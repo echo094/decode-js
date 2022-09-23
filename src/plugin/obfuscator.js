@@ -22,10 +22,69 @@ function virtualGlobalEval(jsStr) {
   return vm2.run(String(jsStr))
 }
 
+function decodeObject(ast) {
+  let obj_node = {}
+  function collectObject(path) {
+    const id = path.node.id
+    const init = path.node.init
+    if (!t.isIdentifier(id) || !t.isObjectExpression(init)) {
+      return
+    }
+    const name = id.name
+    if (name.indexOf('a0_0x') != 0) {
+      return
+    }
+    obj_node[name] = {}
+    for (const item of init.properties) {
+      obj_node[name][item.key.name] = item.value
+    }
+  }
+  traverse(ast, {
+    VariableDeclarator: collectObject,
+  })
+  let obj_used = {}
+  function replaceObject(path) {
+    const name = path.node.object
+    const key = path.node.property
+    if (!t.isIdentifier(name) || !t.isIdentifier(key)) {
+      return
+    }
+    if (!(name.name in obj_node)) {
+      return
+    }
+    path.replaceWith(obj_node[name.name][key.name])
+    obj_used[name.name] = true
+  }
+  traverse(ast, {
+    MemberExpression: replaceObject,
+  })
+  function deleteObject(path) {
+    const id = path.node.id
+    const init = path.node.init
+    if (!t.isIdentifier(id) || !t.isObjectExpression(init)) {
+      return
+    }
+    const name = id.name
+    if (!(name in obj_node)) {
+      return
+    }
+    path.remove()
+    let used = 'false'
+    if (name in obj_used) {
+      used = 'true'
+    }
+    console.log(`删除对象: ${name} -> ${used}`)
+  }
+  traverse(ast, {
+    VariableDeclarator: deleteObject,
+  })
+  return ast
+}
+
 function decodeGlobal(ast) {
   // 找到关键的函数
   let obfuncstr = []
-  let obdecname
+  let obdecname = []
   let obsortname
   function findobsortfunc(path) {
     function get_obsort(path) {
@@ -51,9 +110,8 @@ function decodeGlobal(ast) {
     if (t && t.type === 'VariableDeclaration') {
       let g = t.declarations[0].init
       if (g && g.type == 'CallExpression' && g.callee.name == obsortname) {
-        obdecname = path.node.id.name
+        obdecname.push(path.node.id.name)
         obfuncstr.push(generator(path.node, { minified: true }).code)
-        path.stop()
         path.remove()
       }
     }
@@ -65,7 +123,7 @@ function decodeGlobal(ast) {
 
   // 循环删除混淆函数
   let call_dict = {}
-  let exist_names = [obdecname]
+  let exist_names = obdecname
   let collect_codes = []
   let collect_names = []
   function do_parse_value(path) {
@@ -855,6 +913,8 @@ function unlockEnv(ast) {
 
 export default function (jscode) {
   let ast = parse(jscode)
+  console.log('还原数值...')
+  decodeObject(ast)
   console.log('处理全局加密...')
   decodeGlobal(ast)
   console.log('处理代码块加密...')
