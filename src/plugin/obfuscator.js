@@ -31,13 +31,21 @@ function decodeObject(ast) {
       return
     }
     const name = id.name
-    if (name.indexOf('a0_0x') != 0) {
+    let valid = true
+    let count = 0
+    let obj = {}
+    for (const item of init.properties) {
+      if (!t.isObjectProperty(item) || !t.isLiteral(item.value)) {
+        valid = false
+        break
+      }
+      ++count
+      obj[item.key.name] = item.value
+    }
+    if (!valid || !count) {
       return
     }
-    obj_node[name] = {}
-    for (const item of init.properties) {
-      obj_node[name][item.key.name] = item.value
-    }
+    obj_node[name] = obj
   }
   traverse(ast, {
     VariableDeclarator: collectObject,
@@ -322,12 +330,14 @@ function unpackCall(path) {
   //     "aaa": function(_0x57e640) {
   //         return _0x57e640();
   //     },
-  //     "bbb": "eee"
+  //     "bbb": "eee",
+  //     "ccc": A[x][y][...]
   // };
   // var aa = _0xb28de8["abcd"](123, 456);
   // var bb = _0xb28de8["dbca"](bcd, 11, 22);
   // var cc = _0xb28de8["aaa"](dcb);
   // var dd = _0xb28de8["bbb"];
+  // var ee = _0xb28de8["ccc"];
   //   |
   //   |
   //   |
@@ -336,6 +346,7 @@ function unpackCall(path) {
   // var bb = bcd(11, 22);
   // var cc = dcb();
   // var dd = "eee";
+  // var ee = A[x][y][...];
   let node = path.node
   // 变量必须定义为Object类型才可能是代码块加密内容
   if (!t.isObjectExpression(node.init)) {
@@ -402,6 +413,12 @@ function unpackCall(path) {
         _path.replaceWith(t.stringLiteral(retStmt))
       }
       ++replCount
+    } else if (t.isMemberExpression(prop.value)) {
+      let retStmt = prop.value
+      objKeys[key] = function (_path) {
+        _path.replaceWith(retStmt)
+      }
+      ++replCount
     }
   })
   // 如果Object内的元素不全符合要求 很有可能是普通的字符串类型 不需要替换
@@ -417,50 +434,59 @@ function unpackCall(path) {
   // 遍历作用域进行替换 分为函数调用和字符串调用
   console.log(`处理代码块: ${objName}`)
   let objUsed = {}
+  let end = false
   function getReplaceFunc(_node) {
     // 这边的节点类型是 MemberExpression
     if (!t.isIdentifier(_node.object) || _node.object.name !== objName) {
       return null
     }
     // 这里开始所有的调用应该都在列表中
-    if (!t.isStringLiteral(_node.property) && !t.isIdentifier(_node.property)) {
-      console.log(`意外的调用: ${objName}`)
+    let key = null
+    if (t.isStringLiteral(_node.property)) {
+      key = _node.property.value
+    } else if (t.isIdentifier(_node.property)) {
+      key = _node.property.name
+    } else if (t.isMemberExpression(_node.property)) {
+      const code = generator(_node.property, { minified: true }).code
+      console.log(`嵌套的调用: ${objName}[${code}]`)
+      end = false
+      return null
+    } else {
+      const code = generator(_node.property, { minified: true }).code
+      console.log(`意外的调用: ${objName}[${code}]`)
       return null
     }
-    let key = null
-    if (_node.property.value in objKeys) {
-      key = _node.property.value
-    } else if (_node.property.name in objKeys) {
-      key = _node.property.name
-    }
-    if (!key) {
-      console.log(`意外的调用: ${objName}['${key}']`)
+    if (!(key in objKeys)) {
+      // 这里应该是在死代码中 因为key不存在
       return null
     }
     objUsed[key] = true
     return objKeys[key]
   }
   const fnPath = path.getFunctionParent() || path.scope.path
-  fnPath.traverse({
-    CallExpression: function (_path) {
-      const _node = _path.node.callee
-      // 函数名必须为Object成员
-      if (!t.isMemberExpression(_node)) {
-        return
-      }
-      let func = getReplaceFunc(_node)
-      let args = _path.node.arguments
-      if (func) {
-        func(_path, args)
-      }
-    },
-    MemberExpression: function (_path) {
-      let func = getReplaceFunc(_path.node)
-      if (func) {
-        func(_path)
-      }
-    },
-  })
+  while (!end) {
+    end = true
+    fnPath.traverse({
+      CallExpression: function (_path) {
+        const _node = _path.node.callee
+        // 函数名必须为Object成员
+        if (!t.isMemberExpression(_node)) {
+          return
+        }
+        let func = getReplaceFunc(_node)
+        let args = _path.node.arguments
+        if (func) {
+          func(_path, args)
+        }
+      },
+      MemberExpression: function (_path) {
+        let func = getReplaceFunc(_path.node)
+        if (func) {
+          func(_path)
+        }
+      },
+    })
+  }
   // 不管有没有全部使用 都可以删除
   const usedCount = Object.keys(objUsed).length
   if (usedCount !== replCount) {
@@ -501,8 +527,6 @@ function decodeCodeBlock(ast) {
   // 先合并分离的Object定义
   traverse(ast, { VariableDeclarator: { exit: mergeObject } })
   // 在变量定义完成后判断是否为代码块加密内容
-  traverse(ast, { VariableDeclarator: { exit: unpackCall } })
-  // 部分区域可能会嵌套2层
   traverse(ast, { VariableDeclarator: { exit: unpackCall } })
   // 合并字面量(在解除区域混淆后会出现新的可合并分割)
   traverse(ast, { BinaryExpression: { exit: calcBinary } })
@@ -723,17 +747,6 @@ function splitSequence(path) {
 }
 
 function purifyCode(ast) {
-  // 清理二进制显示内容
-  traverse(ast, {
-    StringLiteral: ({ node }) => {
-      delete node.extra
-    },
-  })
-  traverse(ast, {
-    NumericLiteral: ({ node }) => {
-      delete node.extra
-    },
-  })
   // 标准化if语句
   traverse(ast, { IfStatement: standardIfStatement })
   // 标准化for语句
@@ -913,6 +926,17 @@ function unlockEnv(ast) {
 
 export default function (jscode) {
   let ast = parse(jscode)
+  // 清理二进制显示内容
+  traverse(ast, {
+    StringLiteral: ({ node }) => {
+      delete node.extra
+    },
+  })
+  traverse(ast, {
+    NumericLiteral: ({ node }) => {
+      delete node.extra
+    },
+  })
   console.log('还原数值...')
   decodeObject(ast)
   console.log('处理全局加密...')
