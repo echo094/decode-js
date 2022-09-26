@@ -53,7 +53,7 @@ function decodeGlobal(ast) {
   virtualGlobalEval(code)
   // 遍历内容语句
   function funToStr(path) {
-    var node = path.node
+    let node = path.node
     if (!t.isIdentifier(node.callee, { name: decrypt_val })) {
       return
     }
@@ -62,14 +62,20 @@ function decodeGlobal(ast) {
     // console.log(`还原前：${tmp} 还原后：${value}`)
     path.replaceWith(t.valueToNode(value))
   }
-  function delExtra(path) {
-    delete path.node.extra
+  function memToStr(path) {
+    let node = path.node
+    if (!t.isIdentifier(node.object, { name: decrypt_val })) {
+      return
+    }
+    let tmp = path.toString()
+    let value = virtualGlobalEval(tmp)
+    // console.log(`还原前：${tmp} 还原后：${value}`)
+    path.replaceWith(t.valueToNode(value))
   }
   ast.program.body = content_code
   traverse(ast, {
     CallExpression: funToStr,
-    StringLiteral: delExtra,
-    NumericLiteral: delExtra,
+    MemberExpression: memToStr,
   })
   return ast
 }
@@ -375,6 +381,7 @@ function cleanSwitchCode(path) {
 function cleanDeadCode(ast) {
   traverse(ast, { UnaryExpression: purifyBoolean })
   traverse(ast, { IfStatement: cleanIFCode })
+  traverse(ast, { ConditionalExpression: cleanIFCode })
   traverse(ast, { WhileStatement: { exit: cleanSwitchCode } })
   return ast
 }
@@ -567,11 +574,38 @@ function purifyCode(ast) {
     path.replaceInline(body)
   }
   traverse(ast, { ExpressionStatement: removeComma })
+  // 删除空语句
+  traverse(ast, {
+    EmptyStatement: (path) => {
+      path.remove()
+    },
+  })
+  // 删除未使用的变量
+  traverse(ast, {
+    VariableDeclarator: (path) => {
+      let { node, scope } = path
+      let binding = scope.getBinding(node.id.name)
+      if (binding && !binding.referenced && binding.constant) {
+        path.remove()
+      }
+    },
+  })
   return ast
 }
 
 export default function (jscode) {
   let ast = parse(jscode)
+  // 清理二进制显示内容
+  traverse(ast, {
+    StringLiteral: ({ node }) => {
+      delete node.extra
+    },
+  })
+  traverse(ast, {
+    NumericLiteral: ({ node }) => {
+      delete node.extra
+    },
+  })
   console.log('处理全局加密...')
   ast = decodeGlobal(ast)
   console.log('处理代码块加密...')
