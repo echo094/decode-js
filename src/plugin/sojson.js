@@ -34,17 +34,25 @@ function decodeGlobal(ast) {
   if (i < 3) {
     return false
   }
-  const head_len = 3
   // 分离解密语句与内容语句
-  let decrypt_code = ast.program.body.slice(0, head_len)
-  let decrypt_fun = decrypt_code[head_len - 1]
+  let decrypt_code = ast.program.body.slice(0, 3)
+  if (!t.isVariableDeclaration(decrypt_code[0])) {
+    return false
+  }
+  let decrypt_fun = decrypt_code[2]
+  if (t.isExpressionStatement(decrypt_fun)) {
+    decrypt_fun = decrypt_code[1]
+  }
   let decrypt_val
   if (t.isVariableDeclaration(decrypt_fun)) {
     decrypt_val = decrypt_fun.declarations[0].id.name
-  } else {
+  } else if (t.isFunctionDeclaration(decrypt_fun)) {
     decrypt_val = decrypt_fun.id.name
+  } else {
+    return false
   }
-  let content_code = ast.program.body.slice(head_len)
+  console.log(`主加密变量: ${decrypt_val}`)
+  let content_code = ast.program.body.slice(3)
   // 运行解密语句
   ast.program.body = decrypt_code
   let { code } = generator(ast, {
@@ -388,6 +396,24 @@ function cleanDeadCode(ast) {
 
 let func_dbg = ''
 
+function unlockVersionCheck(path) {
+  const right = path.node.right
+  const msg = '删除版本号，js会定期弹窗，还请支持我们的工作'
+  if (!t.isStringLiteral(right) || right.value !== msg) {
+    return
+  }
+  let fnPath = path.getFunctionParent()
+  if (!t.isFunctionExpression(fnPath.node)) {
+    return
+  }
+  fnPath = fnPath.parentPath
+  if (!t.isCallExpression(fnPath.node)) {
+    return
+  }
+  fnPath.remove()
+  console.log('去版本检测')
+}
+
 function unlockDebugger1(path) {
   let decl_path = path
   let dep = 0
@@ -478,6 +504,8 @@ function unlockDebugger3(path) {
 }
 
 function unlockEnv(ast) {
+  // 删除版本号检测
+  traverse(ast, { AssignmentExpression: unlockVersionCheck })
   // 查找并删除`禁止控制台调试`函数
   traverse(ast, { DebuggerStatement: unlockDebugger1 })
   // 删除`禁止控制台调试`的相关调用 会一并清理`防止格式化`
@@ -487,7 +515,40 @@ function unlockEnv(ast) {
   return ast
 }
 
+function purifyFunction(path) {
+  const node = path.node
+  if (!t.isIdentifier(node.left) || !t.isFunctionExpression(node.right)) {
+    return
+  }
+  const name = node.left.name
+  if (node.right.body.body.length !== 1) {
+    return
+  }
+  let retStmt = node.right.body.body[0]
+  if (!t.isReturnStatement(retStmt)) {
+    return
+  }
+  if (!t.isBinaryExpression(retStmt.argument, { operator: '+' })) {
+    return
+  }
+  const fnPath = path.getFunctionParent() || path.scope.path
+  fnPath.traverse({
+    CallExpression: function (_path) {
+      const _node = _path.node.callee
+      if (!t.isIdentifier(_node, { name: name })) {
+        return
+      }
+      let args = _path.node.arguments
+      _path.replaceWith(t.binaryExpression('+', args[0], args[1]))
+    },
+  })
+  path.remove()
+  console.log(`拼接类函数: ${name}`)
+}
+
 function purifyCode(ast) {
+  // 净化拼接字符串的函数
+  traverse(ast, { AssignmentExpression: purifyFunction })
   // 净化变量定义中的常量数值
   function purifyDecl(path) {
     if (t.isNumericLiteral(path.node.init)) {
@@ -517,6 +578,7 @@ function purifyCode(ast) {
   }
   traverse(ast, { VariableDeclarator: purifyDecl })
   // 合并字符串
+  let end = false
   function combineString(path) {
     const op = path.node.operator
     if (op !== '+') {
@@ -527,10 +589,14 @@ function purifyCode(ast) {
     if (!t.isStringLiteral(left) || !t.isStringLiteral(right)) {
       return
     }
+    end = false
     path.replaceWith(t.StringLiteral(eval(path + '')))
     console.log(`合并字符串: ${path.node.value}`)
   }
-  traverse(ast, { BinaryExpression: combineString })
+  while (!end) {
+    end = true
+    traverse(ast, { BinaryExpression: combineString })
+  }
   // 替换索引器
   function FormatMember(path) {
     // _0x19882c['removeCookie']['toString']()
@@ -612,10 +678,10 @@ export default function (jscode) {
   ast = decodeCodeBlock(ast)
   console.log('清理死代码...')
   ast = cleanDeadCode(ast)
-  console.log('解除环境限制...')
-  ast = unlockEnv(ast)
   console.log('提高代码可读性...')
   ast = purifyCode(ast)
+  console.log('解除环境限制...')
+  ast = unlockEnv(ast)
   console.log('净化完成')
   let { code } = generator(ast, {
     comments: false,
