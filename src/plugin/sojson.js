@@ -244,8 +244,6 @@ function unpackCall(path) {
 function decodeCodeBlock(ast) {
   // 在变量定义完成后判断是否为代码块加密内容
   traverse(ast, { VariableDeclarator: { exit: unpackCall } })
-  // 部分区域可能会嵌套2层
-  traverse(ast, { VariableDeclarator: { exit: unpackCall } })
   return ast
 }
 
@@ -650,8 +648,10 @@ function purifyCode(ast) {
   traverse(ast, {
     VariableDeclarator: (path) => {
       let { node, scope } = path
-      let binding = scope.getBinding(node.id.name)
+      const name = node.id.name
+      let binding = scope.getBinding(name)
       if (binding && !binding.referenced && binding.constant) {
+        console.log(`未引用变量: ${name}`)
         path.remove()
       }
     },
@@ -678,6 +678,13 @@ export default function (jscode) {
   ast = decodeCodeBlock(ast)
   console.log('清理死代码...')
   ast = cleanDeadCode(ast)
+  // 刷新代码
+  ast = parse(
+    generator(ast, {
+      comments: false,
+      jsescOption: { minimal: true },
+    }).code
+  )
   console.log('提高代码可读性...')
   ast = purifyCode(ast)
   console.log('解除环境限制...')
