@@ -57,7 +57,7 @@ function decodeObject(ast) {
     if (!t.isIdentifier(name) || !t.isIdentifier(key)) {
       return
     }
-    if (!(name.name in obj_node)) {
+    if (!obj_node.hasOwnProperty(name.name)) {
       return
     }
     path.replaceWith(obj_node[name.name][key.name])
@@ -73,12 +73,12 @@ function decodeObject(ast) {
       return
     }
     const name = id.name
-    if (!(name in obj_node)) {
+    if (!obj_node.hasOwnProperty(name)) {
       return
     }
     path.remove()
     let used = 'false'
-    if (name in obj_used) {
+    if (obj_used.hasOwnProperty(name)) {
       used = 'true'
     }
     console.log(`删除对象: ${name} -> ${used}`)
@@ -219,7 +219,7 @@ function decodeGlobal(ast) {
   // 替换混淆函数
   function do_replace(path) {
     let old_call = path + ''
-    if (old_call in call_dict) {
+    if (call_dict.hasOwnProperty(old_call)) {
       path.replaceWith(t.StringLiteral(call_dict[old_call]))
     }
   }
@@ -297,7 +297,7 @@ function mergeObject(path) {
       if (property.isIdentifier()) {
         key = property.node.name
       }
-      if (key && !(key in keys)) {
+      if (key && !keys.hasOwnProperty(key)) {
         properties.push(t.ObjectProperty(t.valueToNode(key), right.node))
         keys[key] = true
       } else {
@@ -456,7 +456,7 @@ function unpackCall(path) {
       console.log(`意外的调用: ${objName}[${code}]`)
       return null
     }
-    if (!(key in objKeys)) {
+    if (!objKeys.hasOwnProperty(key)) {
       // 这里应该是在死代码中 因为key不存在
       return null
     }
