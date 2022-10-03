@@ -39,6 +39,10 @@ function decodeObject(ast) {
         valid = false
         break
       }
+      if (!t.isIdentifier(item.key)) {
+        valid = false
+        break
+      }
       ++count
       obj[item.key.name] = item.value
     }
@@ -487,12 +491,14 @@ function unpackCall(path) {
       },
     })
   }
-  // 不管有没有全部使用 都可以删除
+  // 不管有没有全部使用 只要替换过就删除
   const usedCount = Object.keys(objUsed).length
   if (usedCount !== replCount) {
     console.log(`不完整使用: ${objName} ${usedCount}/${replCount}`)
   }
-  path.remove()
+  if (usedCount) {
+    path.remove()
+  }
 }
 
 function calcBinary(path) {
@@ -769,6 +775,22 @@ function purifyCode(ast) {
       }
     },
   })
+  // 替换索引器
+  function FormatMember(path) {
+    let curNode = path.node
+    if (!t.isStringLiteral(curNode.property)) {
+      return
+    }
+    if (curNode.computed === undefined || !curNode.computed === true) {
+      return
+    }
+    if (!/^[a-zA-Z_$][0-9a-zA-Z_$]*$/.test(curNode.property.value)) {
+      return
+    }
+    curNode.property = t.identifier(curNode.property.value)
+    curNode.computed = false
+  }
+  traverse(ast, { MemberExpression: FormatMember })
   // 拆分语句
   traverse(ast, { SequenceExpression: splitSequence })
   return ast
