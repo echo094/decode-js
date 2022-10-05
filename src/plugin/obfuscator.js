@@ -323,6 +323,8 @@ function mergeObject(path) {
   })
 }
 
+let block_unlock_end = false
+
 function unpackCall(path) {
   // var _0xb28de8 = {
   //     "abcd": function(_0x22293f, _0x5a165e) {
@@ -438,7 +440,7 @@ function unpackCall(path) {
   // 遍历作用域进行替换 分为函数调用和字符串调用
   console.log(`处理代码块: ${objName}`)
   let objUsed = {}
-  let end = false
+  let end = true
   function getReplaceFunc(_node) {
     // 这边的节点类型是 MemberExpression
     if (!t.isIdentifier(_node.object) || _node.object.name !== objName) {
@@ -468,28 +470,30 @@ function unpackCall(path) {
     return objKeys[key]
   }
   const fnPath = path.getFunctionParent() || path.scope.path
-  while (!end) {
-    end = true
-    fnPath.traverse({
-      CallExpression: function (_path) {
-        const _node = _path.node.callee
-        // 函数名必须为Object成员
-        if (!t.isMemberExpression(_node)) {
-          return
-        }
-        let func = getReplaceFunc(_node)
-        let args = _path.node.arguments
-        if (func) {
-          func(_path, args)
-        }
-      },
-      MemberExpression: function (_path) {
-        let func = getReplaceFunc(_path.node)
-        if (func) {
-          func(_path)
-        }
-      },
-    })
+  fnPath.traverse({
+    CallExpression: function (_path) {
+      const _node = _path.node.callee
+      // 函数名必须为Object成员
+      if (!t.isMemberExpression(_node)) {
+        return
+      }
+      let func = getReplaceFunc(_node)
+      let args = _path.node.arguments
+      if (func) {
+        func(_path, args)
+      }
+    },
+    MemberExpression: function (_path) {
+      let func = getReplaceFunc(_path.node)
+      if (func) {
+        func(_path)
+      }
+    },
+  })
+  if (!end) {
+    // 出现嵌套调用
+    block_unlock_end = false
+    return
   }
   // 不管有没有全部使用 只要替换过就删除
   const usedCount = Object.keys(objUsed).length
@@ -533,7 +537,10 @@ function decodeCodeBlock(ast) {
   // 先合并分离的Object定义
   traverse(ast, { VariableDeclarator: { exit: mergeObject } })
   // 在变量定义完成后判断是否为代码块加密内容
-  traverse(ast, { VariableDeclarator: { exit: unpackCall } })
+  while (!block_unlock_end) {
+    block_unlock_end = true
+    traverse(ast, { VariableDeclarator: { exit: unpackCall } })
+  }
   // 合并字面量(在解除区域混淆后会出现新的可合并分割)
   traverse(ast, { BinaryExpression: { exit: calcBinary } })
   return ast
