@@ -61,7 +61,7 @@ function decodeObject(ast) {
     if (!t.isIdentifier(name) || !t.isIdentifier(key)) {
       return
     }
-    if (!obj_node.hasOwnProperty(name.name)) {
+    if (!Object.prototype.hasOwnProperty.call(obj_node, name.name)) {
       return
     }
     path.replaceWith(obj_node[name.name][key.name])
@@ -77,12 +77,12 @@ function decodeObject(ast) {
       return
     }
     const name = id.name
-    if (!obj_node.hasOwnProperty(name)) {
+    if (!Object.prototype.hasOwnProperty.call(obj_node, name)) {
       return
     }
     path.remove()
     let used = 'false'
-    if (obj_used.hasOwnProperty(name)) {
+    if (Object.prototype.hasOwnProperty.call(obj_used, name)) {
       used = 'true'
     }
     console.log(`删除对象: ${name} -> ${used}`)
@@ -223,7 +223,7 @@ function decodeGlobal(ast) {
   // 替换混淆函数
   function do_replace(path) {
     let old_call = path + ''
-    if (call_dict.hasOwnProperty(old_call)) {
+    if (Object.prototype.hasOwnProperty.call(call_dict, old_call)) {
       path.replaceWith(t.StringLiteral(call_dict[old_call]))
     }
   }
@@ -301,7 +301,7 @@ function mergeObject(path) {
       if (property.isIdentifier()) {
         key = property.node.name
       }
-      if (key && !keys.hasOwnProperty(key)) {
+      if (key && !Object.prototype.hasOwnProperty.call(keys, key)) {
         properties.push(t.ObjectProperty(t.valueToNode(key), right.node))
         keys[key] = true
       } else {
@@ -460,7 +460,7 @@ function unpackCall(path) {
       console.log(`意外的调用: ${objName}[${code}]`)
       return null
     }
-    if (!objKeys.hasOwnProperty(key)) {
+    if (!Object.prototype.hasOwnProperty.call(objKeys, key)) {
       // 这里应该是在死代码中 因为key不存在
       return null
     }
@@ -967,6 +967,13 @@ export default function (jscode) {
   ast = decodeCodeBlock(ast)
   console.log('清理死代码...')
   ast = cleanDeadCode(ast)
+  // 刷新代码
+  ast = parse(
+    generator(ast, {
+      comments: false,
+      jsescOption: { minimal: true },
+    }).code
+  )
   console.log('提高代码可读性...')
   ast = purifyCode(ast)
   console.log('解除环境限制...')
