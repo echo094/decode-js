@@ -273,42 +273,120 @@ function mergeObject(path) {
     return
   }
   let paths = binding.referencePaths
+  // 添加已有的key
   let keys = {}
-  scope.traverse(scope.block, {
-    AssignmentExpression: function (_path) {
-      const left = _path.get('left')
-      const right = _path.get('right')
-      if (!left.isMemberExpression()) return
-      const object = left.get('object')
-      const property = left.get('property')
-      function _pas_path(_path, left) {
-        if (
-          _path.parentPath.node.type == 'VariableDeclarator' ||
-          _path.parentPath.node.type == 'AssignmentExpression'
-        ) {
-          _path.replaceWith(left)
-        } else {
-          _path.remove()
-        }
+  for (let prop of properties) {
+    let key = null
+    if (t.isStringLiteral(prop.key)) {
+      key = prop.key.value
+    }
+    if (t.isIdentifier(prop.key)) {
+      key = prop.key.name
+    }
+    if (key) {
+      keys[key] = true
+    }
+  }
+  // 遍历作用域检测是否含有局部混淆特征并合并成员
+  let check = true
+  let dupe = false
+  let modified = false
+  let containfun = false
+  function checkFunction(right) {
+    if (!t.isFunctionExpression(right)) {
+      return false
+    }
+    // 符合要求的函数必须有且仅有一条return语句
+    if (right.body.body.length !== 1) {
+      return false
+    }
+    let retStmt = right.body.body[0]
+    if (!t.isReturnStatement(retStmt)) {
+      return false
+    }
+    // 检测是否是3种格式之一
+    if (t.isBinaryExpression(retStmt.argument)) {
+      return true
+    }
+    if (t.isLogicalExpression(retStmt.argument)) {
+      return true
+    }
+    if (t.isCallExpression(retStmt.argument)) {
+      // 函数调用类型 调用的函数必须是传入的第一个参数
+      if (!t.isIdentifier(retStmt.argument.callee)) {
+        return false
       }
-      if (!object.isIdentifier({ name: name }) || _path.scope != scope) {
+      if (retStmt.argument.callee.name !== right.params[0].name) {
+        return false
+      }
+      return true
+    }
+    return false
+  }
+  function collectProperties(_path) {
+    const left = _path.node.left
+    const right = _path.node.right
+    if (!t.isMemberExpression(left)) {
+      return
+    }
+    const object = left.object
+    const property = left.property
+    if (!t.isIdentifier(object, { name: name }) || _path.scope != scope) {
+      return
+    }
+    let key = null
+    if (t.isStringLiteral(property)) {
+      key = property.value
+    }
+    if (t.isIdentifier(property)) {
+      key = property.name
+    }
+    if (!key) {
+      return
+    }
+    if (check) {
+      // 不允许出现重定义
+      if (Object.prototype.hasOwnProperty.call(keys, key)) {
+        dupe = true
         return
       }
-      let key = null
-      if (property.isStringLiteral()) {
-        key = property.node.value
-      }
-      if (property.isIdentifier()) {
-        key = property.node.name
-      }
-      if (key && !Object.prototype.hasOwnProperty.call(keys, key)) {
-        properties.push(t.ObjectProperty(t.valueToNode(key), right.node))
-        keys[key] = true
+      // 判断是否为特征函数
+      containfun = containfun | checkFunction(right)
+      // 添加到列表
+      properties.push(t.ObjectProperty(t.valueToNode(key), right))
+      keys[key] = true
+      modified = true
+    } else {
+      if (
+        _path.parentPath.node.type == 'VariableDeclarator' ||
+        _path.parentPath.node.type == 'AssignmentExpression'
+      ) {
+        _path.replaceWith(left)
       } else {
-        console.log(`重复的成员: ${name}['${key}']`)
+        _path.remove()
       }
-      _pas_path(_path, left)
-    },
+    }
+  }
+  // 检测已有的key中是否存在混淆函数
+  for (let prop of properties) {
+    containfun = containfun | checkFunction(prop.value)
+  }
+  // 第一次遍历作用域
+  scope.traverse(scope.block, {
+    AssignmentExpression: collectProperties,
+  })
+  if (!modified) {
+    return
+  }
+  if (dupe || !containfun) {
+    console.log(`不进行合并: ${name} dupe:${dupe} spec:${containfun}`)
+    return
+  }
+  // 第二次遍历作用域
+  console.log(`尝试性合并: ${name}`)
+  check = false
+  scope.traverse(scope.block, {
+    AssignmentExpression: collectProperties,
   })
   paths.map(function (refer_path) {
     try {
@@ -367,6 +445,7 @@ function unpackCall(path) {
   let objKeys = {}
   // 有时会有重复的定义
   let replCount = 0
+  let containfun = false
   objPropertiesList.map(function (prop) {
     if (!t.isObjectProperty(prop)) {
       return
@@ -390,6 +469,7 @@ function unpackCall(path) {
             t.binaryExpression(retStmt.argument.operator, args[0], args[1])
           )
         }
+        containfun = true
       } else if (t.isLogicalExpression(retStmt.argument)) {
         // 逻辑判断类型
         repfunc = function (_path, args) {
@@ -397,6 +477,7 @@ function unpackCall(path) {
             t.logicalExpression(retStmt.argument.operator, args[0], args[1])
           )
         }
+        containfun = true
       } else if (t.isCallExpression(retStmt.argument)) {
         // 函数调用类型 调用的函数必须是传入的第一个参数
         if (!t.isIdentifier(retStmt.argument.callee)) {
@@ -408,6 +489,7 @@ function unpackCall(path) {
         repfunc = function (_path, args) {
           _path.replaceWith(t.callExpression(args[0], args.slice(1)))
         }
+        containfun = true
       }
       if (repfunc) {
         objKeys[key] = repfunc
@@ -435,6 +517,11 @@ function unpackCall(path) {
     console.log(
       `不完整替换: ${objName} ${replCount}/${objPropertiesList.length}`
     )
+    return
+  }
+  // 如果不含有混淆函数就不净化了 避免出问题
+  if (!containfun) {
+    console.log(`无函数替换: ${objName}`)
     return
   }
   // 遍历作用域进行替换 分为函数调用和字符串调用
@@ -775,9 +862,20 @@ function purifyCode(ast) {
   // 删除未使用的变量
   traverse(ast, {
     VariableDeclarator: (path) => {
-      let { node, scope } = path
-      let binding = scope.getBinding(node.id.name)
-      if (binding && !binding.referenced && binding.constant) {
+      const { node, scope } = path
+      const name = node.id.name
+      const binding = scope.getBinding(name)
+      if (!binding || binding.referenced || !binding.constant) {
+        return
+      }
+      const pathpp = path.parentPath.parentPath
+      if (t.isForOfStatement(pathpp)) {
+        return
+      }
+      console.log(`未引用变量: ${name}`)
+      if (path.parentPath.node.declarations.length === 1) {
+        path.parentPath.remove()
+      } else {
         path.remove()
       }
     },
