@@ -378,7 +378,7 @@ function mergeObject(path) {
   if (!modified) {
     return
   }
-  if (dupe || !containfun) {
+  if (dupe) {
     console.log(`不进行合并: ${name} dupe:${dupe} spec:${containfun}`)
     return
   }
@@ -627,6 +627,10 @@ function decodeCodeBlock(ast) {
   while (!block_unlock_end) {
     block_unlock_end = true
     traverse(ast, { VariableDeclarator: { exit: unpackCall } })
+    // 清理多余的语句避免死循环
+    traverse(ast, { UnaryExpression: purifyBoolean })
+    traverse(ast, { IfStatement: cleanIFCode })
+    traverse(ast, { ConditionalExpression: cleanIFCode })
   }
   // 合并字面量(在解除区域混淆后会出现新的可合并分割)
   traverse(ast, { BinaryExpression: { exit: calcBinary } })
