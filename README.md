@@ -16,7 +16,7 @@
 调用方法：
 
 ```shell
-npm run xxx [input.js] [output.js]
+npm run -t xxx [-i input.js] [-o output.js]
 ```
 
 `xxx`为预定义的插件，见[package.json](package.json)中的`scripts`字段。

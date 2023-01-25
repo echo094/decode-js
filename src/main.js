@@ -1,22 +1,25 @@
 ﻿import fs from 'fs'
 import PluginSojson from './plugin/sojson.js'
+import PluginSojsonV7 from './plugin/sojsonv7.js'
 import PluginObfuscator from './plugin/obfuscator.js'
 
 // 读取参数
 let type = 'obfuscator'
-if (process.argv.length > 2) {
-  type = process.argv[2]
+let encodeFile = 'input.js'
+let decodeFile = 'output.js'
+for (let i = 2; i < process.argv.length; i += 2) {
+  if (process.argv[i] === '-t') {
+    type = process.argv[i + 1]
+  }
+  if (process.argv[i] === '-i') {
+    encodeFile = process.argv[i + 1]
+  }
+  if (process.argv[i] === '-o') {
+    decodeFile = process.argv[i + 1]
+  }
 }
 console.log(`类型: ${type}`)
-let encodeFile = 'input.js'
-if (process.argv.length > 3) {
-  encodeFile = process.argv[3]
-}
 console.log(`输入: ${encodeFile}`)
-let decodeFile = 'output.js'
-if (process.argv.length > 4) {
-  decodeFile = process.argv[4]
-}
 console.log(`输出: ${decodeFile}`)
 
 // 读取源代码
@@ -26,6 +29,8 @@ const sourceCode = fs.readFileSync(encodeFile, { encoding: 'utf-8' })
 let code
 if (type === 'sojson') {
   code = PluginSojson(sourceCode)
+} else if (type === 'sojsonv7') {
+  code = PluginSojsonV7(sourceCode)
 } else if (type === 'obfuscator') {
   code = PluginObfuscator(sourceCode)
 }
