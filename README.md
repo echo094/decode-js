@@ -16,12 +16,22 @@
 调用方法：
 
 ```shell
-npm run -t xxx [-i input.js] [-o output.js]
+# pre-defined command
+npm run xxx
+# or full command
+node src/main.js -t type [-i input.js] [-o output.js]
 ```
 
-`xxx`为预定义的插件，见[package.json](package.json)中的`scripts`字段。
+`xxx`为预定义的指令，见[package.json](package.json)中的`scripts`字段。
 
-默认输入文件为`input.js`，默认输出文件为`output.js`。
+`type`列表：
+* sojson
+* sojsonv7
+* obfuscator
+
+默认输入文件为`input.js`，文件中不能包含除混淆代码以外的内容（例如非混淆代码，注释除外），且只能包含一段混淆代码（一次处理只能识别一个主加密函数）。
+
+默认输出文件为`output.js`。
 
 程序入口文件为：[src/main.js](src/main.js)，插件目录为[src/plugin](src/plugin)。
 
