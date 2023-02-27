@@ -36,47 +36,97 @@ function decodeGlobal(ast) {
   if (i < 3) {
     return false
   }
-  // split the first line
-  let decrypt_code = [ast.program.body.shift()]
-  if (!t.isVariableDeclaration(decrypt_code[0])) {
+  // find the main encode function
+  let count = 0
+  let decrypt_code = []
+  for (let i = 0; i < 4; ++i) {
+    decrypt_code.push(t.EmptyStatement())
+  }
+  let decrypt_val
+  const first_line = ast.program.body[0]
+  if (!t.isVariableDeclaration(first_line)) {
     return false
   }
-  // find the main encode function
-  const var_string_table = decrypt_code[0].declarations[1].id.name
-  let decrypt_val
+  const var_version = first_line.declarations[0].id.name
+  if (first_line.declarations.length == 1) {
+    decrypt_code[0] = first_line
+    ast.program.body.shift()
+    ++count
+  }
   traverse(ast, {
-    VariableDeclarator: (path) => {
-      const right = path.node.init
-      if (t.isIdentifier(right) && right.name === var_string_table) {
-        let top = path.getFunctionParent()
-        while (top.getFunctionParent()) {
-          top = top.getFunctionParent()
-        }
-        decrypt_code.push(top.node)
-        decrypt_val = top.node.id.name
-        top.remove()
-        path.stop()
+    Identifier: (path) => {
+      const name = path.node.name
+      if (name !== var_version) {
         return
       }
-    }
-  })
-  // find the preprocessing function
-  traverse(ast, {
-    AssignmentExpression: (path) => {
-      const right = path.node.right
-      if (t.isIdentifier(right) && right.name === var_string_table) {
-        let top = path
-        while (top.parentPath.parentPath) {
-          top = top.parentPath
-        }
-        decrypt_code.push(top.node)
-        top.remove()
-        path.stop()
+      if (!t.isArrayExpression(path.parentPath.node)) {
         return
       }
-    }
+      let node_table = path.getFunctionParent()
+      while (node_table.getFunctionParent()) {
+        node_table = node_table.getFunctionParent()
+      }
+      let var_string_table = null
+      if (node_table.node.id) {
+        var_string_table = node_table.node.id.name
+      } else {
+        while (!t.isVariableDeclarator(node_table)) {
+          node_table = node_table.parentPath
+        }
+        var_string_table = node_table.node.id.name
+      }
+      const binds = node_table.scope.getBinding(var_string_table)
+      for (let bind of binds.referencePaths) {
+        const parent = bind.parentPath
+        if (t.isAssignmentExpression(parent.node)) {
+          // preprocessing function
+          let top = parent
+          while (!t.isProgram(top.parentPath)) {
+            top = top.parentPath
+          }
+          decrypt_code[2] = top.node
+          top.remove()
+          ++count
+          continue
+        }
+        if (t.isVariableDeclarator(parent.node)) {
+          // main decrypt val
+          let top = parent.getFunctionParent()
+          while (top.getFunctionParent()) {
+            top = top.getFunctionParent()
+          }
+          decrypt_code[3] = top.node
+          decrypt_val = top.node.id.name
+          top.remove()
+          ++count
+          continue
+        }
+        if (t.isCallExpression(parent.node) && !parent.node.arguments.length) {
+          if (!t.isVariableDeclarator(parent.parentPath.node)) {
+            continue
+          }
+          let top = parent.getFunctionParent()
+          while (top.getFunctionParent()) {
+            top = top.getFunctionParent()
+          }
+          decrypt_code[3] = top.node
+          decrypt_val = top.node.id.name
+          top.remove()
+          ++count
+        }
+      }
+      // line of string table
+      let top = node_table
+      while (top.parentPath.parentPath) {
+        top = top.parentPath
+      }
+      decrypt_code[1] = top.node
+      top.remove()
+      ++count
+      path.stop()
+    },
   })
-  if (decrypt_code.length !== 3) {
+  if (count < 3 || !decrypt_val) {
     return false
   }
   console.log(`主加密变量: ${decrypt_val}`)

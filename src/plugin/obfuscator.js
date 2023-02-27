@@ -401,6 +401,7 @@ function mergeObject(path) {
   })
 }
 
+let loop_count = 0
 let block_unlock_end = false
 
 function unpackCall(path) {
@@ -519,8 +520,8 @@ function unpackCall(path) {
     )
     return
   }
-  // 如果不含有混淆函数就不净化了 避免出问题
-  if (!containfun) {
+  // 从第2轮循环开始 不含有混淆函数就不净化了
+  if (loop_count > 1 && !containfun) {
     console.log(`无函数替换: ${objName}`)
     return
   }
@@ -626,6 +627,7 @@ function decodeCodeBlock(ast) {
   // 在变量定义完成后判断是否为代码块加密内容
   while (!block_unlock_end) {
     block_unlock_end = true
+    ++loop_count
     traverse(ast, { VariableDeclarator: { exit: unpackCall } })
     // 清理多余的语句避免死循环
     traverse(ast, { UnaryExpression: purifyBoolean })
