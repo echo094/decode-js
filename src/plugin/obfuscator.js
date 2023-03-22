@@ -95,47 +95,99 @@ function decodeObject(ast) {
 
 function decodeGlobal(ast) {
   // 找到关键的函数
-  let obfuncstr = []
-  let obdecname = []
-  let obsortname
-  function findobsortfunc(path) {
-    function get_obsort(path) {
-      obsortname = path.node.arguments[0].name
-      obfuncstr.push('!' + generator(path.node, { minified: true }).code)
+  let ob_func_str = []
+  let ob_dec_name = []
+  let ob_string_func_name
+  // Function to sort string list
+  function find_ob_sort_func(path) {
+    function get_ob_sort(path) {
+      ob_string_func_name = path.node.arguments[0].name
+      if (!ob_string_func_name) {
+        return
+      }
+      ob_func_str.push('!' + generator(path.node, { minified: true }).code)
       path.stop()
       path.remove()
     }
     if (!path.getFunctionParent()) {
-      path.traverse({ CallExpression: get_obsort })
+      path.traverse({ CallExpression: get_ob_sort })
       path.stop()
     }
   }
-  function findobsortlist(path) {
-    if (path.node.id.name == obsortname) {
-      obfuncstr.push(generator(path.node, { minified: true }).code)
+  // If the sort func is found, we can get the string list func from its name.
+  function find_ob_sort_list_by_name(path) {
+    if (path.node.id.name == ob_string_func_name) {
+      ob_func_str.push(generator(path.node, { minified: true }).code)
       path.stop()
       path.remove()
     }
   }
-  function findobfunc(path) {
+  // Otherwise, we have to find the string list func by matching its feature:
+  // function aaa() {
+  //   const bbb = [...]
+  //   aaa = function () {
+  //     return bbb;
+  //   };
+  //   return aaa();
+  // }
+  function find_ob_sort_list_by_feature(path) {
+    if (path.getFunctionParent()) {
+      return
+    }
+    if (!t.isIdentifier(path.node.id)
+      || path.node.params.length
+      || !t.isBlockStatement(path.node.body)
+      || path.node.body.body.length != 3) {
+      return
+    }
+    const name_func = path.node.id.name
+    let string_var = -1
+    const body = path.node.body.body
+    try {
+      if (body[0].declarations.length != 1
+        || !(string_var = body[0].declarations[0].id.name)
+        || !t.isArrayExpression(body[0].declarations[0].init)
+        || name_func != body[1].expression.left.name
+        || body[1].expression.right.params.length
+        || string_var != body[1].expression.right.body.body[0].argument.name
+        || body[2].argument.arguments.length
+        || name_func != body[2].argument.callee.name) {
+        return
+      }
+    } catch (e) { }
+    ob_string_func_name = name_func
+    ob_func_str.push(generator(path.node, { minified: true }).code)
+    path.stop()
+    path.remove()
+  }
+  // find the root call function
+  function find_ob_root_func(path) {
     let t = path.node.body.body[0]
     if (t && t.type === 'VariableDeclaration') {
       let g = t.declarations[0].init
-      if (g && g.type == 'CallExpression' && g.callee.name == obsortname) {
-        obdecname.push(path.node.id.name)
-        obfuncstr.push(generator(path.node, { minified: true }).code)
+      if (g && g.type == 'CallExpression' && g.callee.name == ob_string_func_name) {
+        ob_dec_name.push(path.node.id.name)
+        ob_func_str.push(generator(path.node, { minified: true }).code)
         path.remove()
       }
     }
   }
-  traverse(ast, { ExpressionStatement: findobsortfunc })
-  traverse(ast, { FunctionDeclaration: findobsortlist })
-  traverse(ast, { FunctionDeclaration: findobfunc })
-  virtualGlobalEval(obfuncstr.join(';'))
+  traverse(ast, { ExpressionStatement: find_ob_sort_func })
+  if (ob_string_func_name) {
+    traverse(ast, { FunctionDeclaration: find_ob_sort_list_by_name })
+  } else {
+    traverse(ast, { FunctionDeclaration: find_ob_sort_list_by_feature })
+  }
+  if (!ob_string_func_name) {
+    console.log('error: cannot find string list')
+    return false
+  }
+  traverse(ast, { FunctionDeclaration: find_ob_root_func })
+  virtualGlobalEval(ob_func_str.join(';'))
 
   // 循环删除混淆函数
   let call_dict = {}
-  let exist_names = obdecname
+  let exist_names = ob_dec_name
   let collect_codes = []
   let collect_names = []
   function do_parse_value(path) {
