@@ -219,7 +219,7 @@ function decodeGlobal(ast) {
     if (
       path.node.body.body.length == 1 &&
       path.node.body.body[0].type == 'ReturnStatement' &&
-      path.node.body.body[0].argument.type == 'CallExpression' &&
+      path.node.body.body[0].argument?.type == 'CallExpression' &&
       path.node.body.body[0].argument.callee.type == 'Identifier' &&
       // path.node.params.length == 5 &&
       path.node.id
