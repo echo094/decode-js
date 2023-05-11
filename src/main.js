@@ -36,4 +36,6 @@ if (type === 'sojson') {
 }
 
 // 输出代码
-fs.writeFile(decodeFile, code, () => {})
+if (code) {
+  fs.writeFile(decodeFile, code, () => { })
+}

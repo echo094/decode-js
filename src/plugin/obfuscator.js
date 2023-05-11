@@ -179,7 +179,7 @@ function decodeGlobal(ast) {
     traverse(ast, { FunctionDeclaration: find_ob_sort_list_by_feature })
   }
   if (!ob_string_func_name) {
-    console.log('error: cannot find string list')
+    console.log('Error: cannot find string list')
     return false
   }
   traverse(ast, { FunctionDeclaration: find_ob_root_func })
@@ -280,6 +280,7 @@ function decodeGlobal(ast) {
     }
   }
   traverse(ast, { CallExpression: do_replace })
+  return true
 }
 
 function mergeObject(path) {
@@ -1123,7 +1124,9 @@ export default function (jscode) {
     },
   })
   console.log('还原数值...')
-  decodeObject(ast)
+  if (!decodeObject(ast)) {
+    return null
+  }
   console.log('处理全局加密...')
   decodeGlobal(ast)
   console.log('处理代码块加密...')

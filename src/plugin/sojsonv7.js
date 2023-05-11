@@ -34,6 +34,7 @@ function decodeGlobal(ast) {
   // line x: preprocessing function of string table
   // line y: main encode function containing the var of string table
   if (i < 3) {
+    console.log('Error: code too short')
     return false
   }
   // find the main encode function
@@ -45,6 +46,7 @@ function decodeGlobal(ast) {
   let decrypt_val
   const first_line = ast.program.body[0]
   if (!t.isVariableDeclaration(first_line)) {
+    console.log('Error: line 1 is not variable declaration')
     return false
   }
   const var_version = first_line.declarations[0].id.name
@@ -127,6 +129,7 @@ function decodeGlobal(ast) {
     },
   })
   if (count < 3 || !decrypt_val) {
+    console.log('Error: cannot find decrypt variable')
     return false
   }
   console.log(`主加密变量: ${decrypt_val}`)
@@ -785,6 +788,9 @@ export default function (jscode) {
   })
   console.log('处理全局加密...')
   ast = decodeGlobal(ast)
+  if (!ast) {
+    return null
+  }
   console.log('处理代码块加密...')
   ast = decodeCodeBlock(ast)
   console.log('清理死代码...')

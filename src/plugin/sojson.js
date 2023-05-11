@@ -32,11 +32,13 @@ function decodeGlobal(ast) {
   }
   // 前3句非空语句分别为签名信息、预处理函数、解密函数。
   if (i < 3) {
+    console.log('Error: code too short')
     return false
   }
   // 分离解密语句与内容语句
   let decrypt_code = ast.program.body.slice(0, 3)
   if (!t.isVariableDeclaration(decrypt_code[0])) {
+    console.log('Error: line 1 is not variable declaration')
     return false
   }
   let decrypt_fun = decrypt_code[2]
@@ -49,6 +51,7 @@ function decodeGlobal(ast) {
   } else if (t.isFunctionDeclaration(decrypt_fun)) {
     decrypt_val = decrypt_fun.id.name
   } else {
+    console.log('Error: cannot find decrypt variable')
     return false
   }
   console.log(`主加密变量: ${decrypt_val}`)
@@ -683,6 +686,9 @@ export default function (jscode) {
   })
   console.log('处理全局加密...')
   ast = decodeGlobal(ast)
+  if (!ast) {
+    return null
+  }
   console.log('处理代码块加密...')
   ast = decodeCodeBlock(ast)
   console.log('清理死代码...')
