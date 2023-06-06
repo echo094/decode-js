@@ -98,7 +98,9 @@ function decodeGlobal(ast) {
   let ob_func_str = []
   let ob_dec_name = []
   let ob_string_func_name
-  // Function to sort string list
+
+  // **Fallback**, in case the `find_ob_sort_list_by_feature` does not work
+  // Function to sort string list ("func2")
   function find_ob_sort_func(path) {
     function get_ob_sort(path) {
       ob_string_func_name = path.node.arguments[0].name
@@ -114,7 +116,7 @@ function decodeGlobal(ast) {
       path.stop()
     }
   }
-  // If the sort func is found, we can get the string list func from its name.
+  // If the sort func is found, we can get the "func1" from its name.
   function find_ob_sort_list_by_name(path) {
     if (path.node.id.name == ob_string_func_name) {
       ob_func_str.push(generator(path.node, { minified: true }).code)
@@ -122,7 +124,24 @@ function decodeGlobal(ast) {
       path.remove()
     }
   }
-  // Otherwise, we have to find the string list func by matching its feature:
+  // find the root call function
+  function find_ob_root_func(path) {
+    let t = path.node.body.body[0]
+    if (t && t.type === 'VariableDeclaration') {
+      let g = t.declarations[0].init
+      if (
+        g &&
+        g.type == 'CallExpression' &&
+        g.callee.name == ob_string_func_name
+      ) {
+        ob_dec_name.push(path.node.id.name)
+        ob_func_str.push(generator(path.node, { minified: true }).code)
+        path.remove()
+      }
+    }
+  }
+
+  // **Prefer** Find the string list func ("func1") by matching its feature:
   // function aaa() {
   //   const bbb = [...]
   //   aaa = function () {
@@ -130,59 +149,91 @@ function decodeGlobal(ast) {
   //   };
   //   return aaa();
   // }
+  // After finding the possible func1, this method will check all the binding
+  // references and put the child encode function into list.
   function find_ob_sort_list_by_feature(path) {
     if (path.getFunctionParent()) {
       return
     }
-    if (!t.isIdentifier(path.node.id)
-      || path.node.params.length
-      || !t.isBlockStatement(path.node.body)
-      || path.node.body.body.length != 3) {
+    if (
+      !t.isIdentifier(path.node.id) ||
+      path.node.params.length ||
+      !t.isBlockStatement(path.node.body) ||
+      path.node.body.body.length != 3
+    ) {
       return
     }
     const name_func = path.node.id.name
     let string_var = -1
     const body = path.node.body.body
     try {
-      if (body[0].declarations.length != 1
-        || !(string_var = body[0].declarations[0].id.name)
-        || !t.isArrayExpression(body[0].declarations[0].init)
-        || name_func != body[1].expression.left.name
-        || body[1].expression.right.params.length
-        || string_var != body[1].expression.right.body.body[0].argument.name
-        || body[2].argument.arguments.length
-        || name_func != body[2].argument.callee.name) {
+      if (
+        body[0].declarations.length != 1 ||
+        !(string_var = body[0].declarations[0].id.name) ||
+        !t.isArrayExpression(body[0].declarations[0].init) ||
+        name_func != body[1].expression.left.name ||
+        body[1].expression.right.params.length ||
+        string_var != body[1].expression.right.body.body[0].argument.name ||
+        body[2].argument.arguments.length ||
+        name_func != body[2].argument.callee.name
+      ) {
         return
       }
-    } catch (e) { }
+    } catch (e) {}
+    const binding = path.scope.getBinding(name_func)
+    if (!binding.referencePaths) {
+      return
+    }
+    let paths = binding.referencePaths
+    let find_func2 = false
+    let path_remove = []
+    paths.map(function (refer_path) {
+      let bindpath = refer_path
+      if (t.isCallExpression(bindpath.parent)) {
+        if (name_func == bindpath.parent.callee.name) {
+          bindpath = bindpath.getFunctionParent()
+          if (name_func == bindpath.node.id.name) {
+            return
+          }
+          path_remove.push([bindpath, 'func3'])
+        } else if (name_func == bindpath.parent.arguments[0]?.name) {
+          bindpath = bindpath.parentPath
+          if (t.isExpressionStatement(bindpath.parent)) {
+            bindpath = bindpath.parentPath
+          }
+          find_func2 = true
+          path_remove.push([bindpath, 'func2'])
+        } else {
+          console.error('Unexpected reference')
+        }
+      }
+    })
+    if (!find_func2 || !path_remove.length) {
+      return
+    }
     ob_string_func_name = name_func
     ob_func_str.push(generator(path.node, { minified: true }).code)
+    path_remove.map(function (item) {
+      let bindpath = item[0]
+      if (item[1] == 'func3') {
+        ob_dec_name.push(bindpath.node.id.name)
+      }
+      ob_func_str.push(generator(bindpath.node, { minified: true }).code)
+      bindpath.remove()
+    })
     path.stop()
     path.remove()
   }
-  // find the root call function
-  function find_ob_root_func(path) {
-    let t = path.node.body.body[0]
-    if (t && t.type === 'VariableDeclaration') {
-      let g = t.declarations[0].init
-      if (g && g.type == 'CallExpression' && g.callee.name == ob_string_func_name) {
-        ob_dec_name.push(path.node.id.name)
-        ob_func_str.push(generator(path.node, { minified: true }).code)
-        path.remove()
-      }
-    }
-  }
-  traverse(ast, { ExpressionStatement: find_ob_sort_func })
-  if (ob_string_func_name) {
+  traverse(ast, { FunctionDeclaration: find_ob_sort_list_by_feature })
+  if (!ob_string_func_name) {
+    traverse(ast, { ExpressionStatement: find_ob_sort_func })
     traverse(ast, { FunctionDeclaration: find_ob_sort_list_by_name })
-  } else {
-    traverse(ast, { FunctionDeclaration: find_ob_sort_list_by_feature })
+    traverse(ast, { FunctionDeclaration: find_ob_root_func })
   }
   if (!ob_string_func_name) {
     console.log('Error: cannot find string list')
     return false
   }
-  traverse(ast, { FunctionDeclaration: find_ob_root_func })
   virtualGlobalEval(ob_func_str.join(';'))
 
   // 循环删除混淆函数
@@ -240,20 +291,22 @@ function decodeGlobal(ast) {
   }
   function do_collect_var(path) {
     // var A = B
-    let left = path.node.id
-    let right = path.node.init
-    if (
-      right &&
-      right.type == 'Identifier' &&
-      exist_names.indexOf(right.name) != -1
-    ) {
+    let left, right
+    if (t.isVariableDeclarator(path.node)) {
+      left = path.node.id
+      right = path.node.init
+    } else {
+      left = path.node.left
+      right = path.node.right
+    }
+    if (right?.type == 'Identifier' && exist_names.indexOf(right.name) != -1) {
       let name = left.name
       let t = 'var ' + generator(path.node, { minified: true }).code
       if (collect_names.indexOf(name) == -1) {
         collect_codes.push(t)
         collect_names.push(name)
       } else {
-        console.log(`err: redef ${name}`)
+        console.warning(`redef ${name}`)
       }
     }
   }
@@ -268,6 +321,7 @@ function decodeGlobal(ast) {
     collect_names = []
     traverse(ast, { FunctionDeclaration: do_collect_func })
     traverse(ast, { VariableDeclarator: do_collect_var })
+    traverse(ast, { AssignmentExpression: do_collect_var })
     exist_names = collect_names
     // 执行找到的函数
     virtualGlobalEval(collect_codes.join(';'))
