@@ -259,7 +259,10 @@ function decodeGlobal(ast) {
   function do_collect_remove(path) {
     // 可以删除所有已收集混淆函数的定义
     // 因为根函数已被删除 即使保留也无法运行
-    let name = path.node.id.name
+    let name = path.node?.left?.name
+    if (!name) {
+      name = path.node?.id?.name
+    }
     if (exist_names.indexOf(name) != -1) {
       // console.log(`del: ${name}`)
       path.remove()
@@ -316,6 +319,7 @@ function decodeGlobal(ast) {
     // 删除被使用过的定义
     traverse(ast, { FunctionDeclaration: do_collect_remove })
     traverse(ast, { VariableDeclarator: do_collect_remove })
+    traverse(ast, { AssignmentExpression: do_collect_remove })
     // 收集所有调用已收集混淆函数的混淆函数
     collect_codes = []
     collect_names = []
