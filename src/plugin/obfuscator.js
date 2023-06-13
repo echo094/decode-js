@@ -815,10 +815,14 @@ function cleanSwitchCode(path) {
   // switch语句的执行顺序又while语句上方的字符串决定
   // 首先碰断是否符合这种情况
   const node = path.node
-  if (!(t.isBooleanLiteral(node.test) || t.isUnaryExpression(node.test))) {
-    return
+  let valid = false
+  if (t.isBooleanLiteral(node.test) && node.test.value) {
+    valid = true
   }
-  if (!(node.test.prefix || node.test.value)) {
+  if (t.isArrayExpression(node.test) && node.test.elements.length === 0) {
+    valid = true
+  }
+  if (!valid) {
     return
   }
   if (!t.isBlockStatement(node.body)) {
