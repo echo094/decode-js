@@ -119,25 +119,26 @@ function decodeGlobal(ast) {
   // If the sort func is found, we can get the "func1" from its name.
   function find_ob_sort_list_by_name(path) {
     if (path.node.id.name == ob_string_func_name) {
-      ob_func_str.push(generator(path.node, { minified: true }).code)
+      ob_func_str.unshift(generator(path.node, { minified: true }).code)
+      const binding = path.scope.getBinding(ob_string_func_name)
+      if (!binding.referencePaths) {
+        return
+      }
+      let paths = binding.referencePaths
+      paths.map(function (refer_path) {
+        let bind_path = refer_path.getFunctionParent()
+        if (!bind_path) {
+          return
+        }
+        if (t.isFunctionExpression(bind_path)) {
+          bind_path = bind_path.parentPath
+        }
+        ob_dec_name.push(bind_path.node.id.name)
+        ob_func_str.push(generator(bind_path.node, { minified: true }).code)
+        bind_path.remove()
+      })
       path.stop()
       path.remove()
-    }
-  }
-  // find the root call function
-  function find_ob_root_func(path) {
-    let t = path.node.body.body[0]
-    if (t && t.type === 'VariableDeclaration') {
-      let g = t.declarations[0].init
-      if (
-        g &&
-        g.type == 'CallExpression' &&
-        g.callee.name == ob_string_func_name
-      ) {
-        ob_dec_name.push(path.node.id.name)
-        ob_func_str.push(generator(path.node, { minified: true }).code)
-        path.remove()
-      }
     }
   }
 
@@ -226,14 +227,22 @@ function decodeGlobal(ast) {
   }
   traverse(ast, { FunctionDeclaration: find_ob_sort_list_by_feature })
   if (!ob_string_func_name) {
+    console.warn('Try fallback mode...')
     traverse(ast, { ExpressionStatement: find_ob_sort_func })
+    if (!ob_string_func_name) {
+      console.error('Cannot find string list!')
+      return false
+    }
     traverse(ast, { FunctionDeclaration: find_ob_sort_list_by_name })
-    traverse(ast, { FunctionDeclaration: find_ob_root_func })
+    if (ob_func_str.length < 2) {
+      traverse(ast, { VariableDeclarator: find_ob_sort_list_by_name })
+    }
+    if (ob_func_str.length < 3 || !ob_dec_name.length) {
+      console.error('Essential code missing!')
+      return false
+    }
   }
-  if (!ob_string_func_name) {
-    console.log('Error: cannot find string list')
-    return false
-  }
+  console.log(`String List Name: ${ob_string_func_name}`)
   virtualGlobalEval(ob_func_str.join(';'))
 
   // 循环删除混淆函数
@@ -442,7 +451,10 @@ function mergeObject(path) {
     }
     const object = left.object
     const property = left.property
-    if (!t.isIdentifier(object, { name: name }) || _path.scope != scope) {
+    if (!t.isIdentifier(object, { name: name })) {
+      return
+    }
+    if (_path.parentPath != path.parentPath) {
       return
     }
     let key = null
