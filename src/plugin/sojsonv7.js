@@ -774,7 +774,20 @@ function purifyCode(ast) {
 }
 
 export default function (jscode) {
-  let ast = parse(jscode)
+  let opt = {}
+  let ast
+  while (!ast) {
+    try {
+      ast = parse(jscode, opt)
+    } catch (e) {
+      if (e.reasonCode === 'IllegalReturn') {
+        opt.allowReturnOutsideFunction = true
+      } else {
+        console.error('Cannot parse code!')
+        return null
+      }
+    }
+  }
   // 清理二进制显示内容
   traverse(ast, {
     StringLiteral: ({ node }) => {
@@ -800,7 +813,8 @@ export default function (jscode) {
     generator(ast, {
       comments: false,
       jsescOption: { minimal: true },
-    }).code
+    }).code,
+    opt
   )
   console.log('提高代码可读性...')
   ast = purifyCode(ast)
