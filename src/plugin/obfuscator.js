@@ -127,11 +127,28 @@ function decodeGlobal(ast) {
       let paths = binding.referencePaths
       paths.map(function (refer_path) {
         let bind_path = refer_path.getFunctionParent()
+        while (bind_path) {
+          if (t.isFunctionExpression(bind_path)) {
+            bind_path = bind_path.parentPath
+          } else if (!bind_path.parentPath) {
+            break
+          } else if (t.isSequenceExpression(bind_path.parentPath)) {
+            // issue #11
+            bind_path = bind_path.parentPath
+          } else if (t.isReturnStatement(bind_path.parentPath)) {
+            // issue #11
+            // function _a (x, y) {
+            //   return _a = function (p, q) {
+            //     // #ref
+            //   }, _a(x, y)
+            // }
+            bind_path = bind_path.getFunctionParent()
+          } else {
+            break
+          }
+        }
         if (!bind_path) {
           return
-        }
-        if (t.isFunctionExpression(bind_path)) {
-          bind_path = bind_path.parentPath
         }
         ob_dec_name.push(bind_path.node.id.name)
         ob_func_str.push(generator(bind_path.node, { minified: true }).code)
