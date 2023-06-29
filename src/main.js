@@ -2,6 +2,7 @@
 import PluginSojson from './plugin/sojson.js'
 import PluginSojsonV7 from './plugin/sojsonv7.js'
 import PluginObfuscator from './plugin/obfuscator.js'
+import PluginAwsc from './plugin/awsc.js'
 
 // 读取参数
 let type = 'obfuscator'
@@ -33,9 +34,11 @@ if (type === 'sojson') {
   code = PluginSojsonV7(sourceCode)
 } else if (type === 'obfuscator') {
   code = PluginObfuscator(sourceCode)
+} else if (type === 'awsc') {
+  code = PluginAwsc(sourceCode)
 }
 
 // 输出代码
 if (code) {
-  fs.writeFile(decodeFile, code, () => { })
+  fs.writeFile(decodeFile, code, () => {})
 }
