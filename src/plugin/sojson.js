@@ -7,6 +7,7 @@ import _traverse from '@babel/traverse'
 import * as t from '@babel/types'
 import * as vm from 'node:vm'
 import { VM } from 'vm2'
+import PluginEval from './eval.js'
 
 const generator = _generate.default
 const traverse = _traverse.default
@@ -532,19 +533,24 @@ function purifyFunction(path) {
   if (!t.isBinaryExpression(retStmt.argument, { operator: '+' })) {
     return
   }
-  const fnPath = path.getFunctionParent() || path.scope.path
-  fnPath.traverse({
-    CallExpression: function (_path) {
-      const _node = _path.node.callee
-      if (!t.isIdentifier(_node, { name: name })) {
-        return
-      }
-      let args = _path.node.arguments
-      _path.replaceWith(t.binaryExpression('+', args[0], args[1]))
-    },
-  })
-  path.remove()
-  console.log(`拼接类函数: ${name}`)
+  try {
+    const fnPath = path.getFunctionParent() || path.scope.path
+    fnPath.traverse({
+      CallExpression: function (_path) {
+        const _node = _path.node.callee
+        if (!t.isIdentifier(_node, { name: name })) {
+          return
+        }
+        let args = _path.node.arguments
+        _path.replaceWith(t.binaryExpression('+', args[0], args[1]))
+      },
+    })
+    path.remove()
+    console.log(`拼接类函数: ${name}`)
+  } catch {
+    let code = generator(path.node, { minified: true }).code
+    console.warn('Purify function failed: ' + code)
+  }
 }
 
 function purifyCode(ast) {
@@ -671,8 +677,14 @@ function purifyCode(ast) {
   return ast
 }
 
-export default function (jscode) {
-  let ast = parse(jscode)
+export default function (code) {
+  let ret = PluginEval.unpack(code)
+  let global_eval = false
+  if (ret) {
+    global_eval = true
+    code = ret
+  }
+  let ast = parse(code)
   // 清理二进制显示内容
   traverse(ast, {
     StringLiteral: ({ node }) => {
@@ -705,9 +717,12 @@ export default function (jscode) {
   console.log('解除环境限制...')
   ast = unlockEnv(ast)
   console.log('净化完成')
-  let { code } = generator(ast, {
+  code = generator(ast, {
     comments: false,
     jsescOption: { minimal: true },
-  })
+  }).code
+  if (global_eval) {
+    code = PluginEval.pack(code)
+  }
   return code
 }
