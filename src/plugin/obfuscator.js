@@ -202,7 +202,9 @@ function decodeGlobal(ast) {
       ) {
         return
       }
-    } catch (e) {}
+    } catch {
+      //
+    }
     const binding = path.scope.getBinding(name_func)
     if (!binding.referencePaths) {
       return
@@ -410,7 +412,7 @@ function mergeObject(path) {
   let properties = init.properties
   let scope = path.scope
   let binding = scope.getBinding(name)
-  if (!binding || binding.constantViolations.length > 0) {
+  if (!binding || !binding.constant) {
     // 确认该对象没有被多次定义
     return
   }
@@ -1226,8 +1228,6 @@ export default function (jscode) {
     StringLiteral: ({ node }) => {
       delete node.extra
     },
-  })
-  traverse(ast, {
     NumericLiteral: ({ node }) => {
       delete node.extra
     },
