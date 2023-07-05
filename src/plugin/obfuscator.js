@@ -103,7 +103,12 @@ function decodeGlobal(ast) {
   // Function to sort string list ("func2")
   function find_ob_sort_func(path) {
     function get_ob_sort(path) {
-      ob_string_func_name = path.node.arguments[0].name
+      for (let arg of path.node.arguments) {
+        if (t.isIdentifier(arg)) {
+          ob_string_func_name = arg.name
+          break
+        }
+      }
       if (!ob_string_func_name) {
         return
       }
@@ -1202,7 +1207,20 @@ function unlockEnv(ast) {
 }
 
 export default function (jscode) {
-  let ast = parse(jscode)
+  let opt = {}
+  let ast
+  while (!ast) {
+    try {
+      ast = parse(jscode, opt)
+    } catch (e) {
+      if (e.reasonCode === 'IllegalReturn') {
+        opt.allowReturnOutsideFunction = true
+      } else {
+        console.error('Cannot parse code!')
+        return null
+      }
+    }
+  }
   // 清理二进制显示内容
   traverse(ast, {
     StringLiteral: ({ node }) => {
@@ -1229,7 +1247,8 @@ export default function (jscode) {
     generator(ast, {
       comments: false,
       jsescOption: { minimal: true },
-    }).code
+    }).code,
+    opt
   )
   console.log('提高代码可读性...')
   ast = purifyCode(ast)
