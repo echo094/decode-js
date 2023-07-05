@@ -478,9 +478,6 @@ function mergeObject(path) {
     if (!t.isIdentifier(object, { name: name })) {
       return
     }
-    if (_path.parentPath != path.parentPath) {
-      return
-    }
     let key = null
     if (t.isStringLiteral(property)) {
       key = property.value
