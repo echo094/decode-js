@@ -112,55 +112,67 @@ function decodeGlobal(ast) {
       if (!ob_string_func_name) {
         return
       }
-      ob_func_str.push('!' + generator(path.node, { minified: true }).code)
+      let rm_path = path
+      while (!rm_path.parentPath.isProgram()) {
+        rm_path = rm_path.parentPath
+      }
+      ob_func_str.push('!' + generator(rm_path.node, { minified: true }).code)
       path.stop()
-      path.remove()
+      rm_path.remove()
     }
     if (!path.getFunctionParent()) {
       path.traverse({ CallExpression: get_ob_sort })
-      path.stop()
+      if (ob_string_func_name) {
+        path.stop()
+      }
     }
   }
   // If the sort func is found, we can get the "func1" from its name.
   function find_ob_sort_list_by_name(path) {
-    if (path.node.id.name == ob_string_func_name) {
-      ob_func_str.unshift(generator(path.node, { minified: true }).code)
-      const binding = path.scope.getBinding(ob_string_func_name)
-      if (!binding.referencePaths) {
+    if (path.node.name != ob_string_func_name) {
+      return
+    }
+    let is_list = false
+    let parent = path.parentPath
+    if (parent.isFunctionDeclaration() && path.key === 'id') {
+      is_list = true
+    } else if (parent.isVariableDeclarator() && path.key === 'id') {
+      is_list = true
+    } else if (parent.isAssignmentExpression() && path.key === 'left') {
+      is_list = true
+    } else {
+      let bind_path = parent.getFunctionParent()
+      while (bind_path) {
+        if (t.isFunctionExpression(bind_path)) {
+          bind_path = bind_path.parentPath
+        } else if (!bind_path.parentPath) {
+          break
+        } else if (t.isSequenceExpression(bind_path.parentPath)) {
+          // issue #11
+          bind_path = bind_path.parentPath
+        } else if (t.isReturnStatement(bind_path.parentPath)) {
+          // issue #11
+          // function _a (x, y) {
+          //   return _a = function (p, q) {
+          //     // #ref
+          //   }, _a(x, y)
+          // }
+          bind_path = bind_path.getFunctionParent()
+        } else {
+          break
+        }
+      }
+      if (!bind_path) {
+        console.warn('Unexpected reference!')
         return
       }
-      let paths = binding.referencePaths
-      paths.map(function (refer_path) {
-        let bind_path = refer_path.getFunctionParent()
-        while (bind_path) {
-          if (t.isFunctionExpression(bind_path)) {
-            bind_path = bind_path.parentPath
-          } else if (!bind_path.parentPath) {
-            break
-          } else if (t.isSequenceExpression(bind_path.parentPath)) {
-            // issue #11
-            bind_path = bind_path.parentPath
-          } else if (t.isReturnStatement(bind_path.parentPath)) {
-            // issue #11
-            // function _a (x, y) {
-            //   return _a = function (p, q) {
-            //     // #ref
-            //   }, _a(x, y)
-            // }
-            bind_path = bind_path.getFunctionParent()
-          } else {
-            break
-          }
-        }
-        if (!bind_path) {
-          return
-        }
-        ob_dec_name.push(bind_path.node.id.name)
-        ob_func_str.push(generator(bind_path.node, { minified: true }).code)
-        bind_path.remove()
-      })
-      path.stop()
-      path.remove()
+      ob_dec_name.push(bind_path.node.id.name)
+      ob_func_str.push(generator(bind_path.node, { minified: true }).code)
+      bind_path.remove()
+    }
+    if (is_list) {
+      ob_func_str.unshift(generator(parent.node, { minified: true }).code)
+      parent.remove()
     }
   }
 
@@ -257,10 +269,7 @@ function decodeGlobal(ast) {
       console.error('Cannot find string list!')
       return false
     }
-    traverse(ast, { FunctionDeclaration: find_ob_sort_list_by_name })
-    if (ob_func_str.length < 2) {
-      traverse(ast, { VariableDeclarator: find_ob_sort_list_by_name })
-    }
+    traverse(ast, { Identifier: find_ob_sort_list_by_name })
     if (ob_func_str.length < 3 || !ob_dec_name.length) {
       console.error('Essential code missing!')
       return false
