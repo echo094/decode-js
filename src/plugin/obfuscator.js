@@ -132,6 +132,9 @@ function decodeGlobal(ast) {
     if (path.node.name != ob_string_func_name) {
       return
     }
+    if (path.findParent((path) => path.removed)) {
+      return
+    }
     let is_list = false
     let parent = path.parentPath
     if (parent.isFunctionDeclaration() && path.key === 'id') {

@@ -7,7 +7,7 @@ const generator = _generate.default
 const traverse = _traverse.default
 
 function unpack(code) {
-  let ast = parse(code)
+  let ast = parse(code, { errorRecovery: true })
   let lines = ast.program.body
   let data = null
   for (let line of lines) {
