@@ -135,6 +135,10 @@ function decodeGlobal(ast) {
     if (path.findParent((path) => path.removed)) {
       return
     }
+    if (path.parentPath.isExpressionStatement()) {
+      path.remove()
+      return
+    }
     let is_list = false
     let parent = path.parentPath
     if (parent.isFunctionDeclaration() && path.key === 'id') {
@@ -226,40 +230,56 @@ function decodeGlobal(ast) {
     }
     let paths = binding.referencePaths
     let find_func2 = false
-    let path_remove = []
-    paths.map(function (refer_path) {
-      let bindpath = refer_path
-      if (t.isCallExpression(bindpath.parent)) {
-        if (name_func == bindpath.parent.callee.name) {
-          bindpath = bindpath.getFunctionParent()
-          if (name_func == bindpath.node.id.name) {
-            return
-          }
-          path_remove.push([bindpath, 'func3'])
-        } else if (name_func == bindpath.parent.arguments[0]?.name) {
-          bindpath = bindpath.parentPath
-          if (t.isExpressionStatement(bindpath.parent)) {
-            bindpath = bindpath.parentPath
-          }
-          find_func2 = true
-          path_remove.push([bindpath, 'func2'])
-        } else {
-          console.error('Unexpected reference')
+    let nodes = []
+    function find2(refer_path) {
+      if (
+        refer_path.parentPath.isCallExpression() &&
+        refer_path.listKey === 'arguments' &&
+        refer_path.key === 0
+      ) {
+        let rm_path = refer_path.parentPath
+        if (rm_path.parentPath.isExpressionStatement()) {
+          rm_path = rm_path.parentPath
         }
+        find_func2 = true
+        nodes.push([rm_path.node, 'func2'])
+        rm_path.remove()
       }
-    })
-    if (!find_func2 || !path_remove.length) {
+    }
+    paths.map(find2)
+    if (!find_func2) {
+      return
+    }
+    function find3(refer_path) {
+      if (refer_path.findParent((path) => path.removed)) {
+        return
+      }
+      if (
+        refer_path.parentPath.isCallExpression() &&
+        refer_path.key === 'callee'
+      ) {
+        let rm_path = refer_path.parentPath.getFunctionParent()
+        if (name_func == rm_path.node.id.name) {
+          return
+        }
+        nodes.push([rm_path.node, 'func3'])
+        rm_path.remove()
+      } else {
+        console.error('Unexpected reference')
+      }
+    }
+    paths.map(find3)
+    if (nodes.length == 1) {
       return
     }
     ob_string_func_name = name_func
     ob_func_str.push(generator(path.node, { minified: true }).code)
-    path_remove.map(function (item) {
-      let bindpath = item[0]
+    nodes.map(function (item) {
+      let node = item[0]
       if (item[1] == 'func3') {
-        ob_dec_name.push(bindpath.node.id.name)
+        ob_dec_name.push(node.id.name)
       }
-      ob_func_str.push(generator(bindpath.node, { minified: true }).code)
-      bindpath.remove()
+      ob_func_str.push(generator(node, { minified: true }).code)
     })
     path.stop()
     path.remove()
