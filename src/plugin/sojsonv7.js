@@ -7,6 +7,7 @@ import _traverse from '@babel/traverse'
 import * as t from '@babel/types'
 import * as vm from 'node:vm'
 import { VM } from 'vm2'
+import PluginEval from './eval.js'
 
 const generator = _generate.default
 const traverse = _traverse.default
@@ -45,16 +46,44 @@ function decodeGlobal(ast) {
   }
   let decrypt_val
   const first_line = ast.program.body[0]
-  if (!t.isVariableDeclaration(first_line)) {
-    console.log('Error: line 1 is not variable declaration')
+  let var_version
+  if (t.isVariableDeclaration(first_line)) {
+    if (first_line.declarations.length == 1) {
+      var_version = first_line.declarations[0].id.name
+    }
+  } else if (t.isCallExpression(first_line?.expression)) {
+    let call_func = first_line.expression.callee?.name
+    let i = ast.program.body.length
+    let find = false
+    while (--i) {
+      let part = ast.program.body[i]
+      if (!t.isFunctionDeclaration(part) || part?.id?.name !== call_func) {
+        continue
+      }
+      if (find) {
+        // remove duplicate definition
+        ast.program.body[i] = t.emptyStatement()
+        continue
+      }
+      find = true
+      let obj = part.body.body[0]?.expression?.left
+      if (!obj || !t.isMemberExpression(obj) || obj.object?.name !== 'global') {
+        break
+      }
+      var_version = obj.property?.value
+      decrypt_code.push(part)
+      ast.program.body[i] = t.emptyStatement()
+      continue
+    }
+  }
+  if (!var_version) {
+    console.error('Line 1 is not version variable!')
     return false
   }
-  const var_version = first_line.declarations[0].id.name
-  if (first_line.declarations.length == 1) {
-    decrypt_code[0] = first_line
-    ast.program.body.shift()
-    ++count
-  }
+  console.info(`Version var: ${var_version}`)
+  decrypt_code[0] = first_line
+  ast.program.body.shift()
+  ++count
   traverse(ast, {
     Identifier: (path) => {
       const name = path.node.name
@@ -773,20 +802,19 @@ function purifyCode(ast) {
   return ast
 }
 
-export default function (jscode) {
-  let opt = {}
+export default function (code) {
+  let ret = PluginEval.unpack(code)
+  let global_eval = false
+  if (ret) {
+    global_eval = true
+    code = ret
+  }
   let ast
-  while (!ast) {
-    try {
-      ast = parse(jscode, opt)
-    } catch (e) {
-      if (e.reasonCode === 'IllegalReturn') {
-        opt.allowReturnOutsideFunction = true
-      } else {
-        console.error('Cannot parse code!')
-        return null
-      }
-    }
+  try {
+    ast = parse(code, { errorRecovery: true })
+  } catch (e) {
+    console.error(`Cannot parse code: ${e.reasonCode}`)
+    return null
   }
   // 清理二进制显示内容
   traverse(ast, {
@@ -813,17 +841,19 @@ export default function (jscode) {
     generator(ast, {
       comments: false,
       jsescOption: { minimal: true },
-    }).code,
-    opt
+    }).code
   )
   console.log('提高代码可读性...')
   ast = purifyCode(ast)
   // console.log('解除环境限制...')
   // ast = unlockEnv(ast)
   console.log('净化完成')
-  let { code } = generator(ast, {
+  code = generator(ast, {
     comments: false,
     jsescOption: { minimal: true },
-  })
+  }).code
+  if (global_eval) {
+    code = PluginEval.pack(code)
+  }
   return code
 }
