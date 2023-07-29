@@ -1084,6 +1084,14 @@ function purifyCode(ast) {
   traverse(ast, { MemberExpression: FormatMember })
   // 拆分语句
   traverse(ast, { SequenceExpression: splitSequence })
+  // IllegalReturn
+  traverse(ast, {
+    ReturnStatement(path) {
+      if (!path.getFunctionParent()) {
+        path.remove()
+      }
+    },
+  })
   return ast
 }
 
@@ -1238,19 +1246,12 @@ function unlockEnv(ast) {
 }
 
 export default function (jscode) {
-  let opt = {}
   let ast
-  while (!ast) {
-    try {
-      ast = parse(jscode, opt)
-    } catch (e) {
-      if (e.reasonCode === 'IllegalReturn') {
-        opt.allowReturnOutsideFunction = true
-      } else {
-        console.error('Cannot parse code!')
-        return null
-      }
-    }
+  try {
+    ast = parse(jscode, { errorRecovery: true })
+  } catch (e) {
+    console.error(`Cannot parse code: ${e.reasonCode}`)
+    return null
   }
   // 清理二进制显示内容
   traverse(ast, {
@@ -1277,7 +1278,7 @@ export default function (jscode) {
       comments: false,
       jsescOption: { minimal: true },
     }).code,
-    opt
+    { errorRecovery: true }
   )
   console.log('提高代码可读性...')
   ast = purifyCode(ast)
