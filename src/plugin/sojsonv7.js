@@ -526,125 +526,121 @@ function cleanDeadCode(ast) {
   return ast
 }
 
-let func_dbg = ''
-
-function unlockVersionCheck(path) {
-  const right = path.node.right
-  const msg = '删除版本号，js会定期弹窗，还请支持我们的工作'
-  if (!t.isStringLiteral(right) || right.value !== msg) {
-    return
-  }
-  let fnPath = path.getFunctionParent()
-  if (!t.isFunctionExpression(fnPath.node)) {
-    return
-  }
-  fnPath = fnPath.parentPath
-  if (!t.isCallExpression(fnPath.node)) {
-    return
-  }
-  fnPath.remove()
-  console.log('去版本检测')
-}
-
-function unlockDebugger1(path) {
-  let decl_path = path
-  let dep = 0
-  while (decl_path.parentPath && dep < 2) {
-    decl_path = decl_path.parentPath
-    if (t.isFunctionDeclaration(decl_path.node)) {
-      ++dep
+function removeUniqueCall(path) {
+  let up1 = path.parentPath
+  let decorator = up1.node.callee.name
+  console.info(`Remove decorator: ${decorator}`)
+  let bind1 = up1.scope.getBinding(decorator)
+  bind1.path.remove()
+  if (up1.key === 'callee') {
+    up1.parentPath.remove()
+  } else if (up1.key === 'init') {
+    let up2 = up1.parentPath
+    let call = up2.node.id.name
+    console.info(`Remove call: ${decorator}`)
+    let bind2 = up2.scope.getBinding(call)
+    up2.remove()
+    for (let ref of bind2.referencePaths) {
+      if (ref.findParent((path) => path.removed)) {
+        continue
+      }
+      if (ref.key === 'callee') {
+        let rm = ref.parentPath
+        if (rm.key === 'expression') {
+          rm = rm.parentPath
+        }
+        rm.remove()
+      } else {
+        console.warn(`Unexpected ref key: ${ref.key}`)
+      }
     }
   }
-  if (dep < 2) {
-    // 由于代码会出现两次 遍历到第二个位置时节点已被删除 必然会出现这个情况
-    console.log('控制台调试: 找不到父函数')
+}
+
+function unlockDebugger(path) {
+  const decl_path = path.getFunctionParent()?.getFunctionParent()
+  if (!decl_path) {
+    return
+  }
+  // Check if contains inf-loop
+  let valid = false
+  path.getFunctionParent().traverse({
+    WhileStatement(path) {
+      if (t.isBooleanLiteral(path.node.test) && path.node.test) {
+        valid = true
+      }
+    },
+  })
+  if (!valid) {
     return
   }
   const name = decl_path.node.id.name
-  func_dbg = name
+  const bind = decl_path.scope.getBinding(name)
+  console.info(`Debug test and inf-loop: ${name}`)
+  for (let ref of bind.referencePaths) {
+    if (ref.findParent((path) => path.removed)) {
+      continue
+    }
+    if (ref.listKey === 'arguments') {
+      // setInterval
+      let rm = ref.getFunctionParent().parentPath
+      if (rm.key === 'expression') {
+        rm = rm.parentPath
+      }
+      rm.remove()
+    } else if (ref.key === 'callee') {
+      // lint test for this method
+      let rm = ref.getFunctionParent()
+      removeUniqueCall(rm)
+    } else {
+      console.warn(`Unexpected ref key: ${ref.key}`)
+    }
+  }
   decl_path.remove()
-  console.log(`控制台调试: ${name}`)
+  path.stop()
 }
 
-function unlockDebugger2(path) {
-  const callee = path.node.callee
-  if (!t.isIdentifier(callee) || callee.name !== func_dbg) {
+function unlockConsole(path) {
+  if (!t.isArrayExpression(path.node.init)) {
     return
   }
-  const fnPath = path.getFunctionParent()
-  const node = fnPath.node
-  if (!t.isFunctionExpression(node)) {
+  let pattern = 'log|warn|debug|info|error|exception|table|trace'
+  for (let ele of path.node.init.elements) {
+    if (~pattern.indexOf(ele.value)) {
+      continue
+    }
     return
   }
-  fnPath.replaceWith(
-    t.functionExpression(node.id, node.params, t.blockStatement([]))
-  )
+  let left1 = path.getSibling(0)
+  const code = generator(left1.node, { minified: true }).code
+  pattern = ['window', 'process', 'require', 'global']
+  pattern.map((key) => {
+    if (code.indexOf(key) == -1) {
+      return
+    }
+  })
+  let rm = path.getFunctionParent()
+  removeUniqueCall(rm)
 }
 
-function unlockDebugger3(path) {
-  // 是否定义为空函数
-  const f = path.node.init
-  if (!t.isFunctionExpression(f) || f.params.length) {
+function unlockLint(path) {
+  if (path.findParent((up) => up.removed)) {
     return
   }
-  if (!t.isBlockStatement(f.body) || f.body.body.length) {
+  if (path.node.value !== '(((.+)+)+)+$') {
     return
   }
-  const name = path.node.id.name
-  // 判断函数域是否符合特征
-  const fn = path.getFunctionParent()
-  const body = fn.node.body.body
-  if (body.length !== 3) {
-    return
-  }
-  if (
-    !t.isVariableDeclaration(body[0]) ||
-    !t.isVariableDeclaration(body[1]) ||
-    !t.isIfStatement(body[2])
-  ) {
-    return
-  }
-  const feature = [
-    [name],
-    ['window', 'process', 'require', 'global'],
-    ['console', 'log', 'warn', 'debug', 'info', 'error', 'exception', 'trace'],
-  ]
-  let valid = true
-  for (let i = 0; i < 3; ++i) {
-    const { code } = generator(
-      {
-        type: 'Program',
-        body: [body[i]],
-      },
-      {
-        compact: true,
-      }
-    )
-    feature[i].map((key) => {
-      if (code.indexOf(key) == -1) {
-        valid = false
-      }
-    })
-  }
-  if (valid) {
-    console.log('控制台输出')
-    const node = fn.node
-    fn.replaceWith(
-      t.functionExpression(node.id, node.params, t.blockStatement([]))
-    )
-  }
+  let rm = path.getFunctionParent()
+  removeUniqueCall(rm)
 }
 
 function unlockEnv(ast) {
-  // 删除版本号检测
-  traverse(ast, { AssignmentExpression: unlockVersionCheck })
-  // 查找并删除`禁止控制台调试`函数
-  traverse(ast, { DebuggerStatement: unlockDebugger1 })
-  // 删除`禁止控制台调试`的相关调用 会一并清理`防止格式化`
-  traverse(ast, { CallExpression: unlockDebugger2 })
-  // 清空`禁止控制台输出`函数
-  traverse(ast, { VariableDeclarator: unlockDebugger3 })
-  return ast
+  // 删除`禁止控制台调试`函数
+  traverse(ast, { DebuggerStatement: unlockDebugger })
+  // 删除`禁止控制台输出`函数
+  traverse(ast, { VariableDeclarator: unlockConsole })
+  // 删除`禁止换行`函数
+  traverse(ast, { StringLiteral: unlockLint })
 }
 
 function purifyFunction(path) {
@@ -761,17 +757,19 @@ function purifyCode(ast) {
     // a = 1;
     // b = ddd();
     // c = null;
-    let { expression } = path.node
-    if (!t.isSequenceExpression(expression)) {
+    if (!t.isExpressionStatement(path.parent)) {
       return
     }
-    let body = []
-    expression.expressions.forEach((express) => {
-      body.push(t.expressionStatement(express))
-    })
-    path.replaceInline(body)
+    let replace_path = path.parentPath
+    if (replace_path.listKey !== 'body') {
+      return
+    }
+    for (const item of path.node.expressions) {
+      replace_path.insertBefore(t.expressionStatement(item))
+    }
+    replace_path.remove()
   }
-  traverse(ast, { ExpressionStatement: removeComma })
+  traverse(ast, { SequenceExpression: { exit: removeComma } })
   // 删除空语句
   traverse(ast, {
     EmptyStatement: (path) => {
@@ -799,7 +797,6 @@ function purifyCode(ast) {
       }
     },
   })
-  return ast
 }
 
 export default function (code) {
@@ -844,9 +841,10 @@ export default function (code) {
     }).code
   )
   console.log('提高代码可读性...')
-  ast = purifyCode(ast)
-  // console.log('解除环境限制...')
-  // ast = unlockEnv(ast)
+  purifyCode(ast)
+  ast = parse(generator(ast, { comments: false }).code)
+  console.log('解除环境限制...')
+  unlockEnv(ast)
   console.log('净化完成')
   code = generator(ast, {
     comments: false,
