@@ -605,10 +605,15 @@ function unlockConsole(path) {
     return
   }
   let pattern = 'log|warn|debug|info|error|exception|table|trace'
+  let count = 0
   for (let ele of path.node.init.elements) {
     if (~pattern.indexOf(ele.value)) {
+      ++count
       continue
     }
+    return
+  }
+  if (count < 5) {
     return
   }
   let left1 = path.getSibling(0)
