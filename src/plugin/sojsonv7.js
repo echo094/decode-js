@@ -437,7 +437,7 @@ function cleanIFCode(path) {
   }
 }
 
-function cleanSwitchCode(path) {
+function cleanSwitchCode1(path) {
   // 扁平控制：
   // 会使用一个恒为true的while语句包裹一个switch语句
   // switch语句的执行顺序又while语句上方的字符串决定
@@ -515,11 +515,88 @@ function cleanSwitchCode(path) {
   path.replaceInline(resultBody)
 }
 
+function cleanSwitchCode2(path) {
+  // 扁平控制：
+  // 会使用一个空的for语句包裹一个switch语句
+  // switch语句的执行顺序由for语句上方的字符串决定
+  // 首先判断是否符合这种情况
+  const node = path.node
+  if (node.init || node.test || node.update) {
+    return
+  }
+  if (!t.isBlockStatement(node.body)) {
+    return
+  }
+  const body = node.body.body
+  if (
+    !t.isSwitchStatement(body[0]) ||
+    !t.isMemberExpression(body[0].discriminant) ||
+    !t.isBreakStatement(body[1])
+  ) {
+    return
+  }
+  // switch语句的两个变量
+  const swithStm = body[0]
+  const arrName = swithStm.discriminant.object.name
+  const argName = swithStm.discriminant.property.argument.name
+  // 在while上面的节点寻找这两个变量
+  let arr = null
+  for (let pre_path of path.getAllPrevSiblings()) {
+    if (!pre_path.isVariableDeclaration()) {
+      continue
+    }
+    let test = '' + pre_path
+    try {
+      arr = eval(test + `;${arrName}`)
+    } catch {
+      //
+    }
+  }
+  if (!arr) {
+    return
+  }
+  console.log(`扁平化还原: ${arrName}[${argName}]`)
+  // 重建代码块
+  const caseMap = {}
+  for (let item of swithStm.cases) {
+    caseMap[item.test.value] = item.consequent
+  }
+  let resultBody = []
+  arr.map((targetIdx) => {
+    // 从当前序号开始直到遇到continue
+    let valid = true
+    while (valid && targetIdx < arr.length) {
+      const targetBody = caseMap[targetIdx]
+      for (let i = 0; i < targetBody.length; ++i) {
+        const s = targetBody[i]
+        if (t.isContinueStatement(s)) {
+          valid = false
+          break
+        }
+        if (t.isReturnStatement(s)) {
+          valid = false
+          resultBody.push(s)
+          break
+        }
+        if (t.isBreakStatement(s)) {
+          console.log(`switch中出现意外的break: ${arrName}[${argName}]`)
+        } else {
+          resultBody.push(s)
+        }
+      }
+      targetIdx++
+    }
+  })
+  // 替换整个while语句
+  path.replaceInline(resultBody)
+}
+
 function cleanDeadCode(ast) {
   traverse(ast, { UnaryExpression: purifyBoolean })
   traverse(ast, { IfStatement: cleanIFCode })
   traverse(ast, { ConditionalExpression: cleanIFCode })
-  traverse(ast, { WhileStatement: { exit: cleanSwitchCode } })
+  traverse(ast, { WhileStatement: { exit: cleanSwitchCode1 } })
+  traverse(ast, { ForStatement: { exit: cleanSwitchCode2 } })
   return ast
 }
 
