@@ -327,9 +327,6 @@ function unpackCall(path) {
   console.log(`处理代码块: ${objName}`)
   let objUsed = {}
   function getReplaceFunc(_node) {
-    if (!t.isIdentifier(_node.object) || _node.object.name !== objName) {
-      return null
-    }
     if (!t.isStringLiteral(_node.property) && !t.isIdentifier(_node.property)) {
       return null
     }
@@ -345,31 +342,31 @@ function unpackCall(path) {
     objUsed[key] = true
     return objKeys[key]
   }
-  const fnPath = path.getFunctionParent() || path.scope.path
-  fnPath.traverse({
-    CallExpression: function (_path) {
-      const _node = _path.node.callee
-      // 函数名必须为Object成员
-      if (!t.isMemberExpression(_node)) {
-        return
+  let bind = path.scope.getBinding(objName)?.referencePaths
+  let usedCount = 0
+  for (let i = bind.length - 1; i >= 0; --i) {
+    let ref = bind[i]
+    let up1 = ref.parentPath
+    if (up1.isMemberExpression() && ref.key === 'object') {
+      if (up1.key === 'left' && t.isAssignmentExpression(up1.parent)) {
+        continue
       }
-      let func = getReplaceFunc(_node)
-      let args = _path.node.arguments
-      if (func) {
-        func(_path, args)
+      let func = getReplaceFunc(up1.node)
+      if (!func) {
+        continue
       }
-    },
-    MemberExpression: function (_path) {
-      let func = getReplaceFunc(_path.node)
-      if (func) {
-        func(_path)
+      ++usedCount
+      let up2 = up1.parentPath
+      if (up1.key === 'callee') {
+        func(up2, up2.node.arguments)
+      } else {
+        func(up1)
       }
-    },
-  })
+    }
+  }
   // 如果没有全部使用 就先不删除
-  const usedCount = Object.keys(objUsed).length
-  if (usedCount !== replCount) {
-    console.log(`不完整使用: ${objName} ${usedCount}/${replCount}`)
+  if (usedCount !== bind.length) {
+    console.log(`不完整使用: ${objName} ${usedCount}/${bind.length}`)
   } else {
     path.remove()
   }

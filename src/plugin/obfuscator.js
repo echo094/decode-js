@@ -577,9 +577,6 @@ function mergeObject(path) {
   })
 }
 
-let loop_count = 0
-let block_unlock_end = false
-
 function unpackCall(path) {
   // var _0xb28de8 = {
   //     "abcd": function(_0x22293f, _0x5a165e) {
@@ -622,7 +619,6 @@ function unpackCall(path) {
   let objKeys = {}
   // 有时会有重复的定义
   let replCount = 0
-  let containfun = false
   objPropertiesList.map(function (prop) {
     if (!t.isObjectProperty(prop)) {
       return
@@ -646,7 +642,6 @@ function unpackCall(path) {
             t.binaryExpression(retStmt.argument.operator, args[0], args[1])
           )
         }
-        containfun = true
       } else if (t.isLogicalExpression(retStmt.argument)) {
         // 逻辑判断类型
         repfunc = function (_path, args) {
@@ -654,7 +649,6 @@ function unpackCall(path) {
             t.logicalExpression(retStmt.argument.operator, args[0], args[1])
           )
         }
-        containfun = true
       } else if (t.isCallExpression(retStmt.argument)) {
         // 函数调用类型 调用的函数必须是传入的第一个参数
         if (!t.isIdentifier(retStmt.argument.callee)) {
@@ -666,7 +660,6 @@ function unpackCall(path) {
         repfunc = function (_path, args) {
           _path.replaceWith(t.callExpression(args[0], args.slice(1)))
         }
-        containfun = true
       }
       if (repfunc) {
         objKeys[key] = repfunc
@@ -696,32 +689,18 @@ function unpackCall(path) {
     )
     return
   }
-  // 从第2轮循环开始 不含有混淆函数就不净化了
-  if (loop_count > 1 && !containfun) {
-    console.log(`无函数替换: ${objName}`)
-    return
-  }
   // 遍历作用域进行替换 分为函数调用和字符串调用
   console.log(`处理代码块: ${objName}`)
   let objUsed = {}
-  let end = true
   function getReplaceFunc(_node) {
-    // 这边的节点类型是 MemberExpression
-    if (!t.isIdentifier(_node.object) || _node.object.name !== objName) {
-      return null
-    }
     // 这里开始所有的调用应该都在列表中
     let key = null
     if (t.isStringLiteral(_node.property)) {
       key = _node.property.value
     } else if (t.isIdentifier(_node.property)) {
       key = _node.property.name
-    } else if (t.isMemberExpression(_node.property)) {
-      const code = generator(_node.property, { minified: true }).code
-      console.log(`嵌套的调用: ${objName}[${code}]`)
-      end = false
-      return null
     } else {
+      // Maybe the code was obfuscated more than once
       const code = generator(_node.property, { minified: true }).code
       console.log(`意外的调用: ${objName}[${code}]`)
       return null
@@ -733,38 +712,33 @@ function unpackCall(path) {
     objUsed[key] = true
     return objKeys[key]
   }
-  const fnPath = path.getFunctionParent() || path.scope.path
-  fnPath.traverse({
-    CallExpression: function (_path) {
-      const _node = _path.node.callee
-      // 函数名必须为Object成员
-      if (!t.isMemberExpression(_node)) {
-        return
+  let bind = path.scope.getBinding(objName)?.referencePaths
+  let usedCount = 0
+  // Replace reversely to handle nested cases correctly
+  for (let i = bind.length - 1; i >= 0; --i) {
+    let ref = bind[i]
+    let up1 = ref.parentPath
+    if (up1.isMemberExpression() && ref.key === 'object') {
+      if (up1.key === 'left' && t.isAssignmentExpression(up1.parent)) {
+        continue
       }
-      let func = getReplaceFunc(_node)
-      let args = _path.node.arguments
-      if (func) {
-        func(_path, args)
+      let func = getReplaceFunc(up1.node)
+      if (!func) {
+        continue
       }
-    },
-    MemberExpression: function (_path) {
-      let func = getReplaceFunc(_path.node)
-      if (func) {
-        func(_path)
+      ++usedCount
+      let up2 = up1.parentPath
+      if (up1.key === 'callee') {
+        func(up2, up2.node.arguments)
+      } else {
+        func(up1)
       }
-    },
-  })
-  if (!end) {
-    // 出现嵌套调用
-    block_unlock_end = false
-    return
+    }
   }
-  // 不管有没有全部使用 只要替换过就删除
-  const usedCount = Object.keys(objUsed).length
-  if (usedCount !== replCount) {
-    console.log(`不完整使用: ${objName} ${usedCount}/${replCount}`)
-  }
-  if (usedCount) {
+  // 如果没有全部使用 就先不删除
+  if (usedCount !== bind.length) {
+    console.log(`不完整使用: ${objName} ${usedCount}/${bind.length}`)
+  } else {
     path.remove()
   }
 }
@@ -801,15 +775,7 @@ function decodeCodeBlock(ast) {
   // 先合并分离的Object定义
   traverse(ast, { VariableDeclarator: { exit: mergeObject } })
   // 在变量定义完成后判断是否为代码块加密内容
-  while (!block_unlock_end) {
-    block_unlock_end = true
-    ++loop_count
-    traverse(ast, { VariableDeclarator: { exit: unpackCall } })
-    // 清理多余的语句避免死循环
-    traverse(ast, { UnaryExpression: purifyBoolean })
-    traverse(ast, { IfStatement: cleanIFCode })
-    traverse(ast, { ConditionalExpression: cleanIFCode })
-  }
+  traverse(ast, { VariableDeclarator: { exit: unpackCall } })
   // 合并字面量(在解除区域混淆后会出现新的可合并分割)
   traverse(ast, { BinaryExpression: { exit: calcBinary } })
   return ast
