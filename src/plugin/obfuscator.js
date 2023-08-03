@@ -905,20 +905,31 @@ function cleanSwitchCode(path) {
   const swithStm = body[0]
   const arrName = swithStm.discriminant.object.name
   const argName = swithStm.discriminant.property.argument.name
-  console.log(`扁平化还原: ${arrName}[${argName}]`)
   // 在while上面的节点寻找这两个变量
   let arr = []
+  let rm = []
   path.getAllPrevSiblings().forEach((pre_path) => {
     const { declarations } = pre_path.node
     let { id, init } = declarations[0]
     if (arrName == id.name) {
-      arr = init.callee.object.value.split('|')
-      pre_path.remove()
+      if (t.isStringLiteral(init?.callee?.object)) {
+        arr = init.callee.object.value.split('|')
+        rm.push(pre_path)
+      }
     }
     if (argName == id.name) {
-      pre_path.remove()
+      if (t.isLiteral(init)) {
+        rm.push(pre_path)
+      }
     }
   })
+  if (rm.length !== 2) {
+    return
+  }
+  rm.forEach((pre_path) => {
+    pre_path.remove()
+  })
+  console.log(`扁平化还原: ${arrName}[${argName}]`)
   // 重建代码块
   const caseList = swithStm.cases
   let resultBody = []
