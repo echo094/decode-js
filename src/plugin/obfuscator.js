@@ -575,6 +575,7 @@ function mergeObject(path) {
       console.log(e)
     }
   })
+  scope.crawl()
 }
 
 function unpackCall(path) {
