@@ -48,7 +48,7 @@ function decodeGlobal(ast) {
   const first_line = ast.program.body[0]
   let var_version
   if (t.isVariableDeclaration(first_line)) {
-    if (first_line.declarations.length == 1) {
+    if (first_line.declarations.length) {
       var_version = first_line.declarations[0].id.name
     }
   } else if (t.isCallExpression(first_line?.expression)) {
@@ -107,6 +107,7 @@ function decodeGlobal(ast) {
         var_string_table = node_table.node.id.name
       }
       const binds = node_table.scope.getBinding(var_string_table)
+      let rm = []
       for (let bind of binds.referencePaths) {
         const parent = bind.parentPath
         if (t.isAssignmentExpression(parent.node)) {
@@ -116,7 +117,7 @@ function decodeGlobal(ast) {
             top = top.parentPath
           }
           decrypt_code[2] = top.node
-          top.remove()
+          rm.push(top)
           ++count
           continue
         }
@@ -128,7 +129,7 @@ function decodeGlobal(ast) {
           }
           decrypt_code[3] = top.node
           decrypt_val = top.node.id.name
-          top.remove()
+          rm.push(top)
           ++count
           continue
         }
@@ -142,9 +143,15 @@ function decodeGlobal(ast) {
           }
           decrypt_code[3] = top.node
           decrypt_val = top.node.id.name
-          top.remove()
+          rm.push(top)
           ++count
         }
+      }
+      if (!decrypt_val) {
+        return
+      }
+      for (let path of rm) {
+        path.remove()
       }
       // line of string table
       let top = node_table
