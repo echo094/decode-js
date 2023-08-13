@@ -38,13 +38,28 @@ function decodeGlobal(ast) {
     console.log('Error: code too short')
     return false
   }
+  // split the first line
+  traverse(ast, {
+    Program(path) {
+      path.stop()
+      const l1 = path.get('body.0')
+      if (!l1.isVariableDeclaration()) {
+        return
+      }
+      const defs = l1.node.declarations
+      const kind = l1.node.kind
+      for (let i = defs.length - 1; i; --i) {
+        l1.insertAfter(t.VariableDeclaration(kind, [defs[i]]))
+        l1.get(`declarations.${i}`).remove()
+      }
+      l1.scope.crawl()
+    },
+  })
   // find the main encode function
-  let count = 0
   let decrypt_code = []
   for (let i = 0; i < 4; ++i) {
     decrypt_code.push(t.EmptyStatement())
   }
-  let decrypt_val
   const first_line = ast.program.body[0]
   let var_version
   if (t.isVariableDeclaration(first_line)) {
@@ -83,91 +98,122 @@ function decodeGlobal(ast) {
   console.info(`Version var: ${var_version}`)
   decrypt_code[0] = first_line
   ast.program.body.shift()
-  ++count
+
+  // iterate and classify all refs of var_version
+  const refs = {
+    string_var: null,
+    string_path: null,
+    def: [],
+    process: {},
+  }
   traverse(ast, {
     Identifier: (path) => {
       const name = path.node.name
       if (name !== var_version) {
         return
       }
-      if (!t.isArrayExpression(path.parentPath.node)) {
-        return
-      }
-      let node_table = path.getFunctionParent()
-      while (node_table.getFunctionParent()) {
-        node_table = node_table.getFunctionParent()
-      }
-      let var_string_table = null
-      if (node_table.node.id) {
-        var_string_table = node_table.node.id.name
-      } else {
-        while (!t.isVariableDeclarator(node_table)) {
-          node_table = node_table.parentPath
+      const up1 = path.parentPath
+      if (up1.isVariableDeclarator()) {
+        refs.def.push(path)
+      } else if (up1.isArrayExpression()) {
+        let node_table = path.getFunctionParent()
+        while (node_table.getFunctionParent()) {
+          node_table = node_table.getFunctionParent()
         }
-        var_string_table = node_table.node.id.name
-      }
-      const binds = node_table.scope.getBinding(var_string_table)
-      let rm = []
-      for (let bind of binds.referencePaths) {
-        const parent = bind.parentPath
-        if (t.isAssignmentExpression(parent.node)) {
-          // preprocessing function
-          let top = parent
+        let var_string_table = null
+        if (node_table.node.id) {
+          var_string_table = node_table.node.id.name
+        } else {
+          while (!t.isVariableDeclarator(node_table)) {
+            node_table = node_table.parentPath
+          }
+          var_string_table = node_table.node.id.name
+        }
+        let valid = true
+        up1.traverse({
+          MemberExpression(path) {
+            valid = false
+            path.stop()
+          },
+        })
+        if (valid) {
+          refs.string_var = var_string_table
+          refs.string_path = node_table
+        } else {
+          console.info(`Drop string table: ${var_string_table}`)
+        }
+      } else if (up1.isAssignmentExpression() && path.key === 'left') {
+        const right = up1.get('right')
+        if (right.isIdentifier()) {
+          let top = up1
           while (!t.isProgram(top.parentPath)) {
             top = top.parentPath
           }
-          decrypt_code[2] = top.node
-          rm.push(top)
-          ++count
-          continue
+          refs.process[right.node.name] = top
+        } else {
+          console.warn(`Unexpected ref var_version: ${up1}`)
         }
-        if (t.isVariableDeclarator(parent.node)) {
-          // main decrypt val
-          let top = parent.getFunctionParent()
-          while (top.getFunctionParent()) {
-            top = top.getFunctionParent()
-          }
-          decrypt_code[3] = top.node
-          decrypt_val = top.node.id.name
-          rm.push(top)
-          ++count
-          continue
-        }
-        if (t.isCallExpression(parent.node) && !parent.node.arguments.length) {
-          if (!t.isVariableDeclarator(parent.parentPath.node)) {
-            continue
-          }
-          let top = parent.getFunctionParent()
-          while (top.getFunctionParent()) {
-            top = top.getFunctionParent()
-          }
-          decrypt_code[3] = top.node
-          decrypt_val = top.node.id.name
-          rm.push(top)
-          ++count
-        }
+      } else {
+        console.warn(`Unexpected ref var_version: ${up1}`)
       }
-      if (!decrypt_val) {
-        return
-      }
-      for (let path of rm) {
-        path.remove()
-      }
-      // line of string table
-      let top = node_table
-      while (top.parentPath.parentPath) {
-        top = top.parentPath
-      }
-      decrypt_code[1] = top.node
-      top.remove()
-      ++count
-      path.stop()
     },
   })
-  if (count < 3 || !decrypt_val) {
-    console.log('Error: cannot find decrypt variable')
+  // check if contains string table
+  let var_string_table = refs.string_var
+  if (!var_string_table) {
+    console.error('Cannot find string table')
     return false
   }
+  if (refs.process[var_string_table]) {
+    let rm = refs.process[var_string_table]
+    decrypt_code[2] = rm.node
+    rm.remove()
+  }
+  //  check if contains decrypt variable
+  let decrypt_val
+  let binds = refs.string_path.scope.getBinding(var_string_table)
+  for (let bind of binds.referencePaths) {
+    if (bind.findParent((path) => path.removed)) {
+      continue
+    }
+    const parent = bind.parentPath
+    if (t.isVariableDeclarator(parent.node)) {
+      // main decrypt val
+      let top = parent.getFunctionParent()
+      while (top.getFunctionParent()) {
+        top = top.getFunctionParent()
+      }
+      decrypt_code[3] = top.node
+      decrypt_val = top.node.id.name
+      top.remove()
+      continue
+    }
+    if (t.isCallExpression(parent.node) && !parent.node.arguments.length) {
+      if (!t.isVariableDeclarator(parent.parentPath.node)) {
+        continue
+      }
+      let top = parent.getFunctionParent()
+      while (top.getFunctionParent()) {
+        top = top.getFunctionParent()
+      }
+      decrypt_code[3] = top.node
+      decrypt_val = top.node.id.name
+      top.remove()
+    }
+  }
+  if (!decrypt_val) {
+    console.error('Cannot find decrypt variable')
+    return
+  }
+  // remove path of string table
+  let top = refs.string_path
+  while (top.parentPath.parentPath) {
+    top = top.parentPath
+  }
+  decrypt_code[1] = top.node
+  top.remove()
+
+  // decode
   console.log(`主加密变量: ${decrypt_val}`)
   let content_code = ast.program.body
   // 运行解密语句
