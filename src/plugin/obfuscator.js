@@ -435,22 +435,25 @@ function mergeObject(path) {
   //   },
   //   "bbb": "eee"
   // };
+  //
+  // Note:
+  // Constant objects in the original code can be splitted
+  // AssignmentExpression can be moved to ReturnStatement
   const { id, init } = path.node
   if (!t.isObjectExpression(init)) {
     // 判断是否是定义对象
     return
   }
   let name = id.name
-  let properties = init.properties
   let scope = path.scope
   let binding = scope.getBinding(name)
-  if (!binding || !binding.constant) {
+  if (!binding || binding.kind !== 'const') {
     // 确认该对象没有被多次定义
     return
   }
-  let paths = binding.referencePaths
   // 添加已有的key
   let keys = {}
+  let properties = init.properties
   for (let prop of properties) {
     let key = null
     if (t.isStringLiteral(prop.key)) {
@@ -464,52 +467,34 @@ function mergeObject(path) {
     }
   }
   // 遍历作用域检测是否含有局部混淆特征并合并成员
-  let check = true
-  let dupe = false
-  let modified = false
-  let containfun = false
-  function checkFunction(right) {
-    if (!t.isFunctionExpression(right)) {
-      return false
+  let merges = []
+  const container = path.parentPath.parentPath
+  let idx = path.parentPath.key
+  let cur = 0
+  let valid = true
+  // Check references in sequence
+  while (cur < binding.references) {
+    const ref = binding.referencePaths[cur]
+    if (ref.key !== 'object' || !ref.parentPath.isMemberExpression()) {
+      break
     }
-    // 符合要求的函数必须有且仅有一条return语句
-    if (right.body.body.length !== 1) {
-      return false
+    const me = ref.parentPath
+    if (me.key !== 'left' || !me.parentPath.isAssignmentExpression()) {
+      break
     }
-    let retStmt = right.body.body[0]
-    if (!t.isReturnStatement(retStmt)) {
-      return false
+    const ae = me.parentPath
+    let bk = ae
+    while (bk.parentPath.isExpression()) {
+      bk = bk.parentPath
     }
-    // 检测是否是3种格式之一
-    if (t.isBinaryExpression(retStmt.argument)) {
-      return true
+    if (bk.parentPath.isExpressionStatement()) {
+      bk = bk.parentPath
     }
-    if (t.isLogicalExpression(retStmt.argument)) {
-      return true
+    if (bk.parentPath !== container || bk.key - idx > 1) {
+      break
     }
-    if (t.isCallExpression(retStmt.argument)) {
-      // 函数调用类型 调用的函数必须是传入的第一个参数
-      if (!t.isIdentifier(retStmt.argument.callee)) {
-        return false
-      }
-      if (retStmt.argument.callee.name !== right.params[0].name) {
-        return false
-      }
-      return true
-    }
-    return false
-  }
-  function collectProperties(_path) {
-    const left = _path.node.left
-    const right = _path.node.right
-    if (!t.isMemberExpression(left)) {
-      return
-    }
-    const object = left.object
-    const property = left.property
-    if (!t.isIdentifier(object, { name: name })) {
-      return
-    }
+    idx = bk.key
+    const property = me.node.property
     let key = null
     if (t.isStringLiteral(property)) {
       key = property.value
@@ -518,63 +503,49 @@ function mergeObject(path) {
       key = property.name
     }
     if (!key) {
-      return
+      valid = false
+      break
     }
-    if (check) {
-      // 不允许出现重定义
-      if (Object.prototype.hasOwnProperty.call(keys, key)) {
-        dupe = true
-        return
-      }
-      // 判断是否为特征函数
-      containfun = containfun | checkFunction(right)
-      // 添加到列表
-      properties.push(t.ObjectProperty(t.valueToNode(key), right))
-      keys[key] = true
-      modified = true
-    } else {
-      if (
-        _path.parentPath.node.type == 'VariableDeclarator' ||
-        _path.parentPath.node.type == 'AssignmentExpression'
-      ) {
-        _path.replaceWith(left)
-      } else {
-        _path.remove()
-      }
+    // 不允许出现重定义
+    if (Object.prototype.hasOwnProperty.call(keys, key)) {
+      valid = false
+      break
     }
+    // 添加到列表
+    properties.push(t.ObjectProperty(t.valueToNode(key), ae.node.right))
+    keys[key] = true
+    merges.push(ae)
+    ++cur
   }
-  // 检测已有的key中是否存在混淆函数
-  for (let prop of properties) {
-    containfun = containfun | checkFunction(prop.value)
-  }
-  // 第一次遍历作用域
-  scope.traverse(scope.block, {
-    AssignmentExpression: collectProperties,
-  })
-  if (!modified) {
+  if (!merges.length || !valid) {
     return
   }
-  if (dupe) {
-    console.log(`不进行合并: ${name} dupe:${dupe} spec:${containfun}`)
-    return
-  }
-  // 第二次遍历作用域
+  // Remove code
   console.log(`尝试性合并: ${name}`)
-  check = false
-  scope.traverse(scope.block, {
-    AssignmentExpression: collectProperties,
-  })
-  paths.map(function (refer_path) {
-    try {
-      let bindpath = refer_path.parentPath
-      if (!t.isVariableDeclarator(bindpath.node)) return
-      let bindname = bindpath.node.id.name
-      bindpath.scope.rename(bindname, name, bindpath.scope.block)
-      bindpath.remove()
-    } catch (e) {
-      console.log(e)
+  for (let ref of merges) {
+    const left = ref.node.left
+    if (
+      ref.parentPath.isVariableDeclarator() ||
+      ref.parentPath.isAssignmentExpression()
+    ) {
+      ref.replaceWith(left)
+    } else {
+      if (ref.parentPath.isSequenceExpression() && ref.container.length === 1) {
+        ref = ref.parentPath
+      }
+      ref.remove()
     }
-  })
+  }
+  while (cur < binding.references) {
+    const ref = binding.referencePaths[cur++]
+    const up1 = ref.parentPath
+    if (!up1.isVariableDeclarator()) {
+      continue
+    }
+    let child = up1.node.id.name
+    up1.scope.rename(child, name, up1.scope.block)
+    up1.remove()
+  }
   scope.crawl()
 }
 
@@ -1246,6 +1217,8 @@ export default function (jscode) {
   }
   console.log('处理全局加密...')
   decodeGlobal(ast)
+  console.log('提高代码可读性...')
+  ast = purifyCode(ast)
   console.log('处理代码块加密...')
   ast = decodeCodeBlock(ast)
   console.log('清理死代码...')
