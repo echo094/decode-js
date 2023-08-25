@@ -299,7 +299,25 @@ function decodeGlobal(ast) {
     }
   }
   console.log(`String List Name: ${ob_string_func_name}`)
-  virtualGlobalEval(ob_func_str.join(';'))
+  try {
+    virtualGlobalEval(ob_func_str.join(';'))
+  } catch (e) {
+    // issue #31
+    if (e.name === 'ReferenceError') {
+      let lost = e.message.split(' ')[0]
+      traverse(ast, {
+        Program(path) {
+          ob_dec_name.push(lost)
+          let loc = path.scope.getBinding(lost).path
+          let obj = t.variableDeclaration(loc.parent.kind, [loc.node])
+          ob_func_str.unshift(generator(obj, { minified: true }).code)
+          loc.remove()
+          path.stop()
+        },
+      })
+      virtualGlobalEval(ob_func_str.join(';'))
+    }
+  }
 
   // 循环删除混淆函数
   let call_dict = {}
@@ -543,6 +561,9 @@ function mergeObject(path) {
       continue
     }
     let child = up1.node.id.name
+    if (!up1.scope.bindings[child].constant) {
+      continue
+    }
     up1.scope.rename(child, name, up1.scope.block)
     up1.remove()
   }
