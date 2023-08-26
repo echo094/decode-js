@@ -229,8 +229,8 @@ function decodeGlobal(ast) {
       return
     }
     let paths = binding.referencePaths
-    let find_func2 = false
     let nodes = []
+    // The sorting function maybe missing in some config
     function find2(refer_path) {
       if (
         refer_path.parentPath.isCallExpression() &&
@@ -241,15 +241,11 @@ function decodeGlobal(ast) {
         if (rm_path.parentPath.isExpressionStatement()) {
           rm_path = rm_path.parentPath
         }
-        find_func2 = true
         nodes.push([rm_path.node, 'func2'])
         rm_path.remove()
       }
     }
     paths.map(find2)
-    if (!find_func2) {
-      return
-    }
     function find3(refer_path) {
       if (refer_path.findParent((path) => path.removed)) {
         return
@@ -269,7 +265,7 @@ function decodeGlobal(ast) {
       }
     }
     paths.map(find3)
-    if (nodes.length == 1) {
+    if (!name_func) {
       return
     }
     ob_string_func_name = name_func
@@ -1244,7 +1240,9 @@ export default function (jscode) {
     return null
   }
   console.log('处理全局加密...')
-  decodeGlobal(ast)
+  if (!decodeGlobal(ast)) {
+    return null
+  }
   console.log('提高代码可读性...')
   ast = purifyCode(ast)
   console.log('处理代码块加密...')
