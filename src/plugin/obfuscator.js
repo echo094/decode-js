@@ -279,6 +279,9 @@ function decodeGlobal(ast) {
       if (item[1] == 'func3') {
         ob_dec_name.push(node.id.name)
       }
+      if (t.isCallExpression(node)) {
+        node = t.expressionStatement(node)
+      }
       ob_func_str.push(generator(node, { minified: true }).code)
     })
     path.stop()
@@ -868,17 +871,19 @@ function cleanSwitchCode(path) {
   let arr = []
   let rm = []
   path.getAllPrevSiblings().forEach((pre_path) => {
-    const { declarations } = pre_path.node
-    let { id, init } = declarations[0]
-    if (arrName == id.name) {
-      if (t.isStringLiteral(init?.callee?.object)) {
-        arr = init.callee.object.value.split('|')
-        rm.push(pre_path)
+    for (let i = 0; i < pre_path.node.declarations.length; ++i) {
+      const declaration = pre_path.get(`declarations.${i}`)
+      let { id, init } = declaration.node
+      if (arrName == id.name) {
+        if (t.isStringLiteral(init?.callee?.object)) {
+          arr = init.callee.object.value.split('|')
+          rm.push(declaration)
+        }
       }
-    }
-    if (argName == id.name) {
-      if (t.isLiteral(init)) {
-        rm.push(pre_path)
+      if (argName == id.name) {
+        if (t.isLiteral(init)) {
+          rm.push(declaration)
+        }
       }
     }
   })
