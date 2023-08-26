@@ -1036,8 +1036,10 @@ function purifyCode(ast) {
       console.log(`未引用变量: ${name}`)
       if (path.parentPath.node.declarations.length === 1) {
         path.parentPath.remove()
+        path.parentPath.scope.crawl()
       } else {
         path.remove()
+        scope.crawl()
       }
     },
   })
