@@ -1272,8 +1272,8 @@ export default function (jscode) {
   )
   console.log('提高代码可读性...')
   ast = purifyCode(ast)
-  console.log('解除环境限制...')
-  ast = unlockEnv(ast)
+  // console.log('解除环境限制...')
+  // ast = unlockEnv(ast)
   console.log('净化完成')
   let { code } = generator(ast, {
     comments: false,
