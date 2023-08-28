@@ -935,6 +935,18 @@ function cleanDeadCode(ast) {
   return ast
 }
 
+const splitVariableDeclarator = {
+  VariableDeclarator(path) {
+    const init = path.get('init')
+    if (!init.isAssignmentExpression()) {
+      return
+    }
+    path.parentPath.insertBefore(init.node)
+    init.replaceWith(init.node.left)
+    path.parentPath.scope.crawl()
+  },
+}
+
 function standardIfStatement(path) {
   const consequent = path.get('consequent')
   const alternate = path.get('alternate')
@@ -1017,6 +1029,7 @@ function purifyCode(ast) {
     },
   })
   // 删除未使用的变量
+  traverse(ast, splitVariableDeclarator)
   traverse(ast, {
     VariableDeclarator: (path) => {
       const { node, scope } = path
