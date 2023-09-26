@@ -3,15 +3,12 @@
  * * cilame/v_jstools
  * * Cqxstevexw/decodeObfuscator
  */
-import { parse } from '@babel/parser'
-import _generate from '@babel/generator'
-import _traverse from '@babel/traverse'
-import * as t from '@babel/types'
-import * as vm from 'node:vm'
-import { VM } from 'vm2'
-
-const generator = _generate.default
-const traverse = _traverse.default
+const { parse } = require('@babel/parser')
+const generator = require('@babel/generator').default
+const traverse = require('@babel/traverse').default
+const t = require('@babel/types')
+const vm = require('vm')
+const { VM } = require('vm2')
 
 let globalContext = vm.createContext()
 let vm2 = new VM({
@@ -1231,7 +1228,7 @@ function unlockEnv(ast) {
   return ast
 }
 
-export default function (jscode) {
+module.exports = function (jscode) {
   let ast
   try {
     ast = parse(jscode, { errorRecovery: true })
