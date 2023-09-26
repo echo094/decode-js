@@ -1,6 +1,5 @@
 {
   "name": "decode-js",
-  "type": "module",
   "scripts": {
     "deob": "node src/main.js -t obfuscator",
     "deso": "node src/main.js -t sojson",

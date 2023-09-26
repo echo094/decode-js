@@ -2,13 +2,10 @@
  * Reference：
  * * [某宝登录bx-ua参数逆向思路(fireyejs 225算法)](https://zhuanlan.zhihu.com/p/626187669)
  */
-import { parse } from '@babel/parser'
-import _generate from '@babel/generator'
-import _traverse from '@babel/traverse'
-import * as t from '@babel/types'
-
-const generator = _generate.default
-const traverse = _traverse.default
+const { parse } = require('@babel/parser')
+const generator = require('@babel/generator').default
+const traverse = require('@babel/traverse').default
+const t = require('@babel/types')
 
 function RemoveVoid(path) {
   if (path.node.operator === 'void') {
@@ -207,7 +204,7 @@ function LintBlock(path) {
   path.replaceWith(t.blockStatement(arr))
 }
 
-export default function (code) {
+module.exports = function (code) {
   let ast = parse(code)
   // Lint
   traverse(ast, {

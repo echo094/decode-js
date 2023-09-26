@@ -1,8 +1,8 @@
-﻿import fs from 'fs'
-import PluginSojson from './plugin/sojson.js'
-import PluginSojsonV7 from './plugin/sojsonv7.js'
-import PluginObfuscator from './plugin/obfuscator.js'
-import PluginAwsc from './plugin/awsc.js'
+﻿const fs = require('fs')
+const PluginSojson = require('./plugin/sojson.js')
+const PluginSojsonV7 = require('./plugin/sojsonv7.js')
+const PluginObfuscator = require('./plugin/obfuscator.js')
+const PluginAwsc = require('./plugin/awsc.js')
 
 // 读取参数
 let type = 'obfuscator'
