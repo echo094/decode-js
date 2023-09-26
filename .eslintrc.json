@@ -7,6 +7,5 @@
   "parserOptions": {
     "ecmaVersion": 2020,
     "sourceType": "module"
-  },
-  "ignorePatterns": ["input.js", "output.js"]
+  }
 }
