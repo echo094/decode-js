@@ -3,6 +3,7 @@ const PluginSojson = require('./plugin/sojson.js')
 const PluginSojsonV7 = require('./plugin/sojsonv7.js')
 const PluginObfuscator = require('./plugin/obfuscator.js')
 const PluginAwsc = require('./plugin/awsc.js')
+
 // 读取参数
 let type = 'obfuscator'
 let encodeFile = 'input.js'

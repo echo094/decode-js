@@ -7,7 +7,6 @@ const generator = require('@babel/generator').default
 const traverse = require('@babel/traverse').default
 const t = require('@babel/types')
 
-
 function RemoveVoid(path) {
   if (path.node.operator === 'void') {
     path.replaceWith(path.node.argument)

@@ -9,8 +9,6 @@ const vm = require('vm')
 const { VM } = require('vm2')
 const PluginEval = require('./eval.js')
 
-
-
 let globalContext = vm.createContext()
 let vm2 = new VM({
   allowAsync: false,
