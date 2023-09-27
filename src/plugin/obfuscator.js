@@ -1067,19 +1067,31 @@ function purifyCode(ast) {
   traverse(ast, { MemberExpression: FormatMember })
 
   // 替换类和对象的计算方法和计算属性
-  // ["method"](){} -> method(){}
+  // ["method"](){} -> "method"(){}
   function FormatComputed(path) {
     let curNode = path.node
     if (!t.isStringLiteral(curNode.key)) {
+      return
+    }
+    curNode.computed = false
+  }
+  // "method"(){} -> method(){}
+  function stringLiteralToIdentifier(path) {
+    let curNode = path.node
+    if (!t.isStringLiteral(curNode.key) || curNode.computed === true) {
       return
     }
     if (!/^[a-zA-Z_$][0-9a-zA-Z_$]*$/.test(curNode.key.value)) {
       return
     }
     curNode.key = t.identifier(curNode.key.value)
-    curNode.computed = false
   }
-  traverse(ast, { Method: FormatComputed, Property: FormatComputed })
+  traverse(ast, {
+    'Method|Property': (path) => {
+      FormatComputed(path)
+      stringLiteralToIdentifier(path)
+    },
+  })
 
   // 拆分语句
   traverse(ast, { SequenceExpression: splitSequence })
