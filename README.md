@@ -25,6 +25,7 @@ npm run decode -- -t type [-i input.js] [-o output.js]
 `xxx`为预定义的指令，见[package.json](package.json)中的`scripts`字段。
 
 `type`列表：
+* common (高频局部混淆)
 * sojson
 * sojsonv7
 * obfuscator
