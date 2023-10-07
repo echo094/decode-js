@@ -1,5 +1,6 @@
 const { parse } = require('@babel/parser')
 const generator = require('@babel/generator').default
+const traverse = require('@babel/traverse').default
 
 module.exports = function (code) {
   let ast
@@ -9,6 +10,8 @@ module.exports = function (code) {
     console.error(`Cannot parse code: ${e.reasonCode}`)
     return null
   }
+  const calculateBinary = require('../visitor/calculate-binary')
+  traverse(ast, calculateBinary)
   code = generator(ast).code
   return code
 }
