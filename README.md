@@ -19,7 +19,7 @@
 # pre-defined command
 npm run xxx
 # or full command
-node src/main.js -t type [-i input.js] [-o output.js]
+npm run decode -- -t type [-i input.js] [-o output.js]
 ```
 
 `xxx`为预定义的指令，见[package.json](package.json)中的`scripts`字段。
