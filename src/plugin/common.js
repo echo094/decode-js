@@ -12,6 +12,8 @@ module.exports = function (code) {
   }
   const calculateBinary = require('../visitor/calculate-binary')
   traverse(ast, calculateBinary)
+  const calculateRString = require('../visitor/calculate-rstring')
+  traverse(ast, calculateRString)
   code = generator(ast).code
   return code
 }
