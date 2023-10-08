@@ -10,6 +10,8 @@ module.exports = function (code) {
     console.error(`Cannot parse code: ${e.reasonCode}`)
     return null
   }
+  const deleteExtra = require('../visitor/delete-extra')
+  traverse(ast, deleteExtra)
   const calculateBinary = require('../visitor/calculate-binary')
   traverse(ast, calculateBinary)
   const calculateRString = require('../visitor/calculate-rstring')
