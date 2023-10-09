@@ -1,11 +1,12 @@
 ﻿const fs = require('fs')
+const PluginCommon = require('./plugin/common.js')
 const PluginSojson = require('./plugin/sojson.js')
 const PluginSojsonV7 = require('./plugin/sojsonv7.js')
 const PluginObfuscator = require('./plugin/obfuscator.js')
 const PluginAwsc = require('./plugin/awsc.js')
 
 // 读取参数
-let type = 'obfuscator'
+let type = 'common'
 let encodeFile = 'input.js'
 let decodeFile = 'output.js'
 for (let i = 2; i < process.argv.length; i += 2) {
@@ -36,6 +37,8 @@ if (type === 'sojson') {
   code = PluginObfuscator(sourceCode)
 } else if (type === 'awsc') {
   code = PluginAwsc(sourceCode)
+} else {
+  code = PluginCommon(sourceCode)
 }
 
 // 输出代码
