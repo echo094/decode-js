@@ -612,7 +612,12 @@ function unpackCall(path) {
     if (!t.isObjectProperty(prop)) {
       return
     }
-    let key = prop.key.value
+    let key
+    if (t.isIdentifier(prop.key)) {
+      key = prop.key.name
+    } else {
+      key = prop.key.value
+    }
     if (t.isFunctionExpression(prop.value)) {
       // 符合要求的函数必须有且仅有一条return语句
       if (prop.value.body.body.length !== 1) {
