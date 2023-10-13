@@ -1111,17 +1111,19 @@ function purifyCode(ast) {
   return ast
 }
 
-function deleteSelfDefendingCode(ast) {
-  function checkPattern(code, pattern) {
-    let i = 0, j = 0
-    while (i < code.length && j < pattern.length) {
-      if (code[i] == pattern[j]) {
-        ++j
-      }
-      ++i
+function checkPattern(code, pattern) {
+  let i = 0
+  let j = 0
+  while (i < code.length && j < pattern.length) {
+    if (code[i] == pattern[j]) {
+      ++j
     }
-    return j == pattern.length
+    ++i
   }
+  return j == pattern.length
+}
+
+function deleteSelfDefendingCode(ast) {
   traverse(ast, {
     VariableDeclarator(path) {
       const { id, init } = path.node
@@ -1134,7 +1136,11 @@ function deleteSelfDefendingCode(ast) {
       }
       const callName = init.callee.name
       const args = init.arguments
-      if (args.length != 2 || !t.isThisExpression(args[0]) || !t.isFunctionExpression(args[1])) {
+      if (
+        args.length != 2 ||
+        !t.isThisExpression(args[0]) ||
+        !t.isFunctionExpression(args[1])
+      ) {
         return
       }
       const block = generator(args[1]).code
@@ -1145,7 +1151,7 @@ function deleteSelfDefendingCode(ast) {
       const scope = path.scope
       const refs = scope.bindings[selfName].referencePaths
       for (let ref of refs) {
-        if (ref.key == "callee") {
+        if (ref.key == 'callee') {
           ref.parentPath.remove()
           break
         }
@@ -1162,111 +1168,71 @@ function deleteSelfDefendingCode(ast) {
   })
 }
 
-const deleteObfuscatorCode = {
-  ExpressionStatement(path) {
-    let sourceCode = path.toString()
-    if (!sourceCode.includes('RegExp') && !sourceCode.includes('chain')) {
-      return
-    }
-
-    let { expression } = path.node
-    if (!t.isCallExpression(expression)) {
-      return
-    }
-    let callee = expression.callee
-    let args = expression.arguments
-
-    if (!t.isFunctionExpression(callee) || args.length != 0) {
-      return
-    }
-
-    let body = callee.body.body
-    if (body.length != 1 || !t.isExpressionStatement(body[0])) {
-      return
-    }
-    expression = body[0].expression
-    if (!t.isCallExpression(expression)) {
-      return
-    }
-    callee = expression.callee
-    args = expression.arguments
-
-    if (!t.isCallExpression(callee) || args.length != 0) {
-      return
-    }
-    args = callee.arguments
-    if (
-      args.length == 2 &&
-      t.isThisExpression(args[0]) &&
-      t.isFunctionExpression(args[1])
-    ) {
-      path.remove()
-    }
-  },
-  CallExpression(path) {
-    let { scope, node } = path
-    let callee = node.callee
-    let args = node.arguments
-
-    if (!t.isIdentifier(callee, { name: 'setInterval' })) {
-      return
-    }
-    if (
-      args.length != 2 ||
-      !t.isFunctionExpression(args[0]) ||
-      !t.isNumericLiteral(args[1])
-    ) {
-      return
-    }
-
-    let body = args[0].body.body
-    if (body.length != 1 || !t.isExpressionStatement(body[0])) {
-      return
-    }
-    let expression = body[0].expression
-    if (!t.isCallExpression(expression)) {
-      return
-    }
-    callee = expression.callee
-    args = expression.arguments
-
-    if (!t.isIdentifier(callee) || args.length != 0) {
-      return
-    }
-
-    let binding = scope.getBinding(callee.name)
-    if (!binding || !binding.path) {
-      return
-    }
-
-    let sourceCode = binding.path.toString()
-    if (sourceCode.includes('constructor') || sourceCode.includes('debugger')) {
-      path.remove()
-      binding.path.remove()
-    }
-  },
-  FunctionDeclaration(path) {
-    let { body } = path.node.body
-    if (
-      body.length == 2 &&
-      t.isFunctionDeclaration(body[0]) &&
-      t.isTryStatement(body[1])
-    ) {
-      let sourceCode = path.toString()
+function deleteDebugProtectionCode(ast) {
+  traverse(ast, {
+    FunctionDeclaration(path) {
+      const { id, params, body } = path.node
       if (
-        sourceCode.includes('constructor') &&
-        sourceCode.includes('debugger') &&
-        sourceCode.includes('apply')
+        !t.isIdentifier(id) ||
+        params.length !== 1 ||
+        !t.isIdentifier(params[0]) ||
+        !t.isBlockStatement(body) ||
+        body.body.length !== 2 ||
+        !t.isFunctionDeclaration(body.body[0]) ||
+        !t.isTryStatement(body.body[1])
       ) {
-        path.remove()
+        return
       }
-    }
-  },
+      const debugName = id.name
+      const ret = params[0].name
+      const subNode = body.body[0]
+      if (
+        !t.isIdentifier(subNode.id) ||
+        subNode.params.length !== 1 ||
+        !t.isIdentifier(subNode.params[0])
+      ) {
+        return
+      }
+      const subName = subNode.id.name
+      const counter = subNode.params[0].name
+      const code = generator(body).code
+      const pattern = `function${subName}(${counter}){${counter}debugger${subName}(++${counter})}try{if(${ret})return${subName}${subName}(0)}catch(){}`
+      if (!checkPattern(code, pattern)) {
+        return
+      }
+      const scope1 = path.parentPath.scope
+      const refs = scope1.bindings[debugName].referencePaths
+      for (let ref of refs) {
+        if (ref.findParent((path) => path.removed)) {
+          continue
+        }
+        if (ref.key == 0) {
+          // DebugProtectionFunctionInterval
+          const rm = ref.getFunctionParent().parentPath
+          rm.remove()
+          continue
+        }
+        // DebugProtectionFunctionCall
+        const up1 = ref.getFunctionParent()
+        const callName = up1.parent.callee.name
+        const up2 = up1.getFunctionParent().parentPath
+        const scope2 = up2.scope
+        up2.remove()
+        scope1.crawl()
+        scope2.crawl()
+        const bind = scope2.bindings[callName]
+        bind.path.remove()
+      }
+      path.remove()
+      console.info(`Remove ${debugName}`)
+    },
+  })
 }
 
 function unlockEnv(ast) {
   //可能会误删一些代码，可屏蔽
-  traverse(ast, deleteObfuscatorCode)
+  deleteSelfDefendingCode(ast)
+  deleteDebugProtectionCode(ast)
   return ast
 }
 
@@ -1311,8 +1277,8 @@ module.exports = function (jscode) {
   )
   console.log('提高代码可读性...')
   ast = purifyCode(ast)
-  // console.log('解除环境限制...')
-  // ast = unlockEnv(ast)
+  console.log('解除环境限制...')
+  ast = unlockEnv(ast)
   console.log('净化完成')
   let { code } = generator(ast, {
     comments: false,
