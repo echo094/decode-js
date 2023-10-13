@@ -1111,39 +1111,58 @@ function purifyCode(ast) {
   return ast
 }
 
-const deleteObfuscatorCode = {
-  VariableDeclarator(path) {
-    let sourceCode = path.toString()
-    let { id, init } = path.node
-    if (t.isCallExpression(init)) {
-      let callee = init.callee
-      let args = init.arguments
-      if (args.length == 0 && sourceCode.includes('apply')) {
-        path.remove()
-      } else if (
-        (sourceCode.includes('constructor') || sourceCode.includes('RegExp')) &&
-        t.isIdentifier(callee) &&
-        args.length == 2 &&
-        t.isThisExpression(args[0]) &&
-        t.isFunctionExpression(args[1])
-      ) {
-        let funcName = id.name
-
-        let nextSibling = path.parentPath.getNextSibling()
-        if (nextSibling.isExpressionStatement()) {
-          let expression = nextSibling.get('expression')
-
-          if (
-            expression.isCallExpression() &&
-            expression.get('callee').isIdentifier({ name: funcName })
-          ) {
-            path.remove()
-            nextSibling.remove()
-          }
+function deleteSelfDefendingCode(ast) {
+  function checkPattern(code, pattern) {
+    let i = 0, j = 0
+    while (i < code.length && j < pattern.length) {
+      if (code[i] == pattern[j]) {
+        ++j
+      }
+      ++i
+    }
+    return j == pattern.length
+  }
+  traverse(ast, {
+    VariableDeclarator(path) {
+      const { id, init } = path.node
+      const selfName = id.name
+      if (!t.isCallExpression(init)) {
+        return
+      }
+      if (!t.isIdentifier(init.callee)) {
+        return
+      }
+      const callName = init.callee.name
+      const args = init.arguments
+      if (args.length != 2 || !t.isThisExpression(args[0]) || !t.isFunctionExpression(args[1])) {
+        return
+      }
+      const block = generator(args[1]).code
+      const pattern = `return${selfName}.toString().search().toString().constructor(${selfName}).search()`
+      if (!checkPattern(block, pattern)) {
+        return
+      }
+      const scope = path.scope
+      const refs = scope.bindings[selfName].referencePaths
+      for (let ref of refs) {
+        if (ref.key == "callee") {
+          ref.parentPath.remove()
+          break
         }
       }
-    }
-  },
+      path.remove()
+      scope.crawl()
+      const bind = scope.bindings[callName]
+      if (bind.referenced) {
+        console.error(`Call func ${callName} unexpected ref!`)
+      }
+      bind.path.remove()
+      console.info(`Remove ${callName} -> ${selfName}`)
+    },
+  })
+}
+
+const deleteObfuscatorCode = {
   ExpressionStatement(path) {
     let sourceCode = path.toString()
     if (!sourceCode.includes('RegExp') && !sourceCode.includes('chain')) {
