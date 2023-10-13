@@ -1189,16 +1189,6 @@ const deleteObfuscatorCode = {
     let callee = node.callee
     let args = node.arguments
 
-    let sourceCode = path.toString()
-    if (
-      args.length == 0 &&
-      sourceCode.includes('constructor') &&
-      sourceCode.includes('setInterval')
-    ) {
-      path.remove()
-      return
-    }
-
     if (!t.isIdentifier(callee, { name: 'setInterval' })) {
       return
     }
@@ -1230,7 +1220,7 @@ const deleteObfuscatorCode = {
       return
     }
 
-    sourceCode = binding.path.toString()
+    let sourceCode = binding.path.toString()
     if (sourceCode.includes('constructor') || sourceCode.includes('debugger')) {
       path.remove()
       binding.path.remove()
