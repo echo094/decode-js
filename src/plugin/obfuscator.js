@@ -1123,116 +1123,114 @@ function checkPattern(code, pattern) {
   return j == pattern.length
 }
 
-function deleteSelfDefendingCode(ast) {
-  traverse(ast, {
-    VariableDeclarator(path) {
-      const { id, init } = path.node
-      const selfName = id.name
-      if (!t.isCallExpression(init)) {
-        return
+const deleteSelfDefendingCode = {
+  VariableDeclarator(path) {
+    const { id, init } = path.node
+    const selfName = id.name
+    if (!t.isCallExpression(init)) {
+      return
+    }
+    if (!t.isIdentifier(init.callee)) {
+      return
+    }
+    const callName = init.callee.name
+    const args = init.arguments
+    if (
+      args.length != 2 ||
+      !t.isThisExpression(args[0]) ||
+      !t.isFunctionExpression(args[1])
+    ) {
+      return
+    }
+    const block = generator(args[1]).code
+    const pattern = `return${selfName}.toString().search().toString().constructor(${selfName}).search()`
+    if (!checkPattern(block, pattern)) {
+      return
+    }
+    const scope = path.scope
+    const refs = scope.bindings[selfName].referencePaths
+    for (let ref of refs) {
+      if (ref.key == 'callee') {
+        ref.parentPath.remove()
+        break
       }
-      if (!t.isIdentifier(init.callee)) {
-        return
-      }
-      const callName = init.callee.name
-      const args = init.arguments
-      if (
-        args.length != 2 ||
-        !t.isThisExpression(args[0]) ||
-        !t.isFunctionExpression(args[1])
-      ) {
-        return
-      }
-      const block = generator(args[1]).code
-      const pattern = `return${selfName}.toString().search().toString().constructor(${selfName}).search()`
-      if (!checkPattern(block, pattern)) {
-        return
-      }
-      const scope = path.scope
-      const refs = scope.bindings[selfName].referencePaths
-      for (let ref of refs) {
-        if (ref.key == 'callee') {
-          ref.parentPath.remove()
-          break
-        }
-      }
-      path.remove()
-      scope.crawl()
-      const bind = scope.bindings[callName]
-      if (bind.referenced) {
-        console.error(`Call func ${callName} unexpected ref!`)
-      }
-      bind.path.remove()
-      console.info(`Remove ${callName} -> ${selfName}`)
-    },
-  })
+    }
+    path.remove()
+    console.info(`Remove SelfDefendingFunc: ${selfName}`)
+    scope.crawl()
+    const bind = scope.bindings[callName]
+    if (bind.referenced) {
+      console.error(`Call func ${callName} unexpected ref!`)
+    }
+    bind.path.remove()
+    console.info(`Remove CallFunc: ${callName}`)
+  },
 }
 
-function deleteDebugProtectionCode(ast) {
-  traverse(ast, {
-    FunctionDeclaration(path) {
-      const { id, params, body } = path.node
-      if (
-        !t.isIdentifier(id) ||
-        params.length !== 1 ||
-        !t.isIdentifier(params[0]) ||
-        !t.isBlockStatement(body) ||
-        body.body.length !== 2 ||
-        !t.isFunctionDeclaration(body.body[0]) ||
-        !t.isTryStatement(body.body[1])
-      ) {
-        return
+const deleteDebugProtectionCode = {
+  FunctionDeclaration(path) {
+    const { id, params, body } = path.node
+    if (
+      !t.isIdentifier(id) ||
+      params.length !== 1 ||
+      !t.isIdentifier(params[0]) ||
+      !t.isBlockStatement(body) ||
+      body.body.length !== 2 ||
+      !t.isFunctionDeclaration(body.body[0]) ||
+      !t.isTryStatement(body.body[1])
+    ) {
+      return
+    }
+    const debugName = id.name
+    const ret = params[0].name
+    const subNode = body.body[0]
+    if (
+      !t.isIdentifier(subNode.id) ||
+      subNode.params.length !== 1 ||
+      !t.isIdentifier(subNode.params[0])
+    ) {
+      return
+    }
+    const subName = subNode.id.name
+    const counter = subNode.params[0].name
+    const code = generator(body).code
+    const pattern = `function${subName}(${counter}){${counter}debugger${subName}(++${counter})}try{if(${ret})return${subName}${subName}(0)}catch(){}`
+    if (!checkPattern(code, pattern)) {
+      return
+    }
+    const scope1 = path.parentPath.scope
+    const refs = scope1.bindings[debugName].referencePaths
+    for (let ref of refs) {
+      if (ref.findParent((path) => path.removed)) {
+        continue
       }
-      const debugName = id.name
-      const ret = params[0].name
-      const subNode = body.body[0]
-      if (
-        !t.isIdentifier(subNode.id) ||
-        subNode.params.length !== 1 ||
-        !t.isIdentifier(subNode.params[0])
-      ) {
-        return
+      if (ref.key == 0) {
+        // DebugProtectionFunctionInterval
+        const rm = ref.getFunctionParent().parentPath
+        rm.remove()
+        continue
       }
-      const subName = subNode.id.name
-      const counter = subNode.params[0].name
-      const code = generator(body).code
-      const pattern = `function${subName}(${counter}){${counter}debugger${subName}(++${counter})}try{if(${ret})return${subName}${subName}(0)}catch(){}`
-      if (!checkPattern(code, pattern)) {
-        return
-      }
-      const scope1 = path.parentPath.scope
-      const refs = scope1.bindings[debugName].referencePaths
-      for (let ref of refs) {
-        if (ref.findParent((path) => path.removed)) {
-          continue
-        }
-        if (ref.key == 0) {
-          // DebugProtectionFunctionInterval
-          const rm = ref.getFunctionParent().parentPath
-          rm.remove()
-          continue
-        }
-        // DebugProtectionFunctionCall
-        const up1 = ref.getFunctionParent()
-        const callName = up1.parent.callee.name
-        const up2 = up1.getFunctionParent().parentPath
-        const scope2 = up2.scope
-        up2.remove()
-        scope1.crawl()
-        scope2.crawl()
-        const bind = scope2.bindings[callName]
-        bind.path.remove()
-      }
-      path.remove()
-      console.info(`Remove ${debugName}`)
-    },
-  })
+      // DebugProtectionFunctionCall
+      const up1 = ref.getFunctionParent()
+      const callName = up1.parent.callee.name
+      const up2 = up1.getFunctionParent().parentPath
+      const scope2 = up2.scope
+      up2.remove()
+      scope1.crawl()
+      scope2.crawl()
+      const bind = scope2.bindings[callName]
+      bind.path.remove()
+      console.info(`Remove CallFunc: ${callName}`)
+    }
+    path.remove()
+    console.info(`Remove DebugProtectionFunc: ${debugName}`)
+  },
 }
 
 function unlockEnv(ast) {
   //可能会误删一些代码，可屏蔽
-  deleteSelfDefendingCode(ast)
-  deleteDebugProtectionCode(ast)
+  traverse(ast, deleteSelfDefendingCode)
+  traverse(ast, deleteDebugProtectionCode)
   return ast
 }
 
