@@ -1227,10 +1227,55 @@ const deleteDebugProtectionCode = {
   },
 }
 
+const deleteConsoleOutputCode = {
+  VariableDeclarator(path) {
+    const { id, init } = path.node
+    const selfName = id.name
+    if (!t.isCallExpression(init)) {
+      return
+    }
+    if (!t.isIdentifier(init.callee)) {
+      return
+    }
+    const callName = init.callee.name
+    const args = init.arguments
+    if (
+      args.length != 2 ||
+      !t.isThisExpression(args[0]) ||
+      !t.isFunctionExpression(args[1])
+    ) {
+      return
+    }
+    const block = generator(args[1]).code
+    const pattern = `console=console=log,warn,info,error,for(){${callName}constructor.prototype.bind${callName}${callName}bind${callName}}`
+    if (!checkPattern(block, pattern)) {
+      return
+    }
+    const refs = path.scope.bindings[selfName].referencePaths
+    for (let ref of refs) {
+      if (ref.key == 'callee') {
+        ref.parentPath.remove()
+        break
+      }
+    }
+    path.remove()
+    console.info(`Remove ConsoleOutputFunc: ${selfName}`)
+    const scope = path.scope.getBinding(callName).scope
+    scope.crawl()
+    const bind = scope.bindings[callName]
+    if (bind.referenced) {
+      console.error(`Call func ${callName} unexpected ref!`)
+    }
+    bind.path.remove()
+    console.info(`Remove CallFunc: ${callName}`)
+  },
+}
+
 function unlockEnv(ast) {
   //可能会误删一些代码，可屏蔽
   traverse(ast, deleteSelfDefendingCode)
   traverse(ast, deleteDebugProtectionCode)
+  traverse(ast, deleteConsoleOutputCode)
   return ast
 }
 
