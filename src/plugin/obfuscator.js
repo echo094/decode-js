@@ -1147,8 +1147,7 @@ const deleteSelfDefendingCode = {
     if (!checkPattern(block, pattern)) {
       return
     }
-    const scope = path.scope
-    const refs = scope.bindings[selfName].referencePaths
+    const refs = path.scope.bindings[selfName].referencePaths
     for (let ref of refs) {
       if (ref.key == 'callee') {
         ref.parentPath.remove()
@@ -1157,6 +1156,7 @@ const deleteSelfDefendingCode = {
     }
     path.remove()
     console.info(`Remove SelfDefendingFunc: ${selfName}`)
+    const scope = path.scope.getBinding(callName).scope
     scope.crawl()
     const bind = scope.bindings[callName]
     if (bind.referenced) {
@@ -1214,7 +1214,7 @@ const deleteDebugProtectionCode = {
       const up1 = ref.getFunctionParent()
       const callName = up1.parent.callee.name
       const up2 = up1.getFunctionParent().parentPath
-      const scope2 = up2.scope
+      const scope2 = up2.scope.getBinding(callName).scope
       up2.remove()
       scope1.crawl()
       scope2.crawl()
