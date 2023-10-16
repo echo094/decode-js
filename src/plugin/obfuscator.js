@@ -1111,153 +1111,171 @@ function purifyCode(ast) {
   return ast
 }
 
-const deleteObfuscatorCode = {
+function checkPattern(code, pattern) {
+  let i = 0
+  let j = 0
+  while (i < code.length && j < pattern.length) {
+    if (code[i] == pattern[j]) {
+      ++j
+    }
+    ++i
+  }
+  return j == pattern.length
+}
+
+const deleteSelfDefendingCode = {
   VariableDeclarator(path) {
-    let sourceCode = path.toString()
-    let { id, init } = path.node
-    if (t.isCallExpression(init)) {
-      let callee = init.callee
-      let args = init.arguments
-      if (args.length == 0 && sourceCode.includes('apply')) {
-        path.remove()
-      } else if (
-        (sourceCode.includes('constructor') || sourceCode.includes('RegExp')) &&
-        t.isIdentifier(callee) &&
-        args.length == 2 &&
-        t.isThisExpression(args[0]) &&
-        t.isFunctionExpression(args[1])
-      ) {
-        let funcName = id.name
-
-        let nextSibling = path.parentPath.getNextSibling()
-        if (nextSibling.isExpressionStatement()) {
-          let expression = nextSibling.get('expression')
-
-          if (
-            expression.isCallExpression() &&
-            expression.get('callee').isIdentifier({ name: funcName })
-          ) {
-            path.remove()
-            nextSibling.remove()
-          }
-        }
-      }
-    }
-  },
-  ExpressionStatement(path) {
-    let sourceCode = path.toString()
-    if (!sourceCode.includes('RegExp') && !sourceCode.includes('chain')) {
+    const { id, init } = path.node
+    const selfName = id.name
+    if (!t.isCallExpression(init)) {
       return
     }
-
-    let { expression } = path.node
-    if (!t.isCallExpression(expression)) {
+    if (!t.isIdentifier(init.callee)) {
       return
     }
-    let callee = expression.callee
-    let args = expression.arguments
-
-    if (!t.isFunctionExpression(callee) || args.length != 0) {
-      return
-    }
-
-    let body = callee.body.body
-    if (body.length != 1 || !t.isExpressionStatement(body[0])) {
-      return
-    }
-    expression = body[0].expression
-    if (!t.isCallExpression(expression)) {
-      return
-    }
-    callee = expression.callee
-    args = expression.arguments
-
-    if (!t.isCallExpression(callee) || args.length != 0) {
-      return
-    }
-    args = callee.arguments
-    if (
-      args.length == 2 &&
-      t.isThisExpression(args[0]) &&
-      t.isFunctionExpression(args[1])
-    ) {
-      path.remove()
-    }
-  },
-  CallExpression(path) {
-    let { scope, node } = path
-    let callee = node.callee
-    let args = node.arguments
-
-    let sourceCode = path.toString()
-    if (
-      args.length == 0 &&
-      sourceCode.includes('constructor') &&
-      sourceCode.includes('setInterval')
-    ) {
-      path.remove()
-      return
-    }
-
-    if (!t.isIdentifier(callee, { name: 'setInterval' })) {
-      return
-    }
+    const callName = init.callee.name
+    const args = init.arguments
     if (
       args.length != 2 ||
-      !t.isFunctionExpression(args[0]) ||
-      !t.isNumericLiteral(args[1])
+      !t.isThisExpression(args[0]) ||
+      !t.isFunctionExpression(args[1])
     ) {
       return
     }
-
-    let body = args[0].body.body
-    if (body.length != 1 || !t.isExpressionStatement(body[0])) {
+    const block = generator(args[1]).code
+    const pattern = `return${selfName}.toString().search().toString().constructor(${selfName}).search()`
+    if (!checkPattern(block, pattern)) {
       return
     }
-    let expression = body[0].expression
-    if (!t.isCallExpression(expression)) {
-      return
-    }
-    callee = expression.callee
-    args = expression.arguments
-
-    if (!t.isIdentifier(callee) || args.length != 0) {
-      return
-    }
-
-    let binding = scope.getBinding(callee.name)
-    if (!binding || !binding.path) {
-      return
-    }
-
-    sourceCode = binding.path.toString()
-    if (sourceCode.includes('constructor') || sourceCode.includes('debugger')) {
-      path.remove()
-      binding.path.remove()
-    }
-  },
-  FunctionDeclaration(path) {
-    let { body } = path.node.body
-    if (
-      body.length == 2 &&
-      t.isFunctionDeclaration(body[0]) &&
-      t.isTryStatement(body[1])
-    ) {
-      let sourceCode = path.toString()
-      if (
-        sourceCode.includes('constructor') &&
-        sourceCode.includes('debugger') &&
-        sourceCode.includes('apply')
-      ) {
-        path.remove()
+    const refs = path.scope.bindings[selfName].referencePaths
+    for (let ref of refs) {
+      if (ref.key == 'callee') {
+        ref.parentPath.remove()
+        break
       }
     }
+    path.remove()
+    console.info(`Remove SelfDefendingFunc: ${selfName}`)
+    const scope = path.scope.getBinding(callName).scope
+    scope.crawl()
+    const bind = scope.bindings[callName]
+    if (bind.referenced) {
+      console.error(`Call func ${callName} unexpected ref!`)
+    }
+    bind.path.remove()
+    console.info(`Remove CallFunc: ${callName}`)
+  },
+}
+
+const deleteDebugProtectionCode = {
+  FunctionDeclaration(path) {
+    const { id, params, body } = path.node
+    if (
+      !t.isIdentifier(id) ||
+      params.length !== 1 ||
+      !t.isIdentifier(params[0]) ||
+      !t.isBlockStatement(body) ||
+      body.body.length !== 2 ||
+      !t.isFunctionDeclaration(body.body[0]) ||
+      !t.isTryStatement(body.body[1])
+    ) {
+      return
+    }
+    const debugName = id.name
+    const ret = params[0].name
+    const subNode = body.body[0]
+    if (
+      !t.isIdentifier(subNode.id) ||
+      subNode.params.length !== 1 ||
+      !t.isIdentifier(subNode.params[0])
+    ) {
+      return
+    }
+    const subName = subNode.id.name
+    const counter = subNode.params[0].name
+    const code = generator(body).code
+    const pattern = `function${subName}(${counter}){${counter}debugger${subName}(++${counter})}try{if(${ret})return${subName}${subName}(0)}catch(){}`
+    if (!checkPattern(code, pattern)) {
+      return
+    }
+    const scope1 = path.parentPath.scope
+    const refs = scope1.bindings[debugName].referencePaths
+    for (let ref of refs) {
+      if (ref.findParent((path) => path.removed)) {
+        continue
+      }
+      if (ref.key == 0) {
+        // DebugProtectionFunctionInterval
+        const rm = ref.getFunctionParent().parentPath
+        rm.remove()
+        continue
+      }
+      // DebugProtectionFunctionCall
+      const up1 = ref.getFunctionParent()
+      const callName = up1.parent.callee.name
+      const up2 = up1.getFunctionParent().parentPath
+      const scope2 = up2.scope.getBinding(callName).scope
+      up2.remove()
+      scope1.crawl()
+      scope2.crawl()
+      const bind = scope2.bindings[callName]
+      bind.path.remove()
+      console.info(`Remove CallFunc: ${callName}`)
+    }
+    path.remove()
+    console.info(`Remove DebugProtectionFunc: ${debugName}`)
+  },
+}
+
+const deleteConsoleOutputCode = {
+  VariableDeclarator(path) {
+    const { id, init } = path.node
+    const selfName = id.name
+    if (!t.isCallExpression(init)) {
+      return
+    }
+    if (!t.isIdentifier(init.callee)) {
+      return
+    }
+    const callName = init.callee.name
+    const args = init.arguments
+    if (
+      args.length != 2 ||
+      !t.isThisExpression(args[0]) ||
+      !t.isFunctionExpression(args[1])
+    ) {
+      return
+    }
+    const block = generator(args[1]).code
+    const pattern = `console=console=log,warn,info,error,for(){${callName}constructor.prototype.bind${callName}${callName}bind${callName}}`
+    if (!checkPattern(block, pattern)) {
+      return
+    }
+    const refs = path.scope.bindings[selfName].referencePaths
+    for (let ref of refs) {
+      if (ref.key == 'callee') {
+        ref.parentPath.remove()
+        break
+      }
+    }
+    path.remove()
+    console.info(`Remove ConsoleOutputFunc: ${selfName}`)
+    const scope = path.scope.getBinding(callName).scope
+    scope.crawl()
+    const bind = scope.bindings[callName]
+    if (bind.referenced) {
+      console.error(`Call func ${callName} unexpected ref!`)
+    }
+    bind.path.remove()
+    console.info(`Remove CallFunc: ${callName}`)
   },
 }
 
 function unlockEnv(ast) {
   //可能会误删一些代码，可屏蔽
-  traverse(ast, deleteObfuscatorCode)
+  traverse(ast, deleteSelfDefendingCode)
+  traverse(ast, deleteDebugProtectionCode)
+  traverse(ast, deleteConsoleOutputCode)
   return ast
 }
 
@@ -1302,8 +1320,8 @@ module.exports = function (jscode) {
   )
   console.log('提高代码可读性...')
   ast = purifyCode(ast)
-  // console.log('解除环境限制...')
-  // ast = unlockEnv(ast)
+  console.log('解除环境限制...')
+  ast = unlockEnv(ast)
   console.log('净化完成')
   let { code } = generator(ast, {
     comments: false,
