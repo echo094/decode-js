@@ -523,24 +523,6 @@ const deleteDebugProtectionCode = {
   },
 }
 
-function unlockVersionCheck(path) {
-  const right = path.node.right
-  const msg = '删除版本号，js会定期弹窗，还请支持我们的工作'
-  if (!t.isStringLiteral(right) || right.value !== msg) {
-    return
-  }
-  let fnPath = path.getFunctionParent()
-  if (!t.isFunctionExpression(fnPath.node)) {
-    return
-  }
-  fnPath = fnPath.parentPath
-  if (!t.isCallExpression(fnPath.node)) {
-    return
-  }
-  fnPath.remove()
-  console.log('去版本检测')
-}
-
 const deleteConsoleOutputCode = {
   VariableDeclarator(path) {
     const { id, init } = path.node
@@ -608,15 +590,30 @@ const deleteConsoleOutputCode = {
   },
 }
 
+const deleteVersionCheck = {
+  StringLiteral(path) {
+    const msg = '删除版本号，js会定期弹窗，还请支持我们的工作'
+    if (path.node.value !== msg) {
+      return
+    }
+    let fnPath = path.getFunctionParent().parentPath
+    if (!fnPath.isCallExpression()) {
+      return
+    }
+    fnPath.remove()
+    console.log('Remove VersionCheck')
+  },
+}
+
 function unlockEnv(ast) {
-  // 删除版本号检测
-  traverse(ast, { AssignmentExpression: unlockVersionCheck })
   // 查找并删除`自卫模式`函数
   traverse(ast, deleteSelfDefendingCode)
   // 查找并删除`禁止控制台调试`函数
   traverse(ast, deleteDebugProtectionCode)
   // 清空`禁止控制台输出`函数
   traverse(ast, deleteConsoleOutputCode)
+  // 删除版本号检测
+  traverse(ast, deleteVersionCheck)
   return ast
 }
 
