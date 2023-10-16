@@ -409,7 +409,7 @@ function checkPattern(code, pattern) {
  * Two RegExp tests will be conducted here:
  * * If '\n' exists (code formatted)
  * * If '\u' or '\x' does not exist (literal formatted)
- * 
+ *
  * An infinite call stack will appear if either of the test fails.
  * (by replacing the 'e' with '\u0435')
  */
@@ -556,7 +556,16 @@ const deleteConsoleOutputCode = {
     const feature = [
       [],
       ['window', 'process', 'require', 'global'],
-      ['console', 'log', 'warn', 'debug', 'info', 'error', 'exception', 'trace'],
+      [
+        'console',
+        'log',
+        'warn',
+        'debug',
+        'info',
+        'error',
+        'exception',
+        'trace',
+      ],
     ]
     let valid = true
     for (let i = 1; i < 3; ++i) {
