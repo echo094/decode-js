@@ -393,124 +393,236 @@ function cleanDeadCode(ast) {
   return ast
 }
 
-let func_dbg = ''
-
-function unlockVersionCheck(path) {
-  const right = path.node.right
-  const msg = '删除版本号，js会定期弹窗，还请支持我们的工作'
-  if (!t.isStringLiteral(right) || right.value !== msg) {
-    return
-  }
-  let fnPath = path.getFunctionParent()
-  if (!t.isFunctionExpression(fnPath.node)) {
-    return
-  }
-  fnPath = fnPath.parentPath
-  if (!t.isCallExpression(fnPath.node)) {
-    return
-  }
-  fnPath.remove()
-  console.log('去版本检测')
-}
-
-function unlockDebugger1(path) {
-  let decl_path = path
-  let dep = 0
-  while (decl_path.parentPath && dep < 2) {
-    decl_path = decl_path.parentPath
-    if (t.isFunctionDeclaration(decl_path.node)) {
-      ++dep
+function checkPattern(code, pattern) {
+  let i = 0
+  let j = 0
+  while (i < code.length && j < pattern.length) {
+    if (code[i] == pattern[j]) {
+      ++j
     }
+    ++i
   }
-  if (dep < 2) {
-    // 由于代码会出现两次 遍历到第二个位置时节点已被删除 必然会出现这个情况
-    console.log('控制台调试: 找不到父函数')
-    return
-  }
-  const name = decl_path.node.id.name
-  func_dbg = name
-  decl_path.remove()
-  console.log(`控制台调试: ${name}`)
+  return j == pattern.length
 }
 
-function unlockDebugger2(path) {
-  const callee = path.node.callee
-  if (!t.isIdentifier(callee) || callee.name !== func_dbg) {
-    return
-  }
-  const fnPath = path.getFunctionParent()
-  const node = fnPath.node
-  if (!t.isFunctionExpression(node)) {
-    return
-  }
-  fnPath.replaceWith(
-    t.functionExpression(node.id, node.params, t.blockStatement([]))
-  )
+/**
+ * Two RegExp tests will be conducted here:
+ * * If '\n' exists (code formatted)
+ * * If '\u' or '\x' does not exist (literal formatted)
+ *
+ * An infinite call stack will appear if either of the test fails.
+ * (by replacing the 'e' with '\u0435')
+ */
+const deleteSelfDefendingCode = {
+  VariableDeclarator(path) {
+    const { id, init } = path.node
+    const selfName = id.name
+    if (!t.isCallExpression(init)) {
+      return
+    }
+    if (!t.isIdentifier(init.callee)) {
+      return
+    }
+    const callName = init.callee.name
+    const args = init.arguments
+    if (
+      args.length != 2 ||
+      !t.isThisExpression(args[0]) ||
+      !t.isFunctionExpression(args[1])
+    ) {
+      return
+    }
+    const block = generator(args[1]).code
+    const pattern = `RegExp()return.test(.toString())RegExp()return.test(.toString())\u0435\u0435`
+    if (!checkPattern(block, pattern)) {
+      return
+    }
+    const refs = path.scope.bindings[selfName].referencePaths
+    for (let ref of refs) {
+      if (ref.key == 'callee') {
+        ref.parentPath.remove()
+        break
+      }
+    }
+    path.remove()
+    console.info(`Remove SelfDefendingFunc: ${selfName}`)
+    const scope = path.scope.getBinding(callName).scope
+    scope.crawl()
+    const bind = scope.bindings[callName]
+    if (bind.referenced) {
+      console.error(`Call func ${callName} unexpected ref!`)
+    }
+    bind.path.remove()
+    console.info(`Remove CallFunc: ${callName}`)
+  },
 }
 
-function unlockDebugger3(path) {
-  // 是否定义为空函数
-  const f = path.node.init
-  if (!t.isFunctionExpression(f) || f.params.length) {
-    return
-  }
-  if (!t.isBlockStatement(f.body) || f.body.body.length) {
-    return
-  }
-  const name = path.node.id.name
-  // 判断函数域是否符合特征
-  const fn = path.getFunctionParent()
-  const body = fn.node.body.body
-  if (body.length !== 3) {
-    return
-  }
-  if (
-    !t.isVariableDeclaration(body[0]) ||
-    !t.isVariableDeclaration(body[1]) ||
-    !t.isIfStatement(body[2])
-  ) {
-    return
-  }
-  const feature = [
-    [name],
-    ['window', 'process', 'require', 'global'],
-    ['console', 'log', 'warn', 'debug', 'info', 'error', 'exception', 'trace'],
-  ]
-  let valid = true
-  for (let i = 0; i < 3; ++i) {
-    const { code } = generator(
-      {
-        type: 'Program',
-        body: [body[i]],
-      },
-      {
-        compact: true,
+/**
+ * A "debugger" will be inserted by:
+ * * v5: directly.
+ * * v6: calling Function constructor twice.
+ */
+const deleteDebugProtectionCode = {
+  FunctionDeclaration(path) {
+    const { id, params, body } = path.node
+    if (
+      !t.isIdentifier(id) ||
+      params.length !== 1 ||
+      !t.isIdentifier(params[0]) ||
+      !t.isBlockStatement(body) ||
+      body.body.length !== 2 ||
+      !t.isFunctionDeclaration(body.body[0]) ||
+      !t.isTryStatement(body.body[1])
+    ) {
+      return
+    }
+    const debugName = id.name
+    const ret = params[0].name
+    const subNode = body.body[0]
+    if (
+      !t.isIdentifier(subNode.id) ||
+      subNode.params.length !== 1 ||
+      !t.isIdentifier(subNode.params[0])
+    ) {
+      return
+    }
+    const subName = subNode.id.name
+    const counter = subNode.params[0].name
+    const code = generator(body).code
+    const pattern = `function${subName}(${counter}){${counter}debug${subName}(++${counter})}try{if(${ret})return${subName}${subName}(0)}catch(){}`
+    if (!checkPattern(code, pattern)) {
+      return
+    }
+    const scope1 = path.parentPath.scope
+    const refs = scope1.bindings[debugName].referencePaths
+    for (let ref of refs) {
+      if (ref.findParent((path) => path.removed)) {
+        continue
       }
-    )
-    feature[i].map((key) => {
-      if (code.indexOf(key) == -1) {
-        valid = false
+      let parent = ref.getFunctionParent()
+      if (parent.key == 0) {
+        // DebugProtectionFunctionInterval
+        // window.setInterval(Function(), ...)
+        const rm = parent.parentPath
+        rm.remove()
+        continue
       }
-    })
-  }
-  if (valid) {
-    console.log('控制台输出')
-    const node = fn.node
-    fn.replaceWith(
-      t.functionExpression(node.id, node.params, t.blockStatement([]))
-    )
-  }
+      // DebugProtectionFunctionCall
+      const callName = parent.parent.callee.name
+      const up2 = parent.getFunctionParent().parentPath
+      const scope2 = up2.scope.getBinding(callName).scope
+      up2.remove()
+      scope1.crawl()
+      scope2.crawl()
+      const bind = scope2.bindings[callName]
+      bind.path.remove()
+      console.info(`Remove CallFunc: ${callName}`)
+    }
+    path.remove()
+    console.info(`Remove DebugProtectionFunc: ${debugName}`)
+  },
+}
+
+const deleteConsoleOutputCode = {
+  VariableDeclarator(path) {
+    const { id, init } = path.node
+    const selfName = id.name
+    if (!t.isCallExpression(init)) {
+      return
+    }
+    if (!t.isIdentifier(init.callee)) {
+      return
+    }
+    const callName = init.callee.name
+    const args = init.arguments
+    if (
+      args.length != 2 ||
+      !t.isThisExpression(args[0]) ||
+      !t.isFunctionExpression(args[1])
+    ) {
+      return
+    }
+    const body = args[1].body.body
+    if (body.length !== 3) {
+      return
+    }
+    if (
+      !t.isVariableDeclaration(body[0]) ||
+      !t.isVariableDeclaration(body[1]) ||
+      !t.isIfStatement(body[2])
+    ) {
+      return
+    }
+    const feature = [
+      [],
+      ['window', 'process', 'require', 'global'],
+      [
+        'console',
+        'log',
+        'warn',
+        'debug',
+        'info',
+        'error',
+        'exception',
+        'trace',
+      ],
+    ]
+    let valid = true
+    for (let i = 1; i < 3; ++i) {
+      const { code } = generator(body[i])
+      feature[i].map((key) => {
+        if (code.indexOf(key) == -1) {
+          valid = false
+        }
+      })
+    }
+    if (!valid) {
+      return
+    }
+    const refs = path.scope.bindings[selfName].referencePaths
+    for (let ref of refs) {
+      if (ref.key == 'callee') {
+        ref.parentPath.remove()
+        break
+      }
+    }
+    path.remove()
+    console.info(`Remove ConsoleOutputFunc: ${selfName}`)
+    const scope = path.scope.getBinding(callName).scope
+    scope.crawl()
+    const bind = scope.bindings[callName]
+    if (bind.referenced) {
+      console.error(`Call func ${callName} unexpected ref!`)
+    }
+    bind.path.remove()
+    console.info(`Remove CallFunc: ${callName}`)
+  },
+}
+
+const deleteVersionCheck = {
+  StringLiteral(path) {
+    const msg = '删除版本号，js会定期弹窗，还请支持我们的工作'
+    if (path.node.value !== msg) {
+      return
+    }
+    let fnPath = path.getFunctionParent().parentPath
+    if (!fnPath.isCallExpression()) {
+      return
+    }
+    fnPath.remove()
+    console.log('Remove VersionCheck')
+  },
 }
 
 function unlockEnv(ast) {
-  // 删除版本号检测
-  traverse(ast, { AssignmentExpression: unlockVersionCheck })
+  // 查找并删除`自卫模式`函数
+  traverse(ast, deleteSelfDefendingCode)
   // 查找并删除`禁止控制台调试`函数
-  traverse(ast, { DebuggerStatement: unlockDebugger1 })
-  // 删除`禁止控制台调试`的相关调用 会一并清理`防止格式化`
-  traverse(ast, { CallExpression: unlockDebugger2 })
+  traverse(ast, deleteDebugProtectionCode)
   // 清空`禁止控制台输出`函数
-  traverse(ast, { VariableDeclarator: unlockDebugger3 })
+  traverse(ast, deleteConsoleOutputCode)
+  // 删除版本号检测
+  traverse(ast, deleteVersionCheck)
   return ast
 }
 
