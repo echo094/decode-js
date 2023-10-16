@@ -541,58 +541,71 @@ function unlockVersionCheck(path) {
   console.log('去版本检测')
 }
 
-function unlockDebugger3(path) {
-  // 是否定义为空函数
-  const f = path.node.init
-  if (!t.isFunctionExpression(f) || f.params.length) {
-    return
-  }
-  if (!t.isBlockStatement(f.body) || f.body.body.length) {
-    return
-  }
-  const name = path.node.id.name
-  // 判断函数域是否符合特征
-  const fn = path.getFunctionParent()
-  const body = fn.node.body.body
-  if (body.length !== 3) {
-    return
-  }
-  if (
-    !t.isVariableDeclaration(body[0]) ||
-    !t.isVariableDeclaration(body[1]) ||
-    !t.isIfStatement(body[2])
-  ) {
-    return
-  }
-  const feature = [
-    [name],
-    ['window', 'process', 'require', 'global'],
-    ['console', 'log', 'warn', 'debug', 'info', 'error', 'exception', 'trace'],
-  ]
-  let valid = true
-  for (let i = 0; i < 3; ++i) {
-    const { code } = generator(
-      {
-        type: 'Program',
-        body: [body[i]],
-      },
-      {
-        compact: true,
+const deleteConsoleOutputCode = {
+  VariableDeclarator(path) {
+    const { id, init } = path.node
+    const selfName = id.name
+    if (!t.isCallExpression(init)) {
+      return
+    }
+    if (!t.isIdentifier(init.callee)) {
+      return
+    }
+    const callName = init.callee.name
+    const args = init.arguments
+    if (
+      args.length != 2 ||
+      !t.isThisExpression(args[0]) ||
+      !t.isFunctionExpression(args[1])
+    ) {
+      return
+    }
+    const body = args[1].body.body
+    if (body.length !== 3) {
+      return
+    }
+    if (
+      !t.isVariableDeclaration(body[0]) ||
+      !t.isVariableDeclaration(body[1]) ||
+      !t.isIfStatement(body[2])
+    ) {
+      return
+    }
+    const feature = [
+      [],
+      ['window', 'process', 'require', 'global'],
+      ['console', 'log', 'warn', 'debug', 'info', 'error', 'exception', 'trace'],
+    ]
+    let valid = true
+    for (let i = 1; i < 3; ++i) {
+      const { code } = generator(body[i])
+      feature[i].map((key) => {
+        if (code.indexOf(key) == -1) {
+          valid = false
+        }
+      })
+    }
+    if (!valid) {
+      return
+    }
+    const refs = path.scope.bindings[selfName].referencePaths
+    for (let ref of refs) {
+      if (ref.key == 'callee') {
+        ref.parentPath.remove()
+        break
       }
-    )
-    feature[i].map((key) => {
-      if (code.indexOf(key) == -1) {
-        valid = false
-      }
-    })
-  }
-  if (valid) {
-    console.log('控制台输出')
-    const node = fn.node
-    fn.replaceWith(
-      t.functionExpression(node.id, node.params, t.blockStatement([]))
-    )
-  }
+    }
+    path.remove()
+    console.info(`Remove ConsoleOutputFunc: ${selfName}`)
+    const scope = path.scope.getBinding(callName).scope
+    scope.crawl()
+    const bind = scope.bindings[callName]
+    if (bind.referenced) {
+      console.error(`Call func ${callName} unexpected ref!`)
+    }
+    bind.path.remove()
+    console.info(`Remove CallFunc: ${callName}`)
+  },
 }
 
 function unlockEnv(ast) {
@@ -603,7 +616,7 @@ function unlockEnv(ast) {
   // 查找并删除`禁止控制台调试`函数
   traverse(ast, deleteDebugProtectionCode)
   // 清空`禁止控制台输出`函数
-  traverse(ast, { VariableDeclarator: unlockDebugger3 })
+  traverse(ast, deleteConsoleOutputCode)
   return ast
 }
 
