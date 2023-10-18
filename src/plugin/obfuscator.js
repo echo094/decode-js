@@ -1143,8 +1143,17 @@ const deleteSelfDefendingCode = {
       return
     }
     const block = generator(args[1]).code
-    const pattern = `return${selfName}.toString().search().toString().constructor(${selfName}).search()`
-    if (!checkPattern(block, pattern)) {
+    const patterns = [
+      // @7920538
+      `return${selfName}.toString().search().toString().constructor(${selfName}).search()`,
+      // @7135b09
+      `const=function(){const=.constructor()return.test(${selfName})}return()`,
+    ]
+    let valid = false
+    for (let pattern of patterns) {
+      valid |= checkPattern(block, pattern)
+    }
+    if (!valid) {
       return
     }
     const refs = path.scope.bindings[selfName].referencePaths
@@ -1205,14 +1214,21 @@ const deleteDebugProtectionCode = {
         continue
       }
       if (ref.key == 0) {
-        // DebugProtectionFunctionInterval
+        // DebugProtectionFunctionInterval @e8e92c6
         const rm = ref.getFunctionParent().parentPath
         rm.remove()
         continue
       }
-      // DebugProtectionFunctionCall
+      // ref.key == 'callee'
       const up1 = ref.getFunctionParent()
       const callName = up1.parent.callee.name
+      if (callName === 'setInterval') {
+        // DebugProtectionFunctionInterval @51523c0
+        const rm = up1.parentPath
+        rm.remove()
+        continue
+      }
+      // DebugProtectionFunctionCall
       const up2 = up1.getFunctionParent().parentPath
       const scope2 = up2.scope.getBinding(callName).scope
       up2.remove()
