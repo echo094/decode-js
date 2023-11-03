@@ -222,12 +222,8 @@ function decodeGlobal(ast) {
     console.error('Cannot find decrypt variable')
     return
   }
-  // update the var for the new version
-  if (var_rotate?.origin === decrypt_val) {
-    decrypt_val = var_rotate.alias
-  } else if (var_rotate.origin) {
-    console.warn('The call wrapper tree is not complete.')
-  }
+  console.log(`Main call wrapper name: ${decrypt_val}`)
+
   // remove path of string table
   let top = refs.string_path
   while (top.parentPath.parentPath) {
@@ -236,17 +232,15 @@ function decodeGlobal(ast) {
   decrypt_code[1] = top.node
   top.remove()
 
-  // decode
-  console.log(`主加密变量: ${decrypt_val}`)
-  let content_code = ast.program.body
   // 运行解密语句
+  let content_code = ast.program.body
   ast.program.body = decrypt_code
   let { code } = generator(ast, {
     compact: true,
   })
   virtualGlobalEval(code)
-  ast.program.body = content_code
   // 遍历内容语句
+  ast.program.body = content_code
   let cur_val = decrypt_val
   function funToStr(path) {
     let node = path.node
@@ -288,6 +282,21 @@ function decodeGlobal(ast) {
     })
     cur_val = parent_val
   }
+  traverse(ast, {
+    CallExpression: funToStr,
+    MemberExpression: memToStr,
+  })
+  traverse(ast, {
+    VariableDeclarator: dfs,
+  })
+  // The decoding has finished in the old version
+  if (!var_rotate.alias) {
+    return ast
+  }
+  // Since we removed a VariableDeclarator manually,
+  // we need to decode from the alias
+  cur_val = var_rotate.alias
+  console.log(`Main call wrapper alias: ${cur_val}`)
   traverse(ast, {
     CallExpression: funToStr,
     MemberExpression: memToStr,
