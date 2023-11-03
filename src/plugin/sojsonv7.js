@@ -150,7 +150,6 @@ function decodeGlobal(ast) {
           }
           refs.rotate[name] = {
             code: [top],
-            link: right.node.name,
           }
         } else if (right.isCallExpression()) {
           const name2 = right.node.callee.name
@@ -162,8 +161,8 @@ function decodeGlobal(ast) {
           }
           refs.rotate[name] = {
             code: [path1.parentPath, top],
-            link: name2,
-            dep: name1,
+            alias: name2,
+            origin: name1,
           }
         } else {
           console.warn(`Unexpected ref var_version: ${up1}`)
@@ -224,8 +223,10 @@ function decodeGlobal(ast) {
     return
   }
   // update the var for the new version
-  if (var_rotate?.dep === decrypt_val) {
-    decrypt_val = var_rotate.link
+  if (var_rotate?.origin === decrypt_val) {
+    decrypt_val = var_rotate.alias
+  } else if (var_rotate.origin) {
+    console.warn('The call wrapper tree is not complete.')
   }
   // remove path of string table
   let top = refs.string_path
