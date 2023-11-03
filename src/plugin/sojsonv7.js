@@ -53,8 +53,9 @@ function decodeGlobal(ast) {
     },
   })
   // find the main encode function
+  // [version, string-array, call, ...]
   let decrypt_code = []
-  for (let i = 0; i < 4; ++i) {
+  for (let i = 0; i < 3; ++i) {
     decrypt_code.push(t.EmptyStatement())
   }
   const first_line = ast.program.body[0]
@@ -101,7 +102,7 @@ function decodeGlobal(ast) {
     string_var: null,
     string_path: null,
     def: [],
-    process: {},
+    rotate: {},
   }
   traverse(ast, {
     Identifier: (path) => {
@@ -141,12 +142,28 @@ function decodeGlobal(ast) {
         }
       } else if (up1.isAssignmentExpression() && path.key === 'left') {
         const right = up1.get('right')
+        const name = up1.parentPath.get('left.expressions.1.name').node
         if (right.isIdentifier()) {
           let top = up1
           while (!t.isProgram(top.parentPath)) {
             top = top.parentPath
           }
-          refs.process[right.node.name] = top
+          refs.rotate[name] = {
+            code: [top],
+          }
+        } else if (right.isCallExpression()) {
+          const name2 = right.node.callee.name
+          const path1 = right.scope.getBinding(name2).path
+          const name1 = path1.node.init.name
+          let top = up1
+          while (!t.isProgram(top.parentPath)) {
+            top = top.parentPath
+          }
+          refs.rotate[name] = {
+            code: [path1.parentPath, top],
+            alias: name2,
+            origin: name1,
+          }
         } else {
           console.warn(`Unexpected ref var_version: ${up1}`)
         }
@@ -161,10 +178,13 @@ function decodeGlobal(ast) {
     console.error('Cannot find string table')
     return false
   }
-  if (refs.process[var_string_table]) {
-    let rm = refs.process[var_string_table]
-    decrypt_code[2] = rm.node
-    rm.remove()
+  // check if exists rotate function
+  const var_rotate = refs.rotate[var_string_table]
+  if (var_rotate) {
+    for (let rm of var_rotate.code) {
+      decrypt_code.push(rm.node)
+      rm.remove()
+    }
   }
   //  check if contains decrypt variable
   let decrypt_val
@@ -180,7 +200,7 @@ function decodeGlobal(ast) {
       while (top.getFunctionParent()) {
         top = top.getFunctionParent()
       }
-      decrypt_code[3] = top.node
+      decrypt_code[2] = top.node
       decrypt_val = top.node.id.name
       top.remove()
       continue
@@ -193,7 +213,7 @@ function decodeGlobal(ast) {
       while (top.getFunctionParent()) {
         top = top.getFunctionParent()
       }
-      decrypt_code[3] = top.node
+      decrypt_code[2] = top.node
       decrypt_val = top.node.id.name
       top.remove()
     }
@@ -202,6 +222,8 @@ function decodeGlobal(ast) {
     console.error('Cannot find decrypt variable')
     return
   }
+  console.log(`Main call wrapper name: ${decrypt_val}`)
+
   // remove path of string table
   let top = refs.string_path
   while (top.parentPath.parentPath) {
@@ -210,17 +232,15 @@ function decodeGlobal(ast) {
   decrypt_code[1] = top.node
   top.remove()
 
-  // decode
-  console.log(`主加密变量: ${decrypt_val}`)
-  let content_code = ast.program.body
   // 运行解密语句
+  let content_code = ast.program.body
   ast.program.body = decrypt_code
   let { code } = generator(ast, {
     compact: true,
   })
   virtualGlobalEval(code)
-  ast.program.body = content_code
   // 遍历内容语句
+  ast.program.body = content_code
   let cur_val = decrypt_val
   function funToStr(path) {
     let node = path.node
@@ -262,6 +282,21 @@ function decodeGlobal(ast) {
     })
     cur_val = parent_val
   }
+  traverse(ast, {
+    CallExpression: funToStr,
+    MemberExpression: memToStr,
+  })
+  traverse(ast, {
+    VariableDeclarator: dfs,
+  })
+  // The decoding has finished in the old version
+  if (!var_rotate?.alias) {
+    return ast
+  }
+  // Since we removed a VariableDeclarator manually,
+  // we need to decode from the alias
+  cur_val = var_rotate.alias
+  console.log(`Main call wrapper alias: ${cur_val}`)
   traverse(ast, {
     CallExpression: funToStr,
     MemberExpression: memToStr,
