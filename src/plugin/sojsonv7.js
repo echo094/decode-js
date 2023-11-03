@@ -290,7 +290,7 @@ function decodeGlobal(ast) {
     VariableDeclarator: dfs,
   })
   // The decoding has finished in the old version
-  if (!var_rotate.alias) {
+  if (!var_rotate?.alias) {
     return ast
   }
   // Since we removed a VariableDeclarator manually,
