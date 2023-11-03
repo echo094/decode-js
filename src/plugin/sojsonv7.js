@@ -53,8 +53,9 @@ function decodeGlobal(ast) {
     },
   })
   // find the main encode function
+  // [version, string-array, call, ...]
   let decrypt_code = []
-  for (let i = 0; i < 4; ++i) {
+  for (let i = 0; i < 3; ++i) {
     decrypt_code.push(t.EmptyStatement())
   }
   const first_line = ast.program.body[0]
@@ -101,7 +102,7 @@ function decodeGlobal(ast) {
     string_var: null,
     string_path: null,
     def: [],
-    process: {},
+    rotate: {},
   }
   traverse(ast, {
     Identifier: (path) => {
@@ -141,12 +142,29 @@ function decodeGlobal(ast) {
         }
       } else if (up1.isAssignmentExpression() && path.key === 'left') {
         const right = up1.get('right')
+        const name = up1.parentPath.get('left.expressions.1.name').node
         if (right.isIdentifier()) {
           let top = up1
           while (!t.isProgram(top.parentPath)) {
             top = top.parentPath
           }
-          refs.process[right.node.name] = top
+          refs.rotate[name] = {
+            code: [top],
+            link: right.node.name,
+          }
+        } else if (right.isCallExpression()) {
+          const name2 = right.node.callee.name
+          const path1 = right.scope.getBinding(name2).path
+          const name1 = path1.node.init.name
+          let top = up1
+          while (!t.isProgram(top.parentPath)) {
+            top = top.parentPath
+          }
+          refs.rotate[name] = {
+            code: [path1.parentPath, top],
+            link: name2,
+            dep: name1,
+          }
         } else {
           console.warn(`Unexpected ref var_version: ${up1}`)
         }
@@ -161,10 +179,13 @@ function decodeGlobal(ast) {
     console.error('Cannot find string table')
     return false
   }
-  if (refs.process[var_string_table]) {
-    let rm = refs.process[var_string_table]
-    decrypt_code[2] = rm.node
-    rm.remove()
+  // check if exists rotate function
+  const var_rotate = refs.rotate[var_string_table]
+  if (var_rotate) {
+    for (let rm of var_rotate.code) {
+      decrypt_code.push(rm.node)
+      rm.remove()
+    }
   }
   //  check if contains decrypt variable
   let decrypt_val
@@ -180,7 +201,7 @@ function decodeGlobal(ast) {
       while (top.getFunctionParent()) {
         top = top.getFunctionParent()
       }
-      decrypt_code[3] = top.node
+      decrypt_code[2] = top.node
       decrypt_val = top.node.id.name
       top.remove()
       continue
@@ -193,7 +214,7 @@ function decodeGlobal(ast) {
       while (top.getFunctionParent()) {
         top = top.getFunctionParent()
       }
-      decrypt_code[3] = top.node
+      decrypt_code[2] = top.node
       decrypt_val = top.node.id.name
       top.remove()
     }
@@ -201,6 +222,10 @@ function decodeGlobal(ast) {
   if (!decrypt_val) {
     console.error('Cannot find decrypt variable')
     return
+  }
+  // update the var for the new version
+  if (var_rotate?.dep === decrypt_val) {
+    decrypt_val = var_rotate.link
   }
   // remove path of string table
   let top = refs.string_path
