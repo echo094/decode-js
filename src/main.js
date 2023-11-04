@@ -1,5 +1,6 @@
 ﻿const fs = require('fs')
 const PluginCommon = require('./plugin/common.js')
+const PluginJjencode = require('./plugin/jjencode.js')
 const PluginSojson = require('./plugin/sojson.js')
 const PluginSojsonV7 = require('./plugin/sojsonv7.js')
 const PluginObfuscator = require('./plugin/obfuscator.js')
@@ -37,6 +38,8 @@ if (type === 'sojson') {
   code = PluginObfuscator(sourceCode)
 } else if (type === 'awsc') {
   code = PluginAwsc(sourceCode)
+} else if (type === 'jjencode') {
+  code = PluginJjencode(sourceCode)
 } else {
   code = PluginCommon(sourceCode)
 }
