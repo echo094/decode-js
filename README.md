@@ -26,6 +26,7 @@ npm run decode -- -t type [-i input.js] [-o output.js]
 
 `type`列表：
 * common (高频局部混淆)
+* jjencode (sojson.com 版本)
 * sojson
 * sojsonv7
 * obfuscator
