@@ -763,26 +763,8 @@ function purifyCode(ast) {
     },
   })
   // 删除未使用的变量
-  traverse(ast, {
-    VariableDeclarator: (path) => {
-      let { node, scope } = path
-      const name = node.id.name
-      let binding = scope.getBinding(name)
-      if (!binding || binding.referenced || !binding.constant) {
-        return
-      }
-      const path_p = path.parentPath
-      if (path_p && t.isForOfStatement(path_p.parentPath)) {
-        return
-      }
-      console.log(`未引用变量: ${name}`)
-      if (path_p.node.declarations.length === 1) {
-        path_p.remove()
-      } else {
-        path.remove()
-      }
-    },
-  })
+  const deleteUnusedVar = require('../visitor/delete-unused-var')
+  traverse(ast, deleteUnusedVar)
   return ast
 }
 

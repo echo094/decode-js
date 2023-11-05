@@ -1057,28 +1057,8 @@ function purifyCode(ast) {
   })
   // 删除未使用的变量
   traverse(ast, splitVariableDeclarator)
-  traverse(ast, {
-    VariableDeclarator: (path) => {
-      const { node, scope } = path
-      const name = node.id.name
-      const binding = scope.getBinding(name)
-      if (!binding || binding.referenced || !binding.constant) {
-        return
-      }
-      const pathpp = path.parentPath.parentPath
-      if (t.isForOfStatement(pathpp)) {
-        return
-      }
-      console.log(`未引用变量: ${name}`)
-      if (path.parentPath.node.declarations.length === 1) {
-        path.parentPath.remove()
-        path.parentPath.scope.crawl()
-      } else {
-        path.remove()
-        scope.crawl()
-      }
-    },
-  })
+  const deleteUnusedVar = require('../visitor/delete-unused-var')
+  traverse(ast, deleteUnusedVar)
   // 替换索引器
   function FormatMember(path) {
     let curNode = path.node
