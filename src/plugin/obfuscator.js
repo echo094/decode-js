@@ -131,8 +131,8 @@ function stringArrayV2(ast) {
     obj.stringArrayName = args[0].name
     // The string array can be found by its binding
     const bind = path.scope.getBinding(obj.stringArrayName)
-    const def = bind.path.parentPath
-    obj.stringArrayCodes.push(generator(def.node, { minified: true }).code)
+    const def = t.variableDeclaration('var', [bind.path.node])
+    obj.stringArrayCodes.push(generator(def, { minified: true }).code)
     // The calls can be found by its references
     for (let ref of bind.referencePaths) {
       if (ref?.listKey === 'arguments') {
@@ -176,7 +176,7 @@ function stringArrayV2(ast) {
       up2.remove()
     }
     // Remove the string array
-    def.remove()
+    bind.path.remove()
     // Add the rotate function
     const node = t.expressionStatement(path.node)
     obj.stringArrayCodes.push(generator(node, { minified: true }).code)
