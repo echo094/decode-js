@@ -371,13 +371,18 @@ function decodeGlobal(ast) {
   function do_collect_remove(path) {
     // 可以删除所有已收集混淆函数的定义
     // 因为根函数已被删除 即使保留也无法运行
-    let name = path.node?.left?.name
-    if (!name) {
-      name = path.node?.id?.name
+    let node = path.node?.left
+    if (!node) {
+      node = path.node?.id
     }
+    let name = node?.name
     if (exist_names.indexOf(name) != -1) {
       // console.log(`del: ${name}`)
-      path.remove()
+      if (path.parentPath.isCallExpression()) {
+        path.replaceWith(node)
+      } else {
+        path.remove()
+      }
     }
   }
   function do_collect_func(path) {
