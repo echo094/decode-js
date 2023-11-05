@@ -458,6 +458,44 @@ function decodeGlobal(ast) {
   return true
 }
 
+function stringArrayLite(ast) {
+  const visitor = {
+    VariableDeclarator(path) {
+      const name = path.node.id.name
+      if (!path.get('init').isArrayExpression()) {
+        return
+      }
+      const elements = path.node.init.elements
+      for (const element of elements) {
+        if (!t.isLiteral(element)) {
+          return
+        }
+      }
+      const bind = path.scope.getBinding(name)
+      if (!bind.constant) {
+        return
+      }
+      for (const ref of bind.referencePaths) {
+        if (
+          !ref.parentPath.isMemberExpression() ||
+          ref.key !== 'object' ||
+          !t.isNumericLiteral(ref.parent.property)
+        ) {
+          return
+        }
+      }
+      console.log(`Extract string array: ${name}`)
+      for (const ref of bind.referencePaths) {
+        const i = ref.parent.property.value
+        ref.parentPath.replaceWith(elements[i])
+      }
+      bind.scope.crawl()
+      path.remove()
+    },
+  }
+  traverse(ast, visitor)
+}
+
 function mergeObject(path) {
   // var _0xb28de8 = {};
   // _0xb28de8["abcd"] = function(_0x22293f, _0x5a165e) {
@@ -1341,6 +1379,7 @@ module.exports = function (jscode) {
   console.log('提高代码可读性...')
   ast = purifyCode(ast)
   console.log('处理代码块加密...')
+  stringArrayLite(ast)
   ast = decodeCodeBlock(ast)
   console.log('清理死代码...')
   ast = cleanDeadCode(ast)
