@@ -61,6 +61,10 @@ function decodeObject(ast) {
     if (!Object.prototype.hasOwnProperty.call(obj_node, name.name)) {
       return
     }
+    if (t.isIdentifier(key) && path.node.computed) {
+      // In this case, the identifier points to another value
+      return
+    }
     path.replaceWith(obj_node[name.name][key.name])
     obj_used[name.name] = true
   }
@@ -673,7 +677,7 @@ function unpackCall(path) {
         if (!t.isIdentifier(retStmt.argument.callee)) {
           return
         }
-        if (retStmt.argument.callee.name !== prop.value.params[0].name) {
+        if (retStmt.argument.callee.name !== prop.value.params[0]?.name) {
           return
         }
         repfunc = function (_path, args) {
