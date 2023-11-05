@@ -90,96 +90,115 @@ function decodeObject(ast) {
   return ast
 }
 
-function decodeGlobal(ast) {
-  // 找到关键的函数
+/**
+ * Before version 2.19.0, the string-array is a single array.
+ * Hence, we have to find StringArrayRotateFunction instead.
+ *
+ * @param {t.File} ast The ast file
+ * @returns Object
+ */
+function stringArrayV2(ast) {
+  console.info('Try v2 mode...')
+  let obj = {
+    version: 2,
+    stringArrayName: null,
+    stringArrayCodes: [],
+    stringArrayCalls: [],
+  }
+  // Function to rotate string list ("func2")
+  function find_rotate_function(path) {
+    const callee = path.get('callee')
+    const args = path.node.arguments
+    if (
+      !callee.isFunctionExpression() ||
+      callee.node.params.length !== 2 ||
+      args.length !== 2 ||
+      !t.isIdentifier(args[0])
+    ) {
+      return
+    }
+    const arr = callee.node.params[0].name
+    const cmpV = callee.node.params[1].name
+    const fp = `while(){try{if(==${cmpV})else${arr}push(${arr}shift())}catch(){${arr}push(${arr}shift())}}`
+    const code = '' + callee.get('body')
+    if (!checkPattern(code, fp)) {
+      return
+    }
+    obj.stringArrayName = args[0].name
+    // The string array can be found by its binding
+    const bind = path.scope.getBinding(obj.stringArrayName)
+    const def = bind.path.parentPath
+    obj.stringArrayCodes.push(generator(def.node, { minified: true }).code)
+    // The calls can be found by its references
+    for (let ref of bind.referencePaths) {
+      if (ref?.listKey === 'arguments') {
+        // This is the rotate function
+        continue
+      }
+      if (ref.findParent((path) => path.removed)) {
+        continue
+      }
+      // the key is 'object'
+      let up1 = ref.getFunctionParent()
+      if (up1.node.id) {
+        // 2.12.0 <= v < 2.15.4
+        // The `stringArrayCallsWrapperName` is included in the definition
+        obj.stringArrayCalls.push(up1.node.id.name)
+        obj.stringArrayCodes.push(generator(up1.node, { minified: true }).code)
+        up1.remove()
+        continue
+      }
+      if (up1.key === 'init') {
+        // v < 2.12.0
+        // The `stringArrayCallsWrapperName` is defined by VariableDeclarator
+        up1 = up1.parentPath
+        obj.stringArrayCalls.push(up1.node.id.name)
+        up1 = up1.parentPath
+        obj.stringArrayCodes.push(generator(up1.node, { minified: true }).code)
+        up1.remove()
+        continue
+      }
+      // 2.15.4 <= v < 2.19.0
+      // The function includes another function with the same name
+      up1 = up1.parentPath
+      const wrapper = up1.node.left.name
+      let up2 = up1.getFunctionParent()
+      if (!up2 || up2.node?.id?.name !== wrapper) {
+        console.warn('Unexpected reference!')
+        continue
+      }
+      obj.stringArrayCalls.push(wrapper)
+      obj.stringArrayCodes.push(generator(up2.node, { minified: true }).code)
+      up2.remove()
+    }
+    // Remove the string array
+    def.remove()
+    // Add the rotate function
+    const node = t.expressionStatement(path.node)
+    obj.stringArrayCodes.push(generator(node, { minified: true }).code)
+    path.stop()
+    path.remove()
+  }
+  traverse(ast, { CallExpression: find_rotate_function })
+  if (obj.stringArrayCodes.length < 3 || !obj.stringArrayCalls.length) {
+    console.error('Essential code missing!')
+    obj.stringArrayName = null
+  }
+  return obj
+}
+
+/**
+ * Find the string-array codes by matching string-array function
+ * (valid version >= 2.19.0)
+ *
+ * @param {t.File} ast The ast file
+ * @returns Object
+ */
+function stringArrayV3(ast) {
+  console.info('Try v3 mode...')
   let ob_func_str = []
   let ob_dec_name = []
-  let ob_string_func_name
-
-  // **Fallback**, in case the `find_ob_sort_list_by_feature` does not work
-  // Function to sort string list ("func2")
-  function find_ob_sort_func(path) {
-    function get_ob_sort(path) {
-      for (let arg of path.node.arguments) {
-        if (t.isIdentifier(arg)) {
-          ob_string_func_name = arg.name
-          break
-        }
-      }
-      if (!ob_string_func_name) {
-        return
-      }
-      let rm_path = path
-      while (!rm_path.parentPath.isProgram()) {
-        rm_path = rm_path.parentPath
-      }
-      ob_func_str.push('!' + generator(rm_path.node, { minified: true }).code)
-      path.stop()
-      rm_path.remove()
-    }
-    if (!path.getFunctionParent()) {
-      path.traverse({ CallExpression: get_ob_sort })
-      if (ob_string_func_name) {
-        path.stop()
-      }
-    }
-  }
-  // If the sort func is found, we can get the "func1" from its name.
-  function find_ob_sort_list_by_name(path) {
-    if (path.node.name != ob_string_func_name) {
-      return
-    }
-    if (path.findParent((path) => path.removed)) {
-      return
-    }
-    if (path.parentPath.isExpressionStatement()) {
-      path.remove()
-      return
-    }
-    let is_list = false
-    let parent = path.parentPath
-    if (parent.isFunctionDeclaration() && path.key === 'id') {
-      is_list = true
-    } else if (parent.isVariableDeclarator() && path.key === 'id') {
-      is_list = true
-    } else if (parent.isAssignmentExpression() && path.key === 'left') {
-      is_list = true
-    } else {
-      let bind_path = parent.getFunctionParent()
-      while (bind_path) {
-        if (t.isFunctionExpression(bind_path)) {
-          bind_path = bind_path.parentPath
-        } else if (!bind_path.parentPath) {
-          break
-        } else if (t.isSequenceExpression(bind_path.parentPath)) {
-          // issue #11
-          bind_path = bind_path.parentPath
-        } else if (t.isReturnStatement(bind_path.parentPath)) {
-          // issue #11
-          // function _a (x, y) {
-          //   return _a = function (p, q) {
-          //     // #ref
-          //   }, _a(x, y)
-          // }
-          bind_path = bind_path.getFunctionParent()
-        } else {
-          break
-        }
-      }
-      if (!bind_path) {
-        console.warn('Unexpected reference!')
-        return
-      }
-      ob_dec_name.push(bind_path.node.id.name)
-      ob_func_str.push(generator(bind_path.node, { minified: true }).code)
-      bind_path.remove()
-    }
-    if (is_list) {
-      ob_func_str.unshift(generator(parent.node, { minified: true }).code)
-      parent.remove()
-    }
-  }
-
+  let ob_string_func_name = null
   // **Prefer** Find the string list func ("func1") by matching its feature:
   // function aaa() {
   //   const bbb = [...]
@@ -190,7 +209,7 @@ function decodeGlobal(ast) {
   // }
   // After finding the possible func1, this method will check all the binding
   // references and put the child encode function into list.
-  function find_ob_sort_list_by_feature(path) {
+  function find_string_array_function(path) {
     if (path.getFunctionParent()) {
       return
     }
@@ -280,21 +299,27 @@ function decodeGlobal(ast) {
     path.stop()
     path.remove()
   }
-  traverse(ast, { FunctionDeclaration: find_ob_sort_list_by_feature })
-  if (!ob_string_func_name) {
-    console.warn('Try fallback mode...')
-    traverse(ast, { ExpressionStatement: find_ob_sort_func })
-    if (!ob_string_func_name) {
+  traverse(ast, { FunctionDeclaration: find_string_array_function })
+  return {
+    version: 3,
+    stringArrayName: ob_string_func_name,
+    stringArrayCodes: ob_func_str,
+    stringArrayCalls: ob_dec_name,
+  }
+}
+
+function decodeGlobal(ast) {
+  let obj = stringArrayV3(ast)
+  if (!obj.stringArrayName) {
+    obj = stringArrayV2(ast)
+    if (!obj.stringArrayName) {
       console.error('Cannot find string list!')
       return false
     }
-    traverse(ast, { Identifier: find_ob_sort_list_by_name })
-    if (ob_func_str.length < 3 || !ob_dec_name.length) {
-      console.error('Essential code missing!')
-      return false
-    }
   }
-  console.log(`String List Name: ${ob_string_func_name}`)
+  console.log(`String List Name: ${obj.stringArrayName}`)
+  let ob_func_str = obj.stringArrayCodes
+  let ob_dec_name = obj.stringArrayCalls
   try {
     virtualGlobalEval(ob_func_str.join(';'))
   } catch (e) {
