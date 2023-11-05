@@ -61,6 +61,10 @@ function decodeObject(ast) {
     if (!Object.prototype.hasOwnProperty.call(obj_node, name.name)) {
       return
     }
+    if (t.isIdentifier(key) && path.node.computed) {
+      // In this case, the identifier points to another value
+      return
+    }
     path.replaceWith(obj_node[name.name][key.name])
     obj_used[name.name] = true
   }
@@ -112,14 +116,15 @@ function stringArrayV2(ast) {
     if (
       !callee.isFunctionExpression() ||
       callee.node.params.length !== 2 ||
-      args.length !== 2 ||
+      args.length == 0 ||
+      args.length > 2 ||
       !t.isIdentifier(args[0])
     ) {
       return
     }
     const arr = callee.node.params[0].name
-    const cmpV = callee.node.params[1].name
-    const fp = `while(){try{if(==${cmpV})else${arr}push(${arr}shift())}catch(){${arr}push(${arr}shift())}}`
+    // const cmpV = callee.node.params[1].name
+    const fp = `(){try{if()break${arr}push(${arr}shift())}catch(){${arr}push(${arr}shift())}}`
     const code = '' + callee.get('body')
     if (!checkPattern(code, fp)) {
       return
@@ -127,8 +132,8 @@ function stringArrayV2(ast) {
     obj.stringArrayName = args[0].name
     // The string array can be found by its binding
     const bind = path.scope.getBinding(obj.stringArrayName)
-    const def = bind.path.parentPath
-    obj.stringArrayCodes.push(generator(def.node, { minified: true }).code)
+    const def = t.variableDeclaration('var', [bind.path.node])
+    obj.stringArrayCodes.push(generator(def, { minified: true }).code)
     // The calls can be found by its references
     for (let ref of bind.referencePaths) {
       if (ref?.listKey === 'arguments') {
@@ -172,12 +177,16 @@ function stringArrayV2(ast) {
       up2.remove()
     }
     // Remove the string array
-    def.remove()
+    bind.path.remove()
     // Add the rotate function
     const node = t.expressionStatement(path.node)
     obj.stringArrayCodes.push(generator(node, { minified: true }).code)
     path.stop()
-    path.remove()
+    if (path.parentPath.isUnaryExpression()) {
+      path.parentPath.remove()
+    } else {
+      path.remove()
+    }
   }
   traverse(ast, { CallExpression: find_rotate_function })
   if (obj.stringArrayCodes.length < 3 || !obj.stringArrayCalls.length) {
@@ -363,13 +372,18 @@ function decodeGlobal(ast) {
   function do_collect_remove(path) {
     // 可以删除所有已收集混淆函数的定义
     // 因为根函数已被删除 即使保留也无法运行
-    let name = path.node?.left?.name
-    if (!name) {
-      name = path.node?.id?.name
+    let node = path.node?.left
+    if (!node) {
+      node = path.node?.id
     }
+    let name = node?.name
     if (exist_names.indexOf(name) != -1) {
       // console.log(`del: ${name}`)
-      path.remove()
+      if (path.parentPath.isCallExpression()) {
+        path.replaceWith(node)
+      } else {
+        path.remove()
+      }
     }
   }
   function do_collect_func(path) {
@@ -443,6 +457,44 @@ function decodeGlobal(ast) {
   }
   traverse(ast, { CallExpression: do_replace })
   return true
+}
+
+function stringArrayLite(ast) {
+  const visitor = {
+    VariableDeclarator(path) {
+      const name = path.node.id.name
+      if (!path.get('init').isArrayExpression()) {
+        return
+      }
+      const elements = path.node.init.elements
+      for (const element of elements) {
+        if (!t.isLiteral(element)) {
+          return
+        }
+      }
+      const bind = path.scope.getBinding(name)
+      if (!bind.constant) {
+        return
+      }
+      for (const ref of bind.referencePaths) {
+        if (
+          !ref.parentPath.isMemberExpression() ||
+          ref.key !== 'object' ||
+          !t.isNumericLiteral(ref.parent.property)
+        ) {
+          return
+        }
+      }
+      console.log(`Extract string array: ${name}`)
+      for (const ref of bind.referencePaths) {
+        const i = ref.parent.property.value
+        ref.parentPath.replaceWith(elements[i])
+      }
+      bind.scope.crawl()
+      path.remove()
+    },
+  }
+  traverse(ast, visitor)
 }
 
 function mergeObject(path) {
@@ -673,7 +725,7 @@ function unpackCall(path) {
         if (!t.isIdentifier(retStmt.argument.callee)) {
           return
         }
-        if (retStmt.argument.callee.name !== prop.value.params[0].name) {
+        if (retStmt.argument.callee.name !== prop.value.params[0]?.name) {
           return
         }
         repfunc = function (_path, args) {
@@ -1328,6 +1380,7 @@ module.exports = function (jscode) {
   console.log('提高代码可读性...')
   ast = purifyCode(ast)
   console.log('处理代码块加密...')
+  stringArrayLite(ast)
   ast = decodeCodeBlock(ast)
   console.log('清理死代码...')
   ast = cleanDeadCode(ast)
