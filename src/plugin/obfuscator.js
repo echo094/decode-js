@@ -116,14 +116,15 @@ function stringArrayV2(ast) {
     if (
       !callee.isFunctionExpression() ||
       callee.node.params.length !== 2 ||
-      args.length !== 2 ||
+      args.length == 0 ||
+      args.length > 2 ||
       !t.isIdentifier(args[0])
     ) {
       return
     }
     const arr = callee.node.params[0].name
-    const cmpV = callee.node.params[1].name
-    const fp = `while(){try{if(==${cmpV})else${arr}push(${arr}shift())}catch(){${arr}push(${arr}shift())}}`
+    // const cmpV = callee.node.params[1].name
+    const fp = `(){try{if()break${arr}push(${arr}shift())}catch(){${arr}push(${arr}shift())}}`
     const code = '' + callee.get('body')
     if (!checkPattern(code, fp)) {
       return
