@@ -181,7 +181,11 @@ function stringArrayV2(ast) {
     const node = t.expressionStatement(path.node)
     obj.stringArrayCodes.push(generator(node, { minified: true }).code)
     path.stop()
-    path.remove()
+    if (path.parentPath.isUnaryExpression()) {
+      path.parentPath.remove()
+    } else {
+      path.remove()
+    }
   }
   traverse(ast, { CallExpression: find_rotate_function })
   if (obj.stringArrayCodes.length < 3 || !obj.stringArrayCalls.length) {
