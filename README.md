@@ -1,19 +1,34 @@
 # decode-js
 
-使用AST方式（依赖Babel插件）实现的JS代码净化工具，包括常见的几种类型：
+基于 Babel 的 AST 分析器和处理器，可以处理以下情况：
 
-* 字面量还原（全局、代码块）
-* 死代码清理、扁平化还原
-* 条件、循环语句规范化
-* 特殊函数清理
+* stringArray（包括添加了旋转操作，以及嵌套调用的情况）
+* 死代码
+* 控制流扁平化（switch）
+* 局部代码变换（Object表达式、字符串分割等）
+* 自定义代码（自保护，禁止控制台调试，禁止控制台输出）
 
-处理全局加密内容时使用VM2提供的环境。
+An AST analyzer and processor based on Babel that can handle the following situations:
 
-## 使用
+* stringArray (including Rotate, Wrappers, and ChainedCalls)
+* deadCode
+* controlFlowFlattening (switch)
+* transformer (ObjectExpression, SplitString, and etc.)
+* customCode (self-defending, debug-protection, console-output)
 
-需要`node.js`环境，并安装依赖：`npm i`。
+## 使用 Usage
 
-调用方法：
+1. 准备一个nodejs环境
+
+   Prepare a nodejs environment
+   
+2. 通过`npm i`安装依赖
+   
+   Install the dependencies via `npm i`
+   
+3. 按如下方式运行插件：
+
+   Run the plugins as follows:
 
 ```shell
 # pre-defined command
@@ -24,25 +39,27 @@ npm run decode -- -t type [-i input.js] [-o output.js]
 
 `xxx`为预定义的指令，见[package.json](package.json)中的`scripts`字段。
 
-`type`列表：
+`xxx` are predefined commands, see the `scripts` field in [package.json](package.json).
+
+`type`：
 * common (高频局部混淆)
 * jjencode (sojson.com 版本)
 * sojson
 * sojsonv7
 * obfuscator
 
-默认输入文件为`input.js`，文件中不能包含除混淆代码以外的内容（例如非混淆代码，注释除外），且只能包含一段混淆代码（一次处理只能识别一个主加密函数）。
+默认输入文件为`input.js`，文件中不能包含除混淆代码以外的内容（例如非混淆代码）。
+
+The default input file is `input.js`. The file cannot contain additional codes other than obfuscated code (such as non-obfuscated code).
 
 默认输出文件为`output.js`。
 
-程序入口文件为：[src/main.js](src/main.js)，插件目录为[src/plugin](src/plugin)。
+The default output file is `output.js`. 
 
-## 启发
-
-参考了下面的项目：
+## Related Projects
 
 * [cilame/v_jstools](https://github.com/cilame/v_jstools)
-* [Cqxstevexw/decodeObfuscator](https://github.com/Cqxstevexw/decodeObfuscator)
+* [j4k0xb/webcrack](https://github.com/j4k0xb/webcrack)
 * [NXY666/Jsjiemi](https://github.com/NXY666/Jsjiemi)
 
 
