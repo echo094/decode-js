@@ -123,10 +123,13 @@ function stringArrayV2(ast) {
       return
     }
     const arr = callee.node.params[0].name
-    // const cmpV = callee.node.params[1].name
-    const fp = `(){try{if()break${arr}push(${arr}shift())}catch(){${arr}push(${arr}shift())}}`
+    const cmpV = callee.node.params[1].name
+    // >= 2.10.0
+    const fp1 = `(){try{if()break${arr}push(${arr}shift())}catch(){${arr}push(${arr}shift())}}`
+    // < 2.10.0
+    const fp2 = `const=function(){while(--){${arr}push(${arr}shift)}}${cmpV}`
     const code = '' + callee.get('body')
-    if (!checkPattern(code, fp)) {
+    if (!checkPattern(code, fp1) && !checkPattern(code, fp2)) {
       return
     }
     obj.stringArrayName = args[0].name
