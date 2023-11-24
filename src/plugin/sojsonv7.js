@@ -142,7 +142,8 @@ function decodeGlobal(ast) {
       } else if (up1.isAssignmentExpression() && path.key === 'left') {
         // We don't need to execute this reference
         // Instead, we can delete it directly
-        up1.replaceWith(up1.node.left)
+        const up2 = up1.parentPath
+        up2.replaceWith(up2.node.left)
       } else {
         console.warn(`Unexpected ref var_version: ${up1}`)
       }
