@@ -1160,14 +1160,6 @@ function purifyCode(ast) {
 
   // 拆分语句
   traverse(ast, { SequenceExpression: splitSequence })
-  // IllegalReturn
-  traverse(ast, {
-    ReturnStatement(path) {
-      if (!path.getFunctionParent()) {
-        path.remove()
-      }
-    },
-  })
   return ast
 }
 
@@ -1363,6 +1355,9 @@ module.exports = function (jscode) {
     console.error(`Cannot parse code: ${e.reasonCode}`)
     return null
   }
+  // IllegalReturn
+  const deleteIllegalReturn = require('../visitor/delete-illegal-return')
+  traverse(ast, deleteIllegalReturn)
   // 清理二进制显示内容
   traverse(ast, {
     StringLiteral: ({ node }) => {

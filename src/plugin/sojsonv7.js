@@ -927,6 +927,9 @@ module.exports = function (code) {
     console.error(`Cannot parse code: ${e.reasonCode}`)
     return null
   }
+  // IllegalReturn
+  const deleteIllegalReturn = require('../visitor/delete-illegal-return')
+  traverse(ast, deleteIllegalReturn)
   // 清理二进制显示内容
   traverse(ast, {
     StringLiteral: ({ node }) => {
