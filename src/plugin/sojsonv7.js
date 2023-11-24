@@ -102,7 +102,6 @@ function decodeGlobal(ast) {
     string_var: null,
     string_path: null,
     def: [],
-    rotate: {},
   }
   traverse(ast, {
     Identifier: (path) => {
@@ -141,32 +140,10 @@ function decodeGlobal(ast) {
           console.info(`Drop string table: ${var_string_table}`)
         }
       } else if (up1.isAssignmentExpression() && path.key === 'left') {
-        const right = up1.get('right')
-        const name = up1.parentPath.get('left.expressions.1.name').node
-        if (right.isIdentifier()) {
-          let top = up1
-          while (!t.isProgram(top.parentPath)) {
-            top = top.parentPath
-          }
-          refs.rotate[name] = {
-            code: [top],
-          }
-        } else if (right.isCallExpression()) {
-          const name2 = right.node.callee.name
-          const path1 = right.scope.getBinding(name2).path
-          const name1 = path1.node.init.name
-          let top = up1
-          while (!t.isProgram(top.parentPath)) {
-            top = top.parentPath
-          }
-          refs.rotate[name] = {
-            code: [path1.parentPath, top],
-            alias: name2,
-            origin: name1,
-          }
-        } else {
-          console.warn(`Unexpected ref var_version: ${up1}`)
-        }
+        // We don't need to execute this reference
+        // Instead, we can delete it directly
+        const up2 = up1.parentPath
+        up2.replaceWith(up2.node.left)
       } else {
         console.warn(`Unexpected ref var_version: ${up1}`)
       }
@@ -178,22 +155,36 @@ function decodeGlobal(ast) {
     console.error('Cannot find string table')
     return false
   }
-  // check if exists rotate function
-  const var_rotate = refs.rotate[var_string_table]
-  if (var_rotate) {
-    for (let rm of var_rotate.code) {
-      decrypt_code.push(rm.node)
-      rm.remove()
-    }
-  }
-  //  check if contains decrypt variable
+  //  check if contains rotate function and decrypt variable
   let decrypt_val
   let binds = refs.string_path.scope.getBinding(var_string_table)
+  // remove path of string table
+  decrypt_code[1] = refs.string_path.node
+  refs.string_path.remove()
+  // iterate refs
   for (let bind of binds.referencePaths) {
     if (bind.findParent((path) => path.removed)) {
       continue
     }
     const parent = bind.parentPath
+    if (parent.isCallExpression() && bind.listKey === 'arguments') {
+      // This is the rotate function.
+      // However, we can delete it later.
+      continue
+    }
+    if (parent.isSequenceExpression()) {
+      // rotate function
+      decrypt_code.push(t.expressionStatement(parent.node))
+      const up2 = parent.parentPath
+      if (up2.isIfStatement()) {
+        // In the new version, rotate function will be enclosed by an
+        // empty IfStatement
+        up2.remove()
+      } else {
+        parent.remove()
+      }
+      continue
+    }
     if (t.isVariableDeclarator(parent.node)) {
       // main decrypt val
       let top = parent.getFunctionParent()
@@ -223,14 +214,6 @@ function decodeGlobal(ast) {
     return
   }
   console.log(`Main call wrapper name: ${decrypt_val}`)
-
-  // remove path of string table
-  let top = refs.string_path
-  while (top.parentPath.parentPath) {
-    top = top.parentPath
-  }
-  decrypt_code[1] = top.node
-  top.remove()
 
   // 运行解密语句
   let content_code = ast.program.body
@@ -282,21 +265,6 @@ function decodeGlobal(ast) {
     })
     cur_val = parent_val
   }
-  traverse(ast, {
-    CallExpression: funToStr,
-    MemberExpression: memToStr,
-  })
-  traverse(ast, {
-    VariableDeclarator: dfs,
-  })
-  // The decoding has finished in the old version
-  if (!var_rotate?.alias) {
-    return ast
-  }
-  // Since we removed a VariableDeclarator manually,
-  // we need to decode from the alias
-  cur_val = var_rotate.alias
-  console.log(`Main call wrapper alias: ${cur_val}`)
   traverse(ast, {
     CallExpression: funToStr,
     MemberExpression: memToStr,
