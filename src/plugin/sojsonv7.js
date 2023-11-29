@@ -121,7 +121,7 @@ function decodeGlobal(ast) {
         if (node_table.node.id) {
           var_string_table = node_table.node.id.name
         } else {
-          while (!t.isVariableDeclarator(node_table)) {
+          while (!node_table.isVariableDeclarator()) {
             node_table = node_table.parentPath
           }
           var_string_table = node_table.node.id.name
@@ -159,7 +159,11 @@ function decodeGlobal(ast) {
   let decrypt_val
   let binds = refs.string_path.scope.getBinding(var_string_table)
   // remove path of string table
-  decrypt_code[1] = refs.string_path.node
+  if (refs.string_path.isVariableDeclarator()) {
+    decrypt_code[1] = t.variableDeclaration('var', [refs.string_path.node])
+  } else {
+    decrypt_code[1] = refs.string_path.node
+  }
   refs.string_path.remove()
   // iterate refs
   for (let bind of binds.referencePaths) {
