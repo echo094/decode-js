@@ -211,7 +211,7 @@ function stringArrayV3(ast) {
   let ob_func_str = []
   let ob_dec_name = []
   let ob_string_func_name = null
-  // **Prefer** Find the string list func ("func1") by matching its feature:
+  // Normally, the string array func ("func1") follows the template below:
   // function aaa() {
   //   const bbb = [...]
   //   aaa = function () {
@@ -219,6 +219,7 @@ function stringArrayV3(ast) {
   //   };
   //   return aaa();
   // }
+  // In some cases (lint), the assignment is merged into the ReturnStatement
   // After finding the possible func1, this method will check all the binding
   // references and put the child encode function into list.
   function find_string_array_function(path) {
@@ -228,29 +229,33 @@ function stringArrayV3(ast) {
     if (
       !t.isIdentifier(path.node.id) ||
       path.node.params.length ||
-      !t.isBlockStatement(path.node.body) ||
-      path.node.body.body.length != 3
+      !t.isBlockStatement(path.node.body)
     ) {
+      return
+    }
+    const body = path.node.body.body
+    if (body.length < 2 || body.length > 3) {
       return
     }
     const name_func = path.node.id.name
     let string_var = -1
-    const body = path.node.body.body
     try {
       if (
         body[0].declarations.length != 1 ||
         !(string_var = body[0].declarations[0].id.name) ||
-        !t.isArrayExpression(body[0].declarations[0].init) ||
-        name_func != body[1].expression.left.name ||
-        body[1].expression.right.params.length ||
-        string_var != body[1].expression.right.body.body[0].argument.name ||
-        body[2].argument.arguments.length ||
-        name_func != body[2].argument.callee.name
+        !t.isArrayExpression(body[0].declarations[0].init)
       ) {
         return
       }
+      const nodes = [...body]
+      nodes.shift()
+      const code = generator(t.BlockStatement(nodes)).code
+      const fp = `${name_func}=function(){return${string_var}}${name_func}()`
+      if (!checkPattern(code, fp)) {
+        return
+      }
     } catch {
-      //
+      return
     }
     const binding = path.scope.getBinding(name_func)
     if (!binding.referencePaths) {
