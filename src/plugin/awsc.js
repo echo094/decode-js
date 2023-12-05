@@ -473,6 +473,7 @@ function CollectVars(ast) {
 /**
  * Secondly, we can convert the if-else to switch-case.
  * A dfs search is performed to identify the key of each branch.
+ * After this step, the `info_choice` is not needed.
  *
  * 1. Generate an array of all the keys e.g., [0..7]
  * 2. Evaluate each key with the test condition
@@ -1179,7 +1180,7 @@ export default function (code) {
   CollectVars(ast)
   // Convert if-else to switch
   FlattenIf(ast)
-  // Merge switch case
+  // Flatten nested switch
   FlattenSwitch(ast)
   // Convert some for to while
   FlattenFor(ast)
