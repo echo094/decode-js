@@ -9,254 +9,354 @@ import _traverse from '@babel/traverse'
 const traverse = _traverse.default
 import * as t from '@babel/types'
 
-function RemoveVoid(path) {
-  if (path.node.operator === 'void') {
-    const code = generator(path.node).code
-    if (code === 'void 0') {
-      path.replaceWith(t.identifier('undefined'))
-    } else {
-      path.replaceWith(path.node.argument)
+let name_count = 1000
+/**
+ * Assign a unique name to each Identifier
+ */
+const RenameIdentifier = {
+  FunctionDeclaration(path) {
+    if (!path.node?.id?.name) {
+      return
     }
-  }
+    let up1 = path.parentPath
+    let s = up1.scope.generateUidIdentifier(`_u${name_count++}f`)
+    up1.scope.rename(path.node.id.name, s.name)
+    for (let it of path.node.params) {
+      s = path.scope.generateUidIdentifier(`_u${name_count++}p`)
+      path.scope.rename(it.name, s.name)
+    }
+  },
+  VariableDeclarator(path) {
+    const s = path.scope.generateUidIdentifier(`_u${name_count++}v`)
+    path.scope.rename(path.node.id.name, s.name)
+  },
 }
 
-function LintConditionalAssign(path) {
-  if (!t.isAssignmentExpression(path?.parent)) {
-    return
-  }
-  let { test, consequent, alternate } = path.node
-  let { operator, left } = path.parent
-  consequent = t.assignmentExpression(operator, left, consequent)
-  alternate = t.assignmentExpression(operator, left, alternate)
-  path.parentPath.replaceWith(
-    t.conditionalExpression(test, consequent, alternate)
-  )
-}
-
-function LintConditionalIf(ast) {
-  function conditional(path) {
-    let { test, consequent, alternate } = path.node
-    // console.log(generator(test, { minified: true }).code)
-    if (t.isSequenceExpression(path.parent)) {
-      if (!sequence(path.parentPath)) {
-        path.stop()
+/**
+ * In this scenario, there are two kind of usages:
+ * 1. `void 0` to express `undefined`
+ * 2. `void(Expression)` to delete the return value of the case branch
+ *    (a compact single expression).
+ *    Removing void is a prerequisite for handling internal Expressions.
+ */
+const RemoveVoid = {
+  UnaryExpression(path) {
+    if (path.node.operator === 'void') {
+      const code = generator(path.node).code
+      if (code === 'void 0') {
+        path.replaceWith(t.identifier('undefined'))
+      } else {
+        path.replaceWith(path.node.argument)
       }
-      return
     }
-    if (t.isLogicalExpression(path.parent)) {
-      if (!logical(path.parentPath)) {
-        path.stop()
-      }
-      return
-    }
-    if (!t.isExpressionStatement(path.parent)) {
-      console.error(`Unexpected parent type: ${path.parent.type}`)
-      path.stop()
-      return
-    }
-    consequent = t.expressionStatement(consequent)
-    alternate = t.expressionStatement(alternate)
-    let statement = t.ifStatement(test, consequent, alternate)
-    path.replaceWithMultiple(statement)
-  }
-
-  function sequence(path) {
-    if (t.isLogicalExpression(path.parent)) {
-      return logical(path.parentPath)
-    }
-    let body = []
-    for (const item of path.node.expressions) {
-      body.push(t.expressionStatement(item))
-    }
-    let node = t.blockStatement(body, [])
-    let replace_path = path
-    if (t.isExpressionStatement(path.parent)) {
-      replace_path = path.parentPath
-    } else if (!t.isBlockStatement(path.parent)) {
-      console.error(`Unexpected parent type: ${path.parent.type}`)
-      return false
-    }
-    replace_path.replaceWith(node)
-    return true
-  }
-
-  function logical(path) {
-    let { operator, left, right } = path.node
-    if (operator !== '&&') {
-      console.error(`Unexpected logical operator: ${operator}`)
-      return false
-    }
-    if (!t.isExpressionStatement(path.parent)) {
-      console.error(`Unexpected parent type: ${path.parent.type}`)
-      return false
-    }
-    let node = t.ifStatement(left, t.expressionStatement(right))
-    path.parentPath.replaceWith(node)
-    return true
-  }
-
-  traverse(ast, {
-    ConditionalExpression: { enter: conditional },
-  })
+  },
 }
 
-function LintLogicalIf(path) {
-  let { operator, left, right } = path.node
-  if (operator !== '&&') {
-    // console.warn(`Unexpected logical operator: ${operator}`)
-    return
-  }
-  if (!t.isExpressionStatement(path.parent)) {
-    console.warn(`Unexpected parent type: ${path.parent.type}`)
-    return
-  }
-  let node = t.ifStatement(left, t.expressionStatement(right))
-  path.parentPath.replaceWith(node)
-  return
-}
-
-function LintIfStatement(path) {
-  let { test, consequent, alternate } = path.node
-  let changed = false
-  if (!t.isBlockStatement(consequent)) {
-    consequent = t.blockStatement([consequent])
-    changed = true
-  }
-  if (alternate && !t.isBlockStatement(alternate)) {
-    alternate = t.blockStatement([alternate])
-    changed = true
-  }
-  if (!changed) {
-    return
-  }
-  path.replaceWith(t.ifStatement(test, consequent, alternate))
-}
-
-function LintIfTestSequence(path) {
-  let { test, consequent, alternate } = path.node
-  if (!t.isSequenceExpression(test)) {
-    return
-  }
-  if (!t.isBlockStatement(path.parent)) {
-    return
-  }
-  let body = test.expressions
-  let last = body.pop()
-  let before = t.expressionStatement(t.sequenceExpression(body))
-  path.insertBefore(before)
-  path.replaceWith(t.ifStatement(last, consequent, alternate))
-}
-
-function LintIfTestBinary(path) {
-  let path_test = path.get('test')
-  if (!path_test.isBinaryExpression({ operator: '==' })) {
-    return
-  }
-  let { left, right } = path_test.node
-  if (t.isNumericLiteral(left) && t.isIdentifier(right)) {
-    path_test.replaceWith(t.binaryExpression('==', right, left))
-  }
-}
-
-function LintSwitchCase(path) {
-  let { test, consequent } = path.node
-  if (consequent.length == 1 && t.isBlockStatement(consequent[0])) {
-    return
-  }
-  let block = t.blockStatement(consequent)
-  path.replaceWith(t.switchCase(test, [block]))
-}
-
-function LintReturn(path) {
-  let { argument } = path.node
-  if (!t.isSequenceExpression(argument)) {
-    return
-  }
-  if (!t.isBlockStatement(path.parent)) {
-    return
-  }
-  let body = argument.expressions
-  let last = body.pop()
-  let before = t.expressionStatement(t.sequenceExpression(body))
-  path.insertBefore(before)
-  path.replaceWith(t.returnStatement(last))
-}
-
-function LintSequence(path) {
-  let body = []
-  for (const item of path.node.expressions) {
-    body.push(t.expressionStatement(item))
-  }
-  let node = t.blockStatement(body, [])
-  let replace_path = path
-  if (t.isExpressionStatement(path.parent)) {
-    replace_path = path.parentPath
-  } else if (!t.isBlockStatement(path.parent)) {
-    console.warn(`Unexpected parent type: ${path.parent.type}`)
-    return
-  }
-  replace_path.replaceWith(node)
-  return
-}
-
-function LintFunction(path) {
-  let { id, params, body } = path.node
-  if (id || params.length) {
-    return
-  }
-  if (
-    path.getFunctionParent() &&
-    path.parentPath.isCallExpression() &&
-    path.parentPath.parentPath.isUnaryExpression({ operator: '!' })
-  ) {
-    path.parentPath.parentPath.parentPath.replaceWith(body)
-  }
-}
-
-function LintBlock(path) {
-  let { body } = path.node
-  if (!body.length) {
-    return
-  }
-  let changed = false
-  let arr = []
-  for (const item of body) {
-    if (!t.isBlockStatement(item)) {
-      arr.push(item)
-      continue
-    }
-    changed = true
-    for (const sub of item.body) {
-      arr.push(sub)
-    }
-  }
-  if (!changed) {
-    return
-  }
-  path.replaceWith(t.blockStatement(arr))
-}
-
-function RenameIdentifier(ast) {
-  let name_count = 1000
-  traverse(ast, {
-    FunctionDeclaration(path) {
-      if (!path.node?.id?.name) {
+/**
+ * Do the following transform:
+ *
+ * r=t?a:b => t?r=a:r=b
+ *
+ * This is a prerequisite for converting ternary expressions.
+ */
+const ConvertConditionalAssign = {
+  ConditionalExpression: {
+    exit(path) {
+      if (!t.isAssignmentExpression(path?.parent)) {
         return
       }
-      let up1 = path.parentPath
-      let s = up1.scope.generateUidIdentifier(`_u${name_count++}f`)
-      up1.scope.rename(path.node.id.name, s.name)
-      for (let it of path.node.params) {
-        s = path.scope.generateUidIdentifier(`_u${name_count++}p`)
-        path.scope.rename(it.name, s.name)
+      let { test, consequent, alternate } = path.node
+      let { operator, left } = path.parent
+      consequent = t.assignmentExpression(operator, left, consequent)
+      alternate = t.assignmentExpression(operator, left, alternate)
+      path.parentPath.replaceWith(
+        t.conditionalExpression(test, consequent, alternate)
+      )
+    },
+  },
+}
+
+/**
+ * Convert all ternary expressions into if statements (root to leaf):
+ *
+ * t?a:b => if(t){a}else{b}
+ *
+ * Additional operations may be required considering the parent node:
+ *
+ * - SequenceExpression: a,b,c => {a;b;c;}
+ * - LogicalExpression(&& only): a&&b => if(a){b}
+ * - ExpressionStatement: no action is needed
+ */
+const LintConditionalIf = {
+  ConditionalExpression: {
+    enter(path) {
+      let { test, consequent, alternate } = path.node
+      // Handle the parent node
+      if (t.isSequenceExpression(path.parent)) {
+        if (!sequence(path.parentPath)) {
+          path.stop()
+        }
+        return
+      }
+      if (t.isLogicalExpression(path.parent)) {
+        if (!logical(path.parentPath)) {
+          path.stop()
+        }
+        return
+      }
+      if (!t.isExpressionStatement(path.parent)) {
+        console.error(`Unexpected parent type: ${path.parent.type}`)
+        path.stop()
+        return
+      }
+      // Convert current node
+      consequent = t.expressionStatement(consequent)
+      alternate = t.expressionStatement(alternate)
+      let statement = t.ifStatement(test, consequent, alternate)
+      path.replaceWithMultiple(statement)
+
+      function sequence(path) {
+        if (t.isLogicalExpression(path.parent)) {
+          // The node is replaced, and thus don't need to traverse deeper
+          return logical(path.parentPath)
+        }
+        let body = []
+        for (const item of path.node.expressions) {
+          body.push(t.expressionStatement(item))
+        }
+        let node = t.blockStatement(body, [])
+        let replace_path = path
+        if (t.isExpressionStatement(path.parent)) {
+          replace_path = path.parentPath
+        } else if (!t.isBlockStatement(path.parent)) {
+          console.error(`Unexpected parent type: ${path.parent.type}`)
+          return false
+        }
+        replace_path.replaceWith(node)
+        return true
+      }
+
+      function logical(path) {
+        let { operator, left, right } = path.node
+        if (operator !== '&&') {
+          console.error(`Unexpected logical operator: ${operator}`)
+          return false
+        }
+        if (!t.isExpressionStatement(path.parent)) {
+          console.error(`Unexpected parent type: ${path.parent.type}`)
+          return false
+        }
+        let node = t.ifStatement(left, t.expressionStatement(right))
+        path.parentPath.replaceWith(node)
+        return true
       }
     },
-    VariableDeclarator(path) {
-      const s = path.scope.generateUidIdentifier(`_u${name_count++}v`)
-      path.scope.rename(path.node.id.name, s.name)
+  },
+}
+
+/**
+ * Do the transformation if parent node is expression statement
+ *
+ * a&&b => if(a){b}
+ */
+const LintLogicalIf = {
+  LogicalExpression: {
+    exit(path) {
+      let { operator, left, right } = path.node
+      if (operator !== '&&') {
+        // console.warn(`Unexpected logical operator: ${operator}`)
+        return
+      }
+      if (!t.isExpressionStatement(path.parent)) {
+        console.warn(`Unexpected parent type: ${path.parent.type}`)
+        return
+      }
+      let node = t.ifStatement(left, t.expressionStatement(right))
+      path.parentPath.replaceWith(node)
+      return
     },
-  })
-  console.info(`Count: ${name_count - 1000}`)
+  },
+}
+
+/**
+ * Add parentheses to the consequent and alternate statements of if statements
+ */
+const LintIfStatement = {
+  IfStatement: {
+    exit(path) {
+      let { test, consequent, alternate } = path.node
+      let changed = false
+      if (!t.isBlockStatement(consequent)) {
+        consequent = t.blockStatement([consequent])
+        changed = true
+      }
+      if (alternate && !t.isBlockStatement(alternate)) {
+        alternate = t.blockStatement([alternate])
+        changed = true
+      }
+      if (!changed) {
+        return
+      }
+      path.replaceWith(t.ifStatement(test, consequent, alternate))
+    },
+  },
+}
+
+/**
+ * Split the test node of IfStatement if it's a sequence
+ */
+const LintIfTestSequence = {
+  IfStatement: {
+    enter(path) {
+      let { test, consequent, alternate } = path.node
+      if (!t.isSequenceExpression(test)) {
+        return
+      }
+      if (!t.isBlockStatement(path.parent)) {
+        return
+      }
+      let body = test.expressions
+      let last = body.pop()
+      let before = t.expressionStatement(t.sequenceExpression(body))
+      path.insertBefore(before)
+      path.replaceWith(t.ifStatement(last, consequent, alternate))
+    },
+  },
+}
+
+/**
+ * Do the following switch:
+ *
+ * NumericLiteral==Identifier => Identifier==NumericLiteral
+ */
+const LintIfTestBinary = {
+  IfStatement: {
+    exit(path) {
+      let path_test = path.get('test')
+      if (!path_test.isBinaryExpression({ operator: '==' })) {
+        return
+      }
+      let { left, right } = path_test.node
+      if (t.isNumericLiteral(left) && t.isIdentifier(right)) {
+        path_test.replaceWith(t.binaryExpression('==', right, left))
+      }
+    },
+  },
+}
+
+/**
+ * Add parentheses to each switch-case
+ */
+const LintSwitchCase = {
+  SwitchCase: {
+    enter(path) {
+      let { test, consequent } = path.node
+      if (consequent.length == 1 && t.isBlockStatement(consequent[0])) {
+        return
+      }
+      let block = t.blockStatement(consequent)
+      path.replaceWith(t.switchCase(test, [block]))
+    },
+  },
+}
+
+/**
+ * Split the ReturnStatement if it's a sequence
+ */
+const LintReturn = {
+  ReturnStatement: {
+    enter(path) {
+      let { argument } = path.node
+      if (!t.isSequenceExpression(argument)) {
+        return
+      }
+      if (!t.isBlockStatement(path.parent)) {
+        return
+      }
+      let body = argument.expressions
+      let last = body.pop()
+      let before = t.expressionStatement(t.sequenceExpression(body))
+      path.insertBefore(before)
+      path.replaceWith(t.returnStatement(last))
+    },
+  },
+}
+
+/**
+ * Split a sequence into expression array
+ */
+const LintSequence = {
+  SequenceExpression: {
+    exit(path) {
+      let body = []
+      for (const item of path.node.expressions) {
+        body.push(t.expressionStatement(item))
+      }
+      let node = t.blockStatement(body, [])
+      let replace_path = path
+      if (t.isExpressionStatement(path.parent)) {
+        replace_path = path.parentPath
+      } else if (!t.isBlockStatement(path.parent)) {
+        console.warn(`Unexpected parent type: ${path.parent.type}`)
+        return
+      }
+      replace_path.replaceWith(node)
+      return
+    },
+  },
+}
+
+/**
+ * Remove the function call if it's inside a function:
+ * 
+ * !function(){body}(); => {body}
+ */
+const LintFunction = {
+  FunctionExpression(path) {
+    let { id, params, body } = path.node
+    if (id || params.length) {
+      return
+    }
+    if (
+      path.getFunctionParent() &&
+      path.parentPath.isCallExpression() &&
+      path.parentPath.parentPath.isUnaryExpression({ operator: '!' })
+    ) {
+      path.parentPath.parentPath.parentPath.replaceWith(body)
+    }
+  },
+}
+
+/**
+ * Flatten the BlockStatement:
+ *
+ * {a;{b}} => {a;b}
+ */
+const LintBlock = {
+  BlockStatement: {
+    exit(path) {
+      let { body } = path.node
+      if (!body.length) {
+        return
+      }
+      let changed = false
+      let arr = []
+      for (const item of body) {
+        if (!t.isBlockStatement(item)) {
+          arr.push(item)
+          continue
+        }
+        changed = true
+        for (const sub of item.body) {
+          arr.push(sub)
+        }
+      }
+      if (!changed) {
+        return
+      }
+      path.replaceWith(t.blockStatement(arr))
+    },
+  },
 }
 
 let info_choice = {}
@@ -948,42 +1048,21 @@ function ProcessWhile(ast) {
 export default function (code) {
   let ast = parse(code)
   // Generate unique name for all identifiers
-  RenameIdentifier(ast)
+  traverse(ast, RenameIdentifier)
+  console.info(`Count: ${name_count - 1000}`)
   // Pre Lint
-  traverse(ast, {
-    UnaryExpression: RemoveVoid,
-  })
-  traverse(ast, {
-    ConditionalExpression: { exit: LintConditionalAssign },
-  })
-  LintConditionalIf(ast)
-  traverse(ast, {
-    LogicalExpression: { exit: LintLogicalIf },
-  })
-  traverse(ast, {
-    IfStatement: { exit: LintIfStatement },
-  })
-  traverse(ast, {
-    IfStatement: { enter: LintIfTestSequence },
-  })
-  traverse(ast, {
-    IfStatement: { exit: LintIfTestBinary },
-  })
-  traverse(ast, {
-    SwitchCase: { enter: LintSwitchCase },
-  })
-  traverse(ast, {
-    ReturnStatement: { enter: LintReturn },
-  })
-  traverse(ast, {
-    SequenceExpression: { exit: LintSequence },
-  })
-  traverse(ast, {
-    FunctionExpression: LintFunction,
-  })
-  traverse(ast, {
-    BlockStatement: { exit: LintBlock },
-  })
+  traverse(ast, RemoveVoid)
+  traverse(ast, ConvertConditionalAssign)
+  traverse(ast, LintConditionalIf)
+  traverse(ast, LintLogicalIf)
+  traverse(ast, LintIfStatement)
+  traverse(ast, LintIfTestSequence)
+  traverse(ast, LintIfTestBinary)
+  traverse(ast, LintSwitchCase)
+  traverse(ast, LintReturn)
+  traverse(ast, LintSequence)
+  traverse(ast, LintFunction)
+  traverse(ast, LintBlock)
   // Get control vars in switch
   CollectVars(ast)
   // Convert if-else to switch
