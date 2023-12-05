@@ -308,7 +308,7 @@ const LintSequence = {
 
 /**
  * Remove the function call if it's inside a function:
- * 
+ *
  * !function(){body}(); => {body}
  */
 const LintFunction = {
@@ -359,11 +359,62 @@ const LintBlock = {
   },
 }
 
+/**
+ * Index for each switch-case:
+ *
+ * ```javascript
+ * {
+ *   range: Number, // the value derived from `num1`
+ *   parent: String, // the init of this part
+ *   root: String, // the `index` of this part
+ * }
+ * ```
+ *
+ * @param {Object} key - The `part` index and its data
+ *
+ */
 let info_choice = {}
+/**
+ * Index for each switch-case:
+ *
+ * ```javascript
+ * {
+ *   start: Number, // the `start` value
+ *   code: String, // the code of VariableDeclaration
+ *   child: { // The parent of each part
+ *     part: String,
+ *   },
+ *   value: { // The usage count of each key. default: empty
+ *     key: Number,
+ *   }
+ *   visit: Number, // If it's visited. default: 0
+ * }
+ * ```
+ *
+ * @param {Object} key - The `index` and its data
+ *
+ */
 let info_key = {}
 
+/**
+ * Firstly, we need to find all the switch-case blocks and save them to
+ * `info_choice` and `info_key`, which follows the below template:
+ *
+ * ```javascript
+ * for (var index = start; undefined !== index) {
+ *   var ..., part1 = num1 & (index >> offset1);
+ *   switch (num1 & index) {
+ *     case x: {
+ *       if (part1 == y) {
+ *       }
+ *     } // code branch
+ *   } // main block
+ * } // code block
+ * ```
+ *
+ * Normally, $num1 = 2^{offset1} - 1$.
+ */
 function CollectVars(ast) {
-  // Collect vars
   const visitor_checker = {
     Identifier(path) {
       info_choice[this.name].parent = path.node.name
@@ -419,8 +470,17 @@ function CollectVars(ast) {
   }
 }
 
+/**
+ * Secondly, we can convert the if-else to switch-case.
+ * A dfs search is performed to identify the key of each branch.
+ *
+ * 1. Generate an array of all the keys e.g., [0..7]
+ * 2. Evaluate each key with the test condition
+ * 3. Split the array into left (consequent) and right (alternate)
+ * 4. Go to each branch until the leaf
+ * 5. Store the leaf code with its key
+ */
 function FlattenIf(ast) {
-  // Transform if-else to switch
   let name
   let code
   let last
@@ -501,7 +561,13 @@ function FlattenIf(ast) {
   })
 }
 
-function FlattenSwitch(ast) {
+/**
+ * Update the reference count of a block: info_key[index].value
+ *
+ * @param {String} key - index
+ * @param {*} path_switch - The root of this switch
+ */
+function UpdateRefCount(key, path_switch) {
   const visitor_value = {
     AssignmentExpression(path) {
       if (path.node.left?.name === this.name) {
@@ -516,85 +582,139 @@ function FlattenSwitch(ast) {
       }
     },
   }
-  // Convert binary equation to value
-  const visitor_binary = {
-    BlockStatement: {
-      exit(path) {
-        let info = {}
-        const check_ep = (ep) => {
-          let { operator, left, right } = ep.node
-          if (!t.isIdentifier(left)) {
+  info_key[key].value = {}
+  const start = info_key[key].start
+  info_key[key].value[start] = 1
+  path_switch.traverse(visitor_value, { name: key })
+  console.info(`Key: ${key} Size: ${Object.keys(info_key[key].value).length}`)
+}
+
+/**
+ * Convert binary equation to value
+ */
+const visitor_binary = {
+  BlockStatement: {
+    exit(path) {
+      let info = {}
+      const check_ep = (ep) => {
+        let { operator, left, right } = ep.node
+        if (!t.isIdentifier(left)) {
+          return
+        }
+        const name = left.name
+        let pfx = ''
+        if (operator === '=') {
+          if (t.isNumericLiteral(right) || t.isBooleanLiteral(right)) {
+            info[name] = right.value
             return
           }
-          const name = left.name
-          let pfx = ''
-          if (operator === '=') {
-            if (t.isNumericLiteral(right) || t.isBooleanLiteral(right)) {
-              info[name] = right.value
-              return
+          if (!t.isBinaryExpression(right) && !t.isIdentifier(right)) {
+            if (name in info) {
+              delete info[name]
             }
-            if (!t.isBinaryExpression(right) && !t.isIdentifier(right)) {
-              if (name in info) {
-                delete info[name]
-              }
-              return
-            }
-            let test = generator(right).code
-            if (test.indexOf(name) === -1) {
-              pfx = 'var'
-            }
+            return
           }
+          let test = generator(right).code
+          if (test.indexOf(name) === -1) {
+            pfx = 'var'
+          }
+        }
+        let code = ''
+        for (let key in info) {
+          code += `var ${key}=${info[key]};`
+        }
+        code += `${pfx} ${generator(ep.node).code};${name}`
+        try {
+          let res = eval(code)
+          ep.replaceWithSourceString(`${name}=${res}`)
+          info[name] = res
+        } catch {
+          if (operator === '=' && name in info) {
+            delete info[name]
+          }
+        }
+      }
+      for (let i in path.node.body) {
+        let line = path.get(`body.${i}`)
+        if (t.isAssignmentExpression(line.node?.expression)) {
+          check_ep(line.get('expression'))
+          continue
+        }
+        if (t.isExpressionStatement(line.node)) {
+          const ep = line.get('expression')
+          if (
+            ep.isUpdateExpression() ||
+            ep.isUnaryExpression() ||
+            ep.isMemberExpression()
+          ) {
+            continue
+          }
+        }
+        if (line.isIfStatement()) {
+          let test = line.get('test')
           let code = ''
           for (let key in info) {
             code += `var ${key}=${info[key]};`
           }
-          code += `${pfx} ${generator(ep.node).code};${name}`
+          code += generator(test.node).code
           try {
             let res = eval(code)
-            ep.replaceWithSourceString(`${name}=${res}`)
-            info[name] = res
+            test.replaceWithSourceString(res)
           } catch {
-            if (operator === '=' && name in info) {
-              delete info[name]
-            }
+            //
           }
         }
-        for (let i in path.node.body) {
-          let line = path.get(`body.${i}`)
-          if (t.isAssignmentExpression(line.node?.expression)) {
-            check_ep(line.get('expression'))
-            continue
-          }
-          if (t.isExpressionStatement(line.node)) {
-            const ep = line.get('expression')
-            if (
-              ep.isUpdateExpression() ||
-              ep.isUnaryExpression() ||
-              ep.isMemberExpression()
-            ) {
-              continue
-            }
-          }
-          if (line.isIfStatement()) {
-            let test = line.get('test')
-            let code = ''
-            for (let key in info) {
-              code += `var ${key}=${info[key]};`
-            }
-            code += generator(test.node).code
-            try {
-              let res = eval(code)
-              test.replaceWithSourceString(res)
-            } catch {
-              //
-            }
-          }
-          info = {}
-        }
-      },
+        info = {}
+      }
     },
+  },
+}
+
+/**
+ *
+ * @param {String} key - index
+ * @param {*} path_switch - The root of this switch
+ * @param {Array} nodes - The array of mapped branches
+ * @param {Array} queue - The array of sorted keys
+ */
+function UpdateSwitchCases(key, path_switch, nodes, queue) {
+  const body = []
+  while (queue.length) {
+    const value = queue.shift()
+    if (value in nodes) {
+      body.push(
+        t.switchCase(t.numericLiteral(Number.parseInt(value)), [
+          t.blockStatement(nodes[value]),
+        ])
+      )
+      delete nodes[value]
+    } else {
+      console.error(`Missing case ${value} in switch ${key}`)
+    }
   }
-  // Flatten switch
+  for (let value in nodes) {
+    body.push(
+      t.switchCase(t.numericLiteral(Number.parseInt(value)), [
+        t.blockStatement(nodes[value]),
+      ])
+    )
+  }
+  const repl = t.switchStatement(t.identifier(key), body)
+  path_switch.replaceWith(repl)
+}
+
+/**
+ * Flatten the nested switch-case, which is similar to FlattenIf.
+ * A dfs search is performed to identify the branch of each key.
+ */
+function FlattenSwitch(ast) {
+  /**
+   *
+   * @param {*} path - The root of this switch
+   * @param {*} candidate - The array of keys
+   * @param {*} key - index
+   * @param {*} cases - The array of mapped branches
+   */
   function dfs2(path, candidate, key, cases) {
     let mp = {}
     for (const c of candidate) {
@@ -641,7 +761,34 @@ function FlattenSwitch(ast) {
       delete mp[c]
     }
   }
-  // Merge switch
+  traverse(ast, {
+    ForStatement(path) {
+      let key = path.node.init?.declarations[0]?.id?.name
+      if (!(key in info_key) || info_key[key].visit) {
+        return
+      }
+      const idx = path.node.body.body.length - 1
+      const path_switch = path.get(`body.body.${idx}`)
+      // Get all the cases
+      UpdateRefCount(key, path_switch)
+      let cases = {}
+      let candidate = Object.keys(info_key[key].value)
+      dfs2(path_switch, candidate, key, cases)
+      // Replace cases
+      UpdateSwitchCases(key, path_switch, cases, [])
+      UpdateRefCount(key, path_switch)
+      info_key[key].visit = 1
+    },
+  })
+  for (let index in info_key) {
+    info_key[index].visit = 0
+  }
+}
+
+/**
+ * Merge switch
+ */
+function MergeSwitch(ast) {
   let updated
   function dfs3(cases, vis, body, update, key, value, queue) {
     if (update) {
@@ -739,30 +886,6 @@ function FlattenSwitch(ast) {
       const idx = path.node.body.body.length - 1
       const path_switch = path.get(`body.body.${idx}`)
       const start = info_key[key].start
-      // Helper func
-      let replace_switch = (nodes, queue) => {
-        let body = []
-        while (queue.length) {
-          let value = queue.shift()
-          if (value in nodes) {
-            body.push(
-              t.switchCase(t.numericLiteral(Number.parseInt(value)), [
-                t.blockStatement(nodes[value]),
-              ])
-            )
-            delete nodes[value]
-          }
-        }
-        for (let value in nodes) {
-          body.push(
-            t.switchCase(t.numericLiteral(Number.parseInt(value)), [
-              t.blockStatement(nodes[value]),
-            ])
-          )
-        }
-        const repl = t.switchStatement(t.identifier(key), body)
-        path_switch.replaceWith(repl)
-      }
       let collect_switch = () => {
         const list = path_switch.node.cases
         const out = {}
@@ -771,34 +894,22 @@ function FlattenSwitch(ast) {
         }
         return out
       }
-      let update_ref = () => {
-        info_key[key].value = {}
-        info_key[key].value[start] = 1
-        path_switch.traverse(visitor_value, { name: key })
-        console.info(
-          `Key: ${key} Size: ${Object.keys(info_key[key].value).length}`
-        )
-      }
       // Get all the cases
-      update_ref()
       let cases = {}
-      let candidate = Object.keys(info_key[key].value)
-      dfs2(path_switch, candidate, key, cases)
-      // Update first
-      replace_switch(cases, [])
       updated = true
       while (updated) {
         updated = false
         // Convert binary
         path.traverse(visitor_binary)
+        // Get all the cases
         cases = collect_switch()
         // Marge cases
         let que = []
         dfs3(cases, {}, cases[start], true, key, start, que)
         // Replace
-        replace_switch(cases, que)
+        UpdateSwitchCases(key, path_switch, cases, que)
         // Get the summary of this switch case
-        update_ref()
+        UpdateRefCount(key, path_switch)
       }
       info_key[key].visit = 1
     },
@@ -1063,10 +1174,13 @@ export default function (code) {
   traverse(ast, LintSequence)
   traverse(ast, LintFunction)
   traverse(ast, LintBlock)
+  // Now, the code is ready to be processed
   // Get control vars in switch
   CollectVars(ast)
   // Convert if-else to switch
   FlattenIf(ast)
+  // Merge switch case
+  FlattenSwitch(ast)
   // Convert some for to while
   FlattenFor(ast)
   // After the conversion, we should split some expressions,
@@ -1076,7 +1190,7 @@ export default function (code) {
   // Then, the assignment should be splitted
   MoveAssignment(ast)
   // Merge switch case
-  FlattenSwitch(ast)
+  MergeSwitch(ast)
   // Post Lint
   // The string can be merged
   MergeString(ast)
