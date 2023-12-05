@@ -587,7 +587,9 @@ function UpdateRefCount(key, path_switch) {
   const start = info_key[key].start
   info_key[key].value[start] = 1
   path_switch.traverse(visitor_value, { name: key })
-  console.info(`Key: ${key} Size: ${Object.keys(info_key[key].value).length}`)
+  console.info(
+    `Switch: ${key} Size: ${Object.keys(info_key[key].value).length}`
+  )
 }
 
 /**
@@ -690,7 +692,7 @@ function UpdateSwitchCases(key, path_switch, nodes, queue) {
       )
       delete nodes[value]
     } else {
-      console.error(`Missing case ${value} in switch ${key}`)
+      console.error(`Missing Case ${value} in Switch ${key}`)
     }
   }
   for (let value in nodes) {
@@ -741,7 +743,8 @@ function FlattenSwitch(ast) {
       }
       body = choice.node.consequent[0].body
       if (!(c in mp)) {
-        console.warn(`drop key ${key}:${c}`)
+        // This case is not referenced
+        console.warn(`Drop Case ${c} in Switch ${key}`)
         continue
       }
       if (mp[c].length > 1) {
@@ -917,40 +920,50 @@ function MergeSwitch(ast) {
   })
 }
 
-function FlattenFor(ast) {
-  traverse(ast, {
-    ForStatement(path) {
-      let { init, test, update, body } = path.node
-      if (!update || generator(update).code.indexOf('++') == -1) {
-        return
-      }
-      body.body.push(t.expressionStatement(update))
-      path.insertBefore(init)
-      const repl = t.whileStatement(test, body)
-      path.replaceWith(repl)
-    },
-  })
+/**
+ * In this scenario, some ForStatements are used to decode a string.
+ * We can convert these codes to WhileStatement for further processing.
+ */
+const ConvertFor = {
+  ForStatement(path) {
+    let { init, test, update, body } = path.node
+    if (!update || generator(update).code.indexOf('++') == -1) {
+      return
+    }
+    body.body.push(t.expressionStatement(update))
+    path.insertBefore(init)
+    const repl = t.whileStatement(test, body)
+    path.replaceWith(repl)
+  },
 }
 
-function SplitVarDef(ast) {
-  traverse(ast, {
-    VariableDeclaration(path) {
-      if (t.isForStatement(path.parent)) {
-        return
-      }
-      const kind = path.node.kind
-      const list = path.node.declarations
-      if (list.length == 1) {
-        return
-      }
-      for (let item of list) {
-        path.insertBefore(t.variableDeclaration(kind, [item]))
-      }
-      path.remove()
-    },
-  })
+/**
+ * Split the variable declarator. (Cannot be performed before `CollectVars`)
+ */
+const SplitVarDef = {
+  VariableDeclaration(path) {
+    if (t.isForStatement(path.parent)) {
+      return
+    }
+    const kind = path.node.kind
+    const list = path.node.declarations
+    if (list.length == 1) {
+      return
+    }
+    for (let item of list) {
+      path.insertBefore(t.variableDeclaration(kind, [item]))
+    }
+    path.remove()
+  },
 }
 
+/**
+ * Split the AssignmentExpressions. For example:
+ *
+ * - In the test of IfStatement
+ * - In the VariableDeclaration
+ * - Nested Expression (Assignment...)
+ */
 function MoveAssignment(ast) {
   // post order traversal
   let visitor = {
@@ -1183,11 +1196,11 @@ export default function (code) {
   // Flatten nested switch
   FlattenSwitch(ast)
   // Convert some for to while
-  FlattenFor(ast)
+  traverse(ast, ConvertFor)
   // After the conversion, we should split some expressions,
   // to help get constant test results in the if statement.
   // The Variable Declaration list must be splitted first
-  SplitVarDef(ast)
+  traverse(ast, SplitVarDef)
   // Then, the assignment should be splitted
   MoveAssignment(ast)
   // Merge switch case
