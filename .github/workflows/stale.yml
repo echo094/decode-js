@@ -30,5 +30,6 @@ jobs:
           There hasn't been any activity on this pull request recently, and in order to prioritize active work, it has
           been marked as stale.
         exempt-issue-labels: 'bug,wip'
+        exempt-pr-labels: 'wip'
         exempt-all-milestones: true
         remove-stale-when-updated: true
