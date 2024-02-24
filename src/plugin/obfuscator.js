@@ -19,15 +19,19 @@ function virtualGlobalEval(jsStr) {
   return vm2.run(String(jsStr))
 }
 
+/**
+ * Extract the literal value of an object, and remove an object if all
+ * references to the object are replaced.
+ */
 function decodeObject(ast) {
-  let obj_node = {}
   function collectObject(path) {
     const id = path.node.id
     const init = path.node.init
     if (!t.isIdentifier(id) || !t.isObjectExpression(init)) {
       return
     }
-    const name = id.name
+    const obj_name = id.name
+    const bind = path.scope.getBinding(obj_name)
     let valid = true
     let count = 0
     let obj = {}
@@ -46,50 +50,32 @@ function decodeObject(ast) {
     if (!valid || !count) {
       return
     }
-    obj_node[name] = obj
+    let safe = true
+    for (let ref of bind.referencePaths) {
+      const parent = ref.parentPath
+      if (ref.key !== 'object' || !parent.isMemberExpression()) {
+        safe = false
+        continue
+      }
+      const key = parent.node.property
+      if (!t.isIdentifier(key) || parent.node.computed) {
+        safe = false
+        continue
+      }
+      if (Object.prototype.hasOwnProperty.call(obj, key.name)) {
+        parent.replaceWith(obj[key.name])
+      } else {
+        safe = false
+      }
+    }
+    bind.scope.crawl()
+    if (safe) {
+      path.remove()
+      console.log(`删除对象: ${obj_name}`)
+    }
   }
   traverse(ast, {
     VariableDeclarator: collectObject,
-  })
-  let obj_used = {}
-  function replaceObject(path) {
-    const name = path.node.object
-    const key = path.node.property
-    if (!t.isIdentifier(name) || !t.isIdentifier(key)) {
-      return
-    }
-    if (!Object.prototype.hasOwnProperty.call(obj_node, name.name)) {
-      return
-    }
-    if (t.isIdentifier(key) && path.node.computed) {
-      // In this case, the identifier points to another value
-      return
-    }
-    path.replaceWith(obj_node[name.name][key.name])
-    obj_used[name.name] = true
-  }
-  traverse(ast, {
-    MemberExpression: replaceObject,
-  })
-  function deleteObject(path) {
-    const id = path.node.id
-    const init = path.node.init
-    if (!t.isIdentifier(id) || !t.isObjectExpression(init)) {
-      return
-    }
-    const name = id.name
-    if (!Object.prototype.hasOwnProperty.call(obj_node, name)) {
-      return
-    }
-    path.remove()
-    let used = 'false'
-    if (Object.prototype.hasOwnProperty.call(obj_used, name)) {
-      used = 'true'
-    }
-    console.log(`删除对象: ${name} -> ${used}`)
-  }
-  traverse(ast, {
-    VariableDeclarator: deleteObject,
   })
   return ast
 }
