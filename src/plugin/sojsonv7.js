@@ -784,20 +784,40 @@ function unlockEnv(ast) {
   traverse(ast, { StringLiteral: unlockLint })
 }
 
+/**
+ * If a function acts as follows:
+ * A = function (p1, p2) { return p1 + p2 }
+ *
+ * Convert its call to a binary expression:
+ * A(a, b) => a + b
+ */
 function purifyFunction(path) {
-  const node = path.node
-  if (!t.isIdentifier(node.left) || !t.isFunctionExpression(node.right)) {
+  const left = path.get('left')
+  const right = path.get('right')
+  if (!left.isIdentifier() || !right.isFunctionExpression()) {
     return
   }
-  const name = node.left.name
-  if (node.right.body.body.length !== 1) {
+  const name = left.node.name
+  const params = right.node.params
+  if (params.length !== 2) {
     return
   }
-  let retStmt = node.right.body.body[0]
+  const name1 = params[0].name
+  const name2 = params[1].name
+  if (right.node.body.body.length !== 1) {
+    return
+  }
+  let retStmt = right.node.body.body[0]
   if (!t.isReturnStatement(retStmt)) {
     return
   }
   if (!t.isBinaryExpression(retStmt.argument, { operator: '+' })) {
+    return
+  }
+  if (
+    retStmt.argument.left?.name !== name1 ||
+    retStmt.argument.right?.name !== name2
+  ) {
     return
   }
   const fnPath = path.getFunctionParent() || path.scope.path
