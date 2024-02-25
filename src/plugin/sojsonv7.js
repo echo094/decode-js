@@ -673,7 +673,7 @@ function removeUniqueCall(path) {
   } else if (up1.key === 'init') {
     let up2 = up1.parentPath
     let call = up2.node.id.name
-    console.info(`Remove call: ${decorator}`)
+    console.info(`Remove call: ${call}`)
     let bind2 = up2.scope.getBinding(call)
     up2.remove()
     for (let ref of bind2.referencePaths) {
@@ -775,6 +775,41 @@ function unlockLint(path) {
   removeUniqueCall(rm)
 }
 
+function unlockDomainLock(path) {
+  const array_list = [
+    '[7,116,5,101,3,117,0,100]',
+    '[5,110,0,100]',
+    '[7,110,0,108]',
+    '[7,101,0,104]',
+  ]
+  const checkArray = (node) => {
+    const trim = node.split(' ').join('')
+    for (let i = 0; i < 4; ++i) {
+      if (array_list[i] == trim) {
+        return i + 1
+      }
+    }
+    return 0
+  }
+  if (path.findParent((up) => up.removed)) {
+    return
+  }
+  let mask = 1 << checkArray('' + path)
+  if (mask == 1) {
+    return
+  }
+  let rm = path.getFunctionParent()
+  rm.traverse({
+    ArrayExpression: function (item) {
+      mask = mask | (1 << checkArray('' + item))
+    },
+  })
+  if (mask & 0b11110) {
+    console.info('Find domain lock')
+    removeUniqueCall(rm)
+  }
+}
+
 function unlockEnv(ast) {
   // 删除`禁止控制台调试`函数
   traverse(ast, { DebuggerStatement: unlockDebugger })
@@ -782,6 +817,8 @@ function unlockEnv(ast) {
   traverse(ast, { VariableDeclarator: unlockConsole })
   // 删除`禁止换行`函数
   traverse(ast, { StringLiteral: unlockLint })
+  // 删除`安全域名`函数
+  traverse(ast, { ArrayExpression: unlockDomainLock })
 }
 
 /**
