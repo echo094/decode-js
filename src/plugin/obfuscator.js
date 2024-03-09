@@ -475,6 +475,7 @@ function stringArrayLite(ast) {
         if (
           !ref.parentPath.isMemberExpression() ||
           ref.key !== 'object' ||
+          ref.parentPath.key == 'left' ||
           !t.isNumericLiteral(ref.parent.property)
         ) {
           return
