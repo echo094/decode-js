@@ -114,7 +114,7 @@ function stringArrayV2(ast) {
     // >= 2.10.0
     const fp1 = `(){try{if()break${arr}push(${arr}shift())}catch(){${arr}push(${arr}shift())}}`
     // < 2.10.0
-    const fp2 = `const=function(){while(--){${arr}push(${arr}shift)}}${cmpV}`
+    const fp2 = `=function(){while(--){${arr}push(${arr}shift)}}${cmpV}`
     const code = '' + callee.get('body')
     if (!checkPattern(code, fp1) && !checkPattern(code, fp2)) {
       return
@@ -533,7 +533,7 @@ function mergeObject(path) {
   let name = id.name
   let scope = path.scope
   let binding = scope.getBinding(name)
-  if (!binding || binding.kind !== 'const') {
+  if (!binding || !binding.constant) {
     // 确认该对象没有被多次定义
     return
   }
@@ -629,7 +629,7 @@ function mergeObject(path) {
       continue
     }
     let child = up1.node.id.name
-    if (!up1.scope.bindings[child].constant) {
+    if (!up1.scope.bindings[child]?.constant) {
       continue
     }
     up1.scope.rename(child, name, up1.scope.block)
