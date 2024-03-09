@@ -9,6 +9,7 @@ const traverse = require('@babel/traverse').default
 const t = require('@babel/types')
 const vm = require('vm')
 const { VM } = require('vm2')
+const PluginEval = require('./eval.js')
 
 let globalContext = vm.createContext()
 let vm2 = new VM({
@@ -1338,10 +1339,16 @@ function unlockEnv(ast) {
   return ast
 }
 
-module.exports = function (jscode) {
+module.exports = function (code) {
+  let ret = PluginEval.unpack(code)
+  let global_eval = false
+  if (ret) {
+    global_eval = true
+    code = ret
+  }
   let ast
   try {
-    ast = parse(jscode, { errorRecovery: true })
+    ast = parse(code, { errorRecovery: true })
   } catch (e) {
     console.error(`Cannot parse code: ${e.reasonCode}`)
     return null
@@ -1386,9 +1393,12 @@ module.exports = function (jscode) {
   console.log('解除环境限制...')
   ast = unlockEnv(ast)
   console.log('净化完成')
-  let { code } = generator(ast, {
+  code = generator(ast, {
     comments: false,
     jsescOption: { minimal: true },
-  })
+  }).code
+  if (global_eval) {
+    code = PluginEval.pack(code)
+  }
   return code
 }
