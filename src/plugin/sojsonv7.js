@@ -166,6 +166,7 @@ function decodeGlobal(ast) {
   }
   refs.string_path.remove()
   // iterate refs
+  let cache = undefined
   for (let bind of binds.referencePaths) {
     if (bind.findParent((path) => path.removed)) {
       continue
@@ -173,7 +174,9 @@ function decodeGlobal(ast) {
     const parent = bind.parentPath
     if (parent.isCallExpression() && bind.listKey === 'arguments') {
       // This is the rotate function.
-      // However, we can delete it later.
+      // If it's in a sequence expression, it can be handled together.
+      // Or, we should handle it after this iteration.
+      cache = parent
       continue
     }
     if (parent.isSequenceExpression()) {
@@ -189,7 +192,7 @@ function decodeGlobal(ast) {
       }
       continue
     }
-    if (t.isVariableDeclarator(parent.node)) {
+    if (parent.isVariableDeclarator()) {
       // main decrypt val
       let top = parent.getFunctionParent()
       while (top.getFunctionParent()) {
@@ -200,7 +203,8 @@ function decodeGlobal(ast) {
       top.remove()
       continue
     }
-    if (t.isCallExpression(parent.node) && !parent.node.arguments.length) {
+    if (parent.isCallExpression() && !parent.node.arguments.length) {
+      // main decrypt val
       if (!t.isVariableDeclarator(parent.parentPath.node)) {
         continue
       }
@@ -211,7 +215,23 @@ function decodeGlobal(ast) {
       decrypt_code[2] = top.node
       decrypt_val = top.node.id.name
       top.remove()
+      continue
     }
+    if (parent.isExpressionStatement()) {
+      parent.remove()
+      continue
+    }
+    console.warn(`Unexpected ref var_string_table: ${parent}`)
+  }
+  // If rotateFunction is detected but not handled, we should handle it now.
+  if (decrypt_code.length === 3 && cache) {
+    if (cache.parentPath.isExpressionStatement()) {
+      decrypt_code.push(cache.parent)
+      cache = cache.parentPath
+    } else {
+      decrypt_code.push(t.expressionStatement(cache.node))
+    }
+    cache.remove()
   }
   if (!decrypt_val) {
     console.error('Cannot find decrypt variable')
