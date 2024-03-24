@@ -18,9 +18,13 @@ An AST analyzer and processor based on Babel that can handle the following situa
 
 ## 使用 Usage
 
-1. 准备一个nodejs环境
+**如果在安装和运行过程中出现问题，请先排查[isolated-vm](https://github.com/laverdet/isolated-vm?tab=readme-ov-file#requirements)的安装和使用要求**
 
-   Prepare a nodejs environment
+**If problems occur during installation and execution, please check the requirements of [isolated-vm](https://github.com/laverdet/isolated-vm?tab=readme-ov-file#requirements) first**
+
+1. 准备一个nodejs环境 (16.x以上 推荐18.x)
+
+   Prepare a nodejs environment (>=16.x and 18.x is suggested)
    
 2. 通过`npm i`安装依赖
    
