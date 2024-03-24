@@ -5,17 +5,13 @@ const { parse } = require('@babel/parser')
 const generator = require('@babel/generator').default
 const traverse = require('@babel/traverse').default
 const t = require('@babel/types')
-const vm = require('vm')
-const { VM } = require('vm2')
+const ivm = require('isolated-vm')
 const PluginEval = require('./eval.js')
 
-let globalContext = vm.createContext()
-let vm2 = new VM({
-  allowAsync: false,
-  sandbox: globalContext,
-})
+const isolate = new ivm.Isolate()
+const globalContext = isolate.createContextSync()
 function virtualGlobalEval(jsStr) {
-  return vm2.run(String(jsStr))
+  return globalContext.evalSync(String(jsStr))
 }
 
 function decodeGlobal(ast) {
