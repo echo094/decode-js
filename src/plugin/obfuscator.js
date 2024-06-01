@@ -1201,6 +1201,8 @@ const deleteSelfDefendingCode = {
       `return${selfName}.toString().search().toString().constructor(${selfName}).search()`,
       // @7135b09
       `const=function(){const=.constructor()return.test(${selfName})}return()`,
+      // #94
+      `var=function(){var=.constructor()return.test(${selfName})}return()`,
     ]
     let valid = false
     for (let pattern of patterns) {
