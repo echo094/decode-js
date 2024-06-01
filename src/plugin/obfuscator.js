@@ -377,22 +377,33 @@ function decodeGlobal(ast) {
       }
     }
   }
-  function do_collect_func(path) {
+  function do_collect_func_dec(path) {
     // function A (...) { return function B (...) }
+    do_collect_func(path, path)
+  }
+  function do_collect_func_var(path) {
+    // var A = function (...) { return function B (...) }
+    let func_path = path.get('init')
+    if (!func_path.isFunctionExpression()) {
+      return
+    }
+    do_collect_func(path, func_path)
+  }
+  function do_collect_func(root, path) {
     if (
       path.node.body.body.length == 1 &&
       path.node.body.body[0].type == 'ReturnStatement' &&
       path.node.body.body[0].argument?.type == 'CallExpression' &&
       path.node.body.body[0].argument.callee.type == 'Identifier' &&
       // path.node.params.length == 5 &&
-      path.node.id
+      root.node.id
     ) {
       let call_func = path.node.body.body[0].argument.callee.name
       if (exist_names.indexOf(call_func) == -1) {
         return
       }
-      let name = path.node.id.name
-      let t = generator(path.node, { minified: true }).code
+      let name = root.node.id.name
+      let t = generator(root.node, { minified: true }).code
       if (collect_names.indexOf(name) == -1) {
         collect_codes.push(t)
         collect_names.push(name)
@@ -432,7 +443,8 @@ function decodeGlobal(ast) {
     // 收集所有调用已收集混淆函数的混淆函数
     collect_codes = []
     collect_names = []
-    traverse(ast, { FunctionDeclaration: do_collect_func })
+    traverse(ast, { FunctionDeclaration: do_collect_func_dec })
+    traverse(ast, { VariableDeclarator: do_collect_func_var })
     traverse(ast, { VariableDeclarator: do_collect_var })
     traverse(ast, { AssignmentExpression: do_collect_var })
     exist_names = collect_names
