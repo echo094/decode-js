@@ -1283,15 +1283,21 @@ const deleteDebugProtectionCode = {
         rm.remove()
         continue
       }
-      // DebugProtectionFunctionCall
-      const up2 = up1.getFunctionParent().parentPath
-      const scope2 = up2.scope.getBinding(callName).scope
-      up2.remove()
-      scope1.crawl()
-      scope2.crawl()
-      const bind = scope2.bindings[callName]
-      bind.path.remove()
-      console.info(`Remove CallFunc: ${callName}`)
+      const up2 = up1.getFunctionParent()?.parentPath
+      if (up2) {
+        // DebugProtectionFunctionCall
+        const scope2 = up2.scope.getBinding(callName).scope
+        up2.remove()
+        scope1.crawl()
+        scope2.crawl()
+        const bind = scope2.bindings[callName]
+        bind.path.remove()
+        console.info(`Remove CallFunc: ${callName}`)
+        continue
+      }
+      // exceptions #95
+      const rm = ref.parentPath
+      rm.remove()
     }
     path.remove()
     console.info(`Remove DebugProtectionFunc: ${debugName}`)
