@@ -780,6 +780,9 @@ function cleanSwitchCode(path) {
   let arr = []
   let rm = []
   path.getAllPrevSiblings().forEach((pre_path) => {
+    if (!pre_path.isVariableDeclaration()) {
+      return
+    }
     for (let i = 0; i < pre_path.node.declarations.length; ++i) {
       const declaration = pre_path.get(`declarations.${i}`)
       let { id, init } = declaration.node
