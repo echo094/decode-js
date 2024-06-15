@@ -9,9 +9,27 @@ function mergeObject(path) {
   let name = id.name
   let scope = path.scope
   let binding = scope.getBinding(name)
-  if (!binding || !binding.constant) {
-    // 确认该对象没有被多次定义
-    return
+  const start = path.node.end
+  let end = -1
+  let violation = null
+  if (!binding.constant) {
+    // Find the first constantViolation after this declaration
+    for (let item of binding.constantViolations) {
+      if (item.node.start <= start) {
+        continue
+      }
+      if (item.isVariableDeclarator()) {
+        end = item.node.start
+        violation = item
+        break
+      }
+      if (item.isAssignmentExpression()) {
+        end = item.node.start
+        violation = item
+        break
+      }
+      return
+    }
   }
   // 添加已有的key
   let keys = {}
@@ -31,12 +49,20 @@ function mergeObject(path) {
   // 遍历作用域检测是否含有局部混淆特征并合并成员
   let merges = []
   const container = path.parentPath.parentPath
-  let idx = path.parentPath.key
   let cur = 0
   let valid = true
   // Check references in sequence
   while (cur < binding.references) {
     const ref = binding.referencePaths[cur]
+    // Ignore the references before this declaration
+    if (ref.node.start <= start) {
+      ++cur
+      continue
+    }
+    // Ignore the references after the first constantViolation
+    if (end >= 0 && ref.node.end >= end) {
+      break
+    }
     if (ref.key !== 'object' || !ref.parentPath.isMemberExpression()) {
       break
     }
@@ -46,16 +72,23 @@ function mergeObject(path) {
     }
     const ae = me.parentPath
     let bk = ae
-    while (bk.parentPath.isExpression()) {
-      bk = bk.parentPath
-    }
-    if (bk.parentPath.isExpressionStatement()) {
-      bk = bk.parentPath
-    }
-    if (bk.parentPath !== container || bk.key - idx > 1) {
+    let stop = false
+    while (bk.parentPath !== container) {
+      if (
+        bk.parentPath.isSequenceExpression() ||
+        bk.parentPath.isVariableDeclarator() ||
+        bk.parentPath.isVariableDeclaration() ||
+        bk.parentPath.isExpressionStatement()
+      ) {
+        bk = bk.parentPath
+        continue
+      }
+      stop = true
       break
     }
-    idx = bk.key
+    if (stop) {
+      break
+    }
     const property = me.node.property
     let key = null
     if (t.isStringLiteral(property)) {
@@ -86,30 +119,48 @@ function mergeObject(path) {
   console.log(`尝试性合并: ${name}`)
   for (let ref of merges) {
     const left = ref.node.left
+    if (ref.parentPath.isSequenceExpression() && ref.container.length === 1) {
+      ref = ref.parentPath
+    }
     if (
       ref.parentPath.isVariableDeclarator() ||
       ref.parentPath.isAssignmentExpression()
     ) {
       ref.replaceWith(left)
     } else {
-      if (ref.parentPath.isSequenceExpression() && ref.container.length === 1) {
-        ref = ref.parentPath
-      }
       ref.remove()
     }
   }
-  while (cur < binding.references) {
-    const ref = binding.referencePaths[cur++]
-    const up1 = ref.parentPath
-    if (!up1.isVariableDeclarator()) {
-      continue
-    }
-    let child = up1.node.id.name
-    if (!up1.scope.bindings[child]?.constant) {
-      continue
-    }
-    up1.scope.rename(child, name, up1.scope.block)
-    up1.remove()
+  // Check the remaining references
+  const ref1 = binding.referencePaths[cur++]
+  if (!ref1) {
+    scope.crawl()
+    return
+  }
+  const ref2 = binding.referencePaths[cur]
+  // Don't replace the declarator if there exists more than one reference
+  if (ref2 && ref2.node.end < end) {
+    scope.crawl()
+    return
+  }
+  // Check if the only reference is an assignment
+  let key = ref1.key
+  let up1 = ref1.parentPath
+  if (up1.isSequenceExpression() && ref1.container.length === 1) {
+    key = up1.key
+    up1 = up1.parentPath
+  }
+  if (!up1.isVariableDeclarator() || key !== 'init') {
+    scope.crawl()
+    return
+  }
+  // Move the definition to its reference
+  up1.node.init = path.node.init
+  // Delete the original definition
+  if (violation?.isAssignmentExpression()) {
+    path.node.init = undefined
+  } else {
+    path.remove()
   }
   scope.crawl()
 }
