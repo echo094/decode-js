@@ -677,7 +677,7 @@ function decodeCodeBlock(ast) {
   // 合并字面量
   traverse(ast, { BinaryExpression: { exit: calcBinary } })
   // 先合并分离的Object定义
-  traverse(ast, { VariableDeclarator: { exit: mergeObject } })
+  traverse(ast, { VariableDeclarator: mergeObject })
   // 在变量定义完成后判断是否为代码块加密内容
   const parseControlFlowStorage = require('../visitor/parse-control-flow-storage')
   traverse(ast, parseControlFlowStorage)
