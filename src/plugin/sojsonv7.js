@@ -153,7 +153,15 @@ function decodeGlobal(ast) {
   }
   //  check if contains rotate function and decrypt variable
   let decrypt_val
+  let decrypt_path
   let binds = refs.string_path.scope.getBinding(var_string_table)
+  function parse_main_call(path) {
+    decrypt_path = path
+    const node = path.node
+    const copy = t.functionDeclaration(node.id, node.params, node.body)
+    node.body = t.blockStatement([])
+    return copy
+  }
   // remove path of string table
   if (refs.string_path.isVariableDeclarator()) {
     decrypt_code[1] = t.variableDeclaration('var', [refs.string_path.node])
@@ -194,9 +202,8 @@ function decodeGlobal(ast) {
       while (top.getFunctionParent()) {
         top = top.getFunctionParent()
       }
-      decrypt_code[2] = top.node
+      decrypt_code[2] = parse_main_call(top)
       decrypt_val = top.node.id.name
-      top.remove()
       continue
     }
     if (parent.isCallExpression() && !parent.node.arguments.length) {
@@ -208,9 +215,8 @@ function decodeGlobal(ast) {
       while (top.getFunctionParent()) {
         top = top.getFunctionParent()
       }
-      decrypt_code[2] = top.node
+      decrypt_code[2] = parse_main_call(top)
       decrypt_val = top.node.id.name
-      top.remove()
       continue
     }
     if (parent.isExpressionStatement()) {
@@ -229,6 +235,7 @@ function decodeGlobal(ast) {
     }
     cache.remove()
   }
+  decrypt_path.parentPath.scope.crawl()
   if (!decrypt_val) {
     console.error('Cannot find decrypt variable')
     return
@@ -244,54 +251,65 @@ function decodeGlobal(ast) {
   virtualGlobalEval(code)
   // 遍历内容语句
   ast.program.body = content_code
-  let cur_val = decrypt_val
   function funToStr(path) {
-    let node = path.node
-    if (!t.isIdentifier(node.callee, { name: cur_val })) {
-      return
-    }
     let tmp = path.toString()
     let value = virtualGlobalEval(tmp)
     // console.log(`还原前：${tmp} 还原后：${value}`)
     path.replaceWith(t.valueToNode(value))
   }
   function memToStr(path) {
-    let node = path.node
-    if (!t.isIdentifier(node.object, { name: cur_val })) {
-      return
-    }
     let tmp = path.toString()
     let value = virtualGlobalEval(tmp)
     // console.log(`还原前：${tmp} 还原后：${value}`)
     path.replaceWith(t.valueToNode(value))
   }
-  function dfs(path) {
-    const right = path.node.init
-    if (!t.isIdentifier(right) || right.name !== cur_val) {
-      return
+  function dfs(stk, item) {
+    stk.push(item)
+    const cur_val = item.name
+    console.log(`Enter sub ${stk.length}:${cur_val}`)
+    let pfx = ''
+    for (let parent of stk) {
+      pfx += parent.code + ';'
     }
-    const parent_val = cur_val
-    cur_val = path.node.id.name
-    const code = generator(path.node, { minified: true }).code
-    virtualGlobalEval(code)
-    path.remove()
-    console.log(`Go to sub: ${cur_val}`)
-    path.scope.path.traverse({
-      CallExpression: funToStr,
-      MemberExpression: memToStr,
-    })
-    path.scope.path.traverse({
-      VariableDeclarator: dfs,
-    })
-    cur_val = parent_val
+    virtualGlobalEval(pfx)
+    let scope = item.path.scope
+    if (item.path.isFunctionDeclaration()) {
+      scope = item.path.parentPath.scope
+    }
+    const refs = scope.bindings[cur_val].referencePaths
+    const refs_next = []
+    for (let ref of refs) {
+      const parent = ref.parentPath
+      if (ref.key === 'init') {
+        // VariableDeclarator
+        refs_next.push({
+          name: parent.node.id.name,
+          path: parent,
+          code: 'var ' + parent,
+        })
+      } else if (ref.key === 'object') {
+        // MemberExpression
+        memToStr(parent)
+      } else if (ref.key === 'callee') {
+        // CallExpression
+        funToStr(parent)
+      }
+    }
+    for (let ref of refs_next) {
+      dfs(stk, ref)
+    }
+    scope.crawl()
+    item.path.remove()
+    scope.crawl()
+    console.log(`Exit sub ${stk.length}:${cur_val}`)
+    stk.pop()
   }
-  traverse(ast, {
-    CallExpression: funToStr,
-    MemberExpression: memToStr,
-  })
-  traverse(ast, {
-    VariableDeclarator: dfs,
-  })
+  const root = {
+    name: decrypt_val,
+    path: decrypt_path,
+    code: '',
+  }
+  dfs([], root)
   return ast
 }
 
