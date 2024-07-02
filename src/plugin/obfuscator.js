@@ -134,19 +134,19 @@ function stringArrayV2(ast) {
       if (up1.node.id) {
         // 2.12.0 <= v < 2.15.4
         // The `stringArrayCallsWrapperName` is included in the definition
-        obj.stringArrayCalls.push(up1.node.id.name)
         obj.stringArrayCodes.push(generator(up1.node, { minified: true }).code)
-        up1.remove()
+        up1.node.body = t.blockStatement([])
+        obj.stringArrayCalls.push({ name: up1.node.id.name, path: up1 })
         continue
       }
       if (up1.key === 'init') {
         // v < 2.12.0
         // The `stringArrayCallsWrapperName` is defined by VariableDeclarator
         up1 = up1.parentPath
-        obj.stringArrayCalls.push(up1.node.id.name)
-        up1 = up1.parentPath
-        obj.stringArrayCodes.push(generator(up1.node, { minified: true }).code)
-        up1.remove()
+        const up2 = up1.parentPath
+        obj.stringArrayCodes.push(generator(up2.node, { minified: true }).code)
+        up1.node.init = null
+        obj.stringArrayCalls.push({ name: up1.node.id.name, path: up1 })
         continue
       }
       // 2.15.4 <= v < 2.19.0
@@ -158,9 +158,9 @@ function stringArrayV2(ast) {
         console.warn('Unexpected reference!')
         continue
       }
-      obj.stringArrayCalls.push(wrapper)
       obj.stringArrayCodes.push(generator(up2.node, { minified: true }).code)
-      up2.remove()
+      up2.node.body = t.blockStatement([])
+      obj.stringArrayCalls.push({ name: wrapper, path: up2 })
     }
     // Remove the string array
     bind.path.remove()
@@ -274,8 +274,9 @@ function stringArrayV3(ast) {
         if (name_func == rm_path.node.id.name) {
           return
         }
-        nodes.push([rm_path.node, 'func3'])
-        rm_path.remove()
+        const code = generator(rm_path.node, { minified: true }).code
+        rm_path.node.body = t.blockStatement([])
+        nodes.push([code, 'func3', rm_path])
       } else {
         console.error('Unexpected reference')
       }
@@ -287,10 +288,12 @@ function stringArrayV3(ast) {
     ob_string_func_name = name_func
     ob_func_str.push(generator(path.node, { minified: true }).code)
     nodes.map(function (item) {
-      let node = item[0]
       if (item[1] == 'func3') {
-        ob_dec_name.push(node.id.name)
+        ob_func_str.push(item[0])
+        ob_dec_name.push({ name: item[2].node.id.name, path: item[2] })
+        return
       }
+      let node = item[0]
       if (t.isCallExpression(node)) {
         node = t.expressionStatement(node)
       }
@@ -319,7 +322,7 @@ function decodeGlobal(ast) {
   }
   console.log(`String List Name: ${obj.stringArrayName}`)
   let ob_func_str = obj.stringArrayCodes
-  let ob_dec_name = obj.stringArrayCalls
+  let ob_dec_call = obj.stringArrayCalls
   try {
     virtualGlobalEval(ob_func_str.join(';'))
   } catch (e) {
@@ -328,11 +331,11 @@ function decodeGlobal(ast) {
       let lost = e.message.split(' ')[0]
       traverse(ast, {
         Program(path) {
-          ob_dec_name.push(lost)
           let loc = path.scope.getBinding(lost).path
           let obj = t.variableDeclaration(loc.parent.kind, [loc.node])
           ob_func_str.unshift(generator(obj, { minified: true }).code)
-          loc.remove()
+          loc.node.init = null
+          ob_dec_call.push({ name: lost, path: loc })
           path.stop()
         },
       })
@@ -340,125 +343,111 @@ function decodeGlobal(ast) {
     }
   }
 
-  // 循环删除混淆函数
-  let call_dict = {}
-  let exist_names = ob_dec_name
-  let collect_codes = []
-  let collect_names = []
-  function do_parse_value(path) {
-    let name = path.node.callee.name
-    if (path.node.callee && exist_names.indexOf(name) != -1) {
-      let old_call = path + ''
-      try {
-        // 运行成功则说明函数为直接调用并返回字符串
-        let new_str = virtualGlobalEval(old_call)
-        console.log(`map: ${old_call} -> ${new_str}`)
-        call_dict[old_call] = new_str
-      } catch (e) {
-        // 运行失败则说明函数为其它混淆函数的子函数
-        console.log(`sub: ${old_call}`)
+  // 递归删除混淆函数
+  function getChild(father) {
+    if (father.key !== 'argument' || !father.parentPath.isReturnStatement()) {
+      console.error(`Unexpected chained call: ${father}`)
+      return null
+    }
+    const func = father.getFunctionParent()
+    let name = func.node.id?.name
+    let root
+    let code
+    if (name) {
+      // FunctionDeclaration
+      // function A (...) { return function B (...) }
+      root = func
+      code = generator(root.node, { minified: true }).code
+    } else {
+      // FunctionExpression
+      // var A = function (...) { return function B (...) }
+      root = func.parentPath
+      code = generator(t.variableDeclaration('var', [root])).code
+      name = root.node.id.name
+    }
+    return {
+      name: name,
+      path: root,
+      code: code,
+    }
+  }
+  function dfs(stk, item) {
+    stk.push(item)
+    const cur_val = item.name
+    console.log(`Enter sub ${stk.length}:${cur_val}`)
+    let pfx = ''
+    for (let parent of stk) {
+      pfx += parent.code + ';'
+    }
+    virtualGlobalEval(pfx)
+    let scope = item.path.scope
+    if (item.path.isFunctionDeclaration()) {
+      scope = item.path.parentPath.scope
+    }
+    const binding = scope.getBinding(cur_val)
+    binding.scope.crawl()
+    const refs = binding.scope.bindings[cur_val].referencePaths
+    const refs_next = []
+    // 有4种链式调用情况：
+    // - VariableDeclarator和FunctionDeclaration为原版
+    // - AssignmentExpression 出现于 #50
+    // - FunctionExpression 出现于 #94
+    for (let ref of refs) {
+      const parent = ref.parentPath
+      if (ref.key === 'callee') {
+        // CallExpression
+        let old_call = parent + ''
+        try {
+          // 运行成功则说明函数为直接调用并返回字符串
+          let new_str = virtualGlobalEval(old_call)
+          console.log(`map: ${old_call} -> ${new_str}`)
+          parent.replaceWith(t.StringLiteral(new_str))
+        } catch (e) {
+          // 运行失败则说明函数为其它混淆函数的子函数
+          console.log(`sub: ${old_call}`)
+          const ret = getChild(parent)
+          if (ret) {
+            refs_next.push(ret)
+          }
+        }
+      } else if (ref.key === 'init') {
+        // VariableDeclarator
+        refs_next.push({
+          name: ref.parent.id.name,
+          path: ref.parentPath,
+          code: 'var ' + ref.parentPath,
+        })
+      } else if (ref.key === 'right') {
+        // AssignmentExpression
+        // 这种情况尚不完善 可能会产生额外替换
+        refs_next.push({
+          name: ref.parent.left.name,
+          path: ref.parentPath,
+          code: 'var ' + ref.parentPath,
+        })
       }
     }
-  }
-  function do_collect_remove(path) {
-    // 可以删除所有已收集混淆函数的定义
-    // 因为根函数已被删除 即使保留也无法运行
-    let node = path.node?.left
-    if (!node) {
-      node = path.node?.id
+    for (let ref of refs_next) {
+      dfs(stk, ref)
     }
-    let name = node?.name
-    if (exist_names.indexOf(name) != -1) {
-      // console.log(`del: ${name}`)
-      if (path.parentPath.isCallExpression()) {
-        path.replaceWith(node)
-      } else {
-        path.remove()
-      }
-    }
-  }
-  function do_collect_func_dec(path) {
-    // function A (...) { return function B (...) }
-    do_collect_func(path, path)
-  }
-  function do_collect_func_var(path) {
-    // var A = function (...) { return function B (...) }
-    let func_path = path.get('init')
-    if (!func_path.isFunctionExpression()) {
+    binding.scope.crawl()
+    console.log(`Exit sub ${stk.length}:${cur_val}`)
+    stk.pop()
+    if (!item.path.parentPath.isCallExpression()) {
+      item.path.remove()
+      binding.scope.crawl()
       return
     }
-    do_collect_func(path, func_path)
+    // 只会出现在AssignmentExpression情况下 需要再次运行
+    item.path.replaceWith(t.identifier(cur_val))
+    item.path = binding.path
+    binding.scope.crawl()
+    dfs(stk, item)
   }
-  function do_collect_func(root, path) {
-    if (
-      path.node.body.body.length == 1 &&
-      path.node.body.body[0].type == 'ReturnStatement' &&
-      path.node.body.body[0].argument?.type == 'CallExpression' &&
-      path.node.body.body[0].argument.callee.type == 'Identifier' &&
-      // path.node.params.length == 5 &&
-      root.node.id
-    ) {
-      let call_func = path.node.body.body[0].argument.callee.name
-      if (exist_names.indexOf(call_func) == -1) {
-        return
-      }
-      let name = root.node.id.name
-      let t = generator(root.node, { minified: true }).code
-      if (collect_names.indexOf(name) == -1) {
-        collect_codes.push(t)
-        collect_names.push(name)
-      } else {
-        console.log(`err: redef ${name}`)
-      }
-    }
+  for (let item of ob_dec_call) {
+    item.code = ''
+    dfs([], item)
   }
-  function do_collect_var(path) {
-    // var A = B
-    let left, right
-    if (t.isVariableDeclarator(path.node)) {
-      left = path.node.id
-      right = path.node.init
-    } else {
-      left = path.node.left
-      right = path.node.right
-    }
-    if (right?.type == 'Identifier' && exist_names.indexOf(right.name) != -1) {
-      let name = left.name
-      let t = 'var ' + generator(path.node, { minified: true }).code
-      if (collect_names.indexOf(name) == -1) {
-        collect_codes.push(t)
-        collect_names.push(name)
-      } else {
-        console.warning(`redef ${name}`)
-      }
-    }
-  }
-  while (exist_names.length) {
-    // 查找已收集混淆函数的调用并建立替换关系
-    traverse(ast, { CallExpression: do_parse_value })
-    // 删除被使用过的定义
-    traverse(ast, { FunctionDeclaration: do_collect_remove })
-    traverse(ast, { VariableDeclarator: do_collect_remove })
-    traverse(ast, { AssignmentExpression: do_collect_remove })
-    // 收集所有调用已收集混淆函数的混淆函数
-    collect_codes = []
-    collect_names = []
-    traverse(ast, { FunctionDeclaration: do_collect_func_dec })
-    traverse(ast, { VariableDeclarator: do_collect_func_var })
-    traverse(ast, { VariableDeclarator: do_collect_var })
-    traverse(ast, { AssignmentExpression: do_collect_var })
-    exist_names = collect_names
-    // 执行找到的函数
-    virtualGlobalEval(collect_codes.join(';'))
-  }
-  // 替换混淆函数
-  function do_replace(path) {
-    let old_call = path + ''
-    if (Object.prototype.hasOwnProperty.call(call_dict, old_call)) {
-      path.replaceWith(t.StringLiteral(call_dict[old_call]))
-    }
-  }
-  traverse(ast, { CallExpression: do_replace })
   return true
 }
 
