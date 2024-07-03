@@ -15,6 +15,9 @@ module.exports = {
     if (!binding || binding.referenced || !binding.constant) {
       return
     }
+    if (t.isCallExpression(node.init)) {
+      return
+    }
     const up1 = path.parentPath
     const up2 = up1?.parentPath
     if (t.isForOfStatement(up2)) {
