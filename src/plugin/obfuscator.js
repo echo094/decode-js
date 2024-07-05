@@ -9,6 +9,7 @@ const traverse = require('@babel/traverse').default
 const t = require('@babel/types')
 const ivm = require('isolated-vm')
 const PluginEval = require('./eval.js')
+const calculateConstantExp = require('../visitor/calculate-constant-exp')
 
 const isolate = new ivm.Isolate()
 const globalContext = isolate.createContextSync()
@@ -490,35 +491,9 @@ function stringArrayLite(ast) {
   traverse(ast, visitor)
 }
 
-function calcBinary(path) {
-  let tps = ['StringLiteral', 'BooleanLiteral', 'NumericLiteral']
-  let nod = path.node
-  function judge(e) {
-    return (
-      tps.indexOf(e.type) != -1 ||
-      (e.type == 'UnaryExpression' && tps.indexOf(e.argument.type) != -1)
-    )
-  }
-  function make_rep(e) {
-    if (typeof e == 'number') {
-      return t.NumericLiteral(e)
-    }
-    if (typeof e == 'string') {
-      return t.StringLiteral(e)
-    }
-    if (typeof e == 'boolean') {
-      return t.BooleanLiteral(e)
-    }
-    throw Error('unknown type' + typeof e)
-  }
-  if (judge(nod.left) && judge(nod.right)) {
-    path.replaceWith(make_rep(eval(path + '')))
-  }
-}
-
 function decodeCodeBlock(ast) {
   // 合并字面量
-  traverse(ast, { BinaryExpression: { exit: calcBinary } })
+  traverse(ast, calculateConstantExp)
   // 先合并分离的Object定义
   const mergeObject = require('../visitor/merge-object')
   traverse(ast, mergeObject)
@@ -526,28 +501,8 @@ function decodeCodeBlock(ast) {
   const parseControlFlowStorage = require('../visitor/parse-control-flow-storage')
   traverse(ast, parseControlFlowStorage)
   // 合并字面量(在解除区域混淆后会出现新的可合并分割)
-  traverse(ast, { BinaryExpression: { exit: calcBinary } })
+  traverse(ast, calculateConstantExp)
   return ast
-}
-
-function purifyBoolean(path) {
-  // 简化 ![] 和 !![]
-  const node0 = path.node
-  if (node0.operator !== '!') {
-    return
-  }
-  const node1 = node0.argument
-  if (t.isArrayExpression(node1) && node1.elements.length === 0) {
-    path.replaceWith(t.booleanLiteral(false))
-    return
-  }
-  if (!t.isUnaryExpression(node1) || node1.operator !== '!') {
-    return
-  }
-  const node2 = node1.argument
-  if (t.isArrayExpression(node2) && node2.elements.length === 0) {
-    path.replaceWith(t.booleanLiteral(true))
-  }
 }
 
 function cleanSwitchCode(path) {
@@ -649,7 +604,7 @@ function cleanSwitchCode(path) {
 }
 
 function cleanDeadCode(ast) {
-  traverse(ast, { UnaryExpression: purifyBoolean })
+  traverse(ast, calculateConstantExp)
   const pruneIfBranch = require('../visitor/prune-if-branch')
   traverse(ast, pruneIfBranch)
   traverse(ast, { WhileStatement: { exit: cleanSwitchCode } })

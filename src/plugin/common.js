@@ -12,8 +12,8 @@ module.exports = function (code) {
   }
   const deleteExtra = require('../visitor/delete-extra')
   traverse(ast, deleteExtra)
-  const calculateBinary = require('../visitor/calculate-binary')
-  traverse(ast, calculateBinary)
+  const calculateConstantExp = require('../visitor/calculate-constant-exp')
+  traverse(ast, calculateConstantExp)
   const calculateRString = require('../visitor/calculate-rstring')
   traverse(ast, calculateRString)
   code = generator(ast).code
