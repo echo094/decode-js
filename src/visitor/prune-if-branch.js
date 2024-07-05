@@ -2,11 +2,7 @@ function pruneIfBranch(path) {
   function clear(path, toggle) {
     // 判定成立
     if (toggle) {
-      if (path.node.consequent.type == 'BlockStatement') {
-        path.replaceWithMultiple(path.node.consequent.body)
-      } else {
-        path.replaceWith(path.node.consequent)
-      }
+      path.replaceWith(path.node.consequent)
       return
     }
     // 判定不成立
@@ -14,11 +10,7 @@ function pruneIfBranch(path) {
       path.remove()
       return
     }
-    if (path.node.alternate.type == 'BlockStatement') {
-      path.replaceWithMultiple(path.node.alternate.body)
-    } else {
-      path.replaceWith(path.node.alternate)
-    }
+    path.replaceWith(path.node.alternate)
   }
   // 判断判定是否恒定
   const test = path.node.test
