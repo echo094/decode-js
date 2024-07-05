@@ -550,45 +550,6 @@ function purifyBoolean(path) {
   }
 }
 
-function cleanIFCode(path) {
-  function clear(path, toggle) {
-    // 判定成立
-    if (toggle) {
-      if (path.node.consequent.type == 'BlockStatement') {
-        path.replaceWithMultiple(path.node.consequent.body)
-      } else {
-        path.replaceWith(path.node.consequent)
-      }
-      return
-    }
-    // 判定不成立
-    if (!path.node.alternate) {
-      path.remove()
-      return
-    }
-    if (path.node.alternate.type == 'BlockStatement') {
-      path.replaceWithMultiple(path.node.alternate.body)
-    } else {
-      path.replaceWith(path.node.alternate)
-    }
-  }
-  // 判断判定是否恒定
-  const test = path.node.test
-  const types = ['StringLiteral', 'NumericLiteral', 'BooleanLiteral']
-  if (test.type === 'BinaryExpression') {
-    if (
-      types.indexOf(test.left.type) !== -1 &&
-      types.indexOf(test.right.type) !== -1
-    ) {
-      const left = JSON.stringify(test.left.value)
-      const right = JSON.stringify(test.right.value)
-      clear(path, eval(left + test.operator + right))
-    }
-  } else if (types.indexOf(test.type) !== -1) {
-    clear(path, eval(JSON.stringify(test.value)))
-  }
-}
-
 function cleanSwitchCode(path) {
   // 扁平控制：
   // 会使用一个恒为true的while语句包裹一个switch语句
@@ -689,8 +650,8 @@ function cleanSwitchCode(path) {
 
 function cleanDeadCode(ast) {
   traverse(ast, { UnaryExpression: purifyBoolean })
-  traverse(ast, { IfStatement: cleanIFCode })
-  traverse(ast, { ConditionalExpression: cleanIFCode })
+  const pruneIfBranch = require('../visitor/prune-if-branch')
+  traverse(ast, pruneIfBranch)
   traverse(ast, { WhileStatement: { exit: cleanSwitchCode } })
   return ast
 }
