@@ -16,6 +16,13 @@ function calculateBinaryExpression(path) {
   try {
     const ret = eval(code)
     path.replaceWithSourceString(ret)
+    // The strings cannot use replaceWithSourceString
+    // For example, string "ab" will be parsed as identifier ab
+    if (typeof ret === 'string') {
+      path.replaceWith(t.stringLiteral(ret))
+    } else {
+      path.replaceWithSourceString(ret)
+    }
   } catch {
     //
   }
