@@ -14,6 +14,12 @@ const globalContext = isolate.createContextSync()
 function virtualGlobalEval(jsStr) {
   return globalContext.evalSync(String(jsStr))
 }
+function evalOneTime(str) {
+  const vm = new ivm.Isolate()
+  const ret = vm.createContextSync().evalSync(String(str))
+  vm.dispose()
+  return ret
+}
 
 function decodeGlobal(ast) {
   // 清理空语句
@@ -424,12 +430,13 @@ function cleanSwitchCode2(path) {
     }
     let test = '' + pre_path
     try {
-      arr = eval(test + `;${arrName}`)
+      arr = evalOneTime(test + `;${arrName}.join('|')`)
+      arr = arr.split('|')
     } catch {
       //
     }
   }
-  if (!arr) {
+  if (!Array.isArray(arr)) {
     return
   }
   console.log(`扁平化还原: ${arrName}[${argName}]`)
