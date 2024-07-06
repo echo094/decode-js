@@ -715,28 +715,8 @@ function purifyCode(ast) {
   }
   traverse(ast, { MemberExpression: FormatMember })
   // 分割表达式
-  function removeComma(path) {
-    // a = 1, b = ddd(), c = null;
-    //  |
-    //  |
-    //  |
-    //  v
-    // a = 1;
-    // b = ddd();
-    // c = null;
-    if (!t.isExpressionStatement(path.parent)) {
-      return
-    }
-    let replace_path = path.parentPath
-    if (replace_path.listKey !== 'body') {
-      return
-    }
-    for (const item of path.node.expressions) {
-      replace_path.insertBefore(t.expressionStatement(item))
-    }
-    replace_path.remove()
-  }
-  traverse(ast, { SequenceExpression: { exit: removeComma } })
+  const splitSequence = require('../visitor/split-sequence')
+  traverse(ast, splitSequence)
   // 删除空语句
   traverse(ast, {
     EmptyStatement: (path) => {

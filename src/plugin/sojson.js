@@ -469,26 +469,8 @@ function purifyCode(ast) {
   }
   traverse(ast, { MemberExpression: FormatMember })
   // 分割表达式
-  function removeComma(path) {
-    // a = 1, b = ddd(), c = null;
-    //  |
-    //  |
-    //  |
-    //  v
-    // a = 1;
-    // b = ddd();
-    // c = null;
-    let { expression } = path.node
-    if (!t.isSequenceExpression(expression)) {
-      return
-    }
-    let body = []
-    expression.expressions.forEach((express) => {
-      body.push(t.expressionStatement(express))
-    })
-    path.replaceInline(body)
-  }
-  traverse(ast, { ExpressionStatement: removeComma })
+  const splitSequence = require('../visitor/split-sequence')
+  traverse(ast, splitSequence)
   // 删除空语句
   traverse(ast, {
     EmptyStatement: (path) => {

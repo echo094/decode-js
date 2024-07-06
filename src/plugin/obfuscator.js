@@ -668,29 +668,6 @@ function standardLoop(path) {
   }
 }
 
-function splitSequence(path) {
-  let { scope, parentPath, node } = path
-  let expressions = node.expressions
-  if (parentPath.isReturnStatement({ argument: node })) {
-    let lastExpression = expressions.pop()
-    for (let expression of expressions) {
-      parentPath.insertBefore(t.ExpressionStatement(expression))
-    }
-
-    path.replaceInline(lastExpression)
-  } else if (parentPath.isExpressionStatement({ expression: node })) {
-    let body = []
-    expressions.forEach((express) => {
-      body.push(t.ExpressionStatement(express))
-    })
-    path.replaceInline(body)
-  } else {
-    return
-  }
-
-  scope.crawl()
-}
-
 function purifyCode(ast) {
   // 标准化if语句
   traverse(ast, { IfStatement: standardIfStatement })
@@ -753,7 +730,8 @@ function purifyCode(ast) {
   })
 
   // 拆分语句
-  traverse(ast, { SequenceExpression: splitSequence })
+  const splitSequence = require('../visitor/split-sequence')
+  traverse(ast, splitSequence)
   return ast
 }
 
