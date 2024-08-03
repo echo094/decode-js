@@ -1,15 +1,33 @@
 const generator = require('@babel/generator').default
 const t = require('@babel/types')
 
+function checkLiteral(node) {
+  if (t.isNumericLiteral(node)) {
+    return 'positive'
+  }
+  if (t.isLiteral(node)) {
+    return 'literal'
+  }
+  if (!t.isUnaryExpression(node)) {
+    return false
+  }
+  if (!t.isNumericLiteral(node.argument)) {
+    return false
+  }
+  if (node.operator === '-') {
+    return 'negative'
+  }
+  return false
+}
+
 /**
  * Calculate BinaryExpression if left and right are both literals.
  * Otherwise, the expression can't be simplified.
- *
- * For example, `typeof window` can be calculated but it's not constant.
+ * Note that negative numbers are UnaryExpressions.
  */
 function calculateBinaryExpression(path) {
   const { left, right } = path.node
-  if (!t.isLiteral(left) || !t.isLiteral(right)) {
+  if (!checkLiteral(left) || !checkLiteral(right)) {
     return
   }
   const code = generator(path.node).code
@@ -28,21 +46,43 @@ function calculateBinaryExpression(path) {
   }
 }
 
+/**
+ * Calculate UnaryExpression:
+ * - the operator is `!` and the argument is ArrayExpression or Literal.
+ * - the operator is `-` and the argument is a negative number
+ * - the operator is `+`, or `~`, and the argument is a number
+ *
+ * Otherwise, the expression can't be simplified.
+ * For example, `typeof window` can be calculated but it's not constant.
+ */
 function calculateUnaryExpression(path) {
   const node0 = path.node
-  if (node0.operator !== '!') {
-    return
-  }
   const node1 = node0.argument
-  if (t.isArrayExpression(node1)) {
-    if (node1.elements.length === 0) {
-      path.replaceWith(t.booleanLiteral(false))
+  const isLiteral = checkLiteral(node1)
+  if (node0.operator === '!') {
+    if (t.isArrayExpression(node1)) {
+      if (node1.elements.length === 0) {
+        path.replaceWith(t.booleanLiteral(false))
+      }
+    }
+    if (isLiteral) {
+      const code = generator(node0).code
+      path.replaceWith(t.booleanLiteral(eval(code)))
     }
     return
   }
-  if (t.isLiteral(node1)) {
-    const code = generator(node0).code
-    path.replaceWith(t.booleanLiteral(eval(code)))
+  if (node0.operator === '-') {
+    if (isLiteral === 'negative') {
+      const code = generator(node0).code
+      path.replaceWithSourceString(eval(code))
+    }
+    return
+  }
+  if (node0.operator === '+' || node0.operator === '~') {
+    if (isLiteral === 'negative' || isLiteral === 'positive') {
+      const code = generator(node0).code
+      path.replaceWithSourceString(eval(code))
+    }
     return
   }
 }
