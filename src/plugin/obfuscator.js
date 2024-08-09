@@ -144,8 +144,8 @@ function stringArrayV2(ast) {
         // v < 2.12.0
         // The `stringArrayCallsWrapperName` is defined by VariableDeclarator
         up1 = up1.parentPath
-        const up2 = up1.parentPath
-        obj.stringArrayCodes.push(generator(up2.node, { minified: true }).code)
+        const node = t.variableDeclaration('var', [up1.node])
+        obj.stringArrayCodes.push(generator(node, { minified: true }).code)
         up1.node.init = null
         obj.stringArrayCalls.push({ name: up1.node.id.name, path: up1 })
         continue
