@@ -944,6 +944,12 @@ module.exports = function (code) {
   // IllegalReturn
   const deleteIllegalReturn = require('../visitor/delete-illegal-return')
   traverse(ast, deleteIllegalReturn)
+  // Lint before split statements
+  const lintIfStatement = require('../visitor/lint-if-statement')
+  traverse(ast, lintIfStatement)
+  // Split declarations to avoid bugs
+  const splitVarDeclaration = require('../visitor/split-variable-declaration')
+  traverse(ast, splitVarDeclaration)
   // 清理二进制显示内容
   traverse(ast, {
     StringLiteral: ({ node }) => {
