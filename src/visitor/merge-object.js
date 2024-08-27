@@ -162,7 +162,7 @@ function mergeObject(path) {
   } else {
     path.remove()
   }
-  scope.crawl()
+  binding.scope.crawl()
 }
 
 /**
