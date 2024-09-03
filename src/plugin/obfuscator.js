@@ -17,6 +17,12 @@ function virtualGlobalEval(jsStr) {
   return globalContext.evalSync(String(jsStr))
 }
 
+const optGenMin = {
+  comments: false,
+  minified: true,
+  jsescOption: { minimal: true },
+}
+
 /**
  * Extract the literal value of an object, and remove an object if all
  * references to the object are replaced.
@@ -120,7 +126,7 @@ function stringArrayV2(ast) {
     // The string array can be found by its binding
     const bind = path.scope.getBinding(obj.stringArrayName)
     const def = t.variableDeclaration('var', [bind.path.node])
-    obj.stringArrayCodes.push(generator(def, { minified: true }).code)
+    obj.stringArrayCodes.push(generator(def, optGenMin).code)
     // The calls can be found by its references
     for (let ref of bind.referencePaths) {
       if (ref?.listKey === 'arguments') {
@@ -135,7 +141,7 @@ function stringArrayV2(ast) {
       if (up1.node.id) {
         // 2.12.0 <= v < 2.15.4
         // The `stringArrayCallsWrapperName` is included in the definition
-        obj.stringArrayCodes.push(generator(up1.node, { minified: true }).code)
+        obj.stringArrayCodes.push(generator(up1.node, optGenMin).code)
         up1.node.body = t.blockStatement([])
         obj.stringArrayCalls.push({ name: up1.node.id.name, path: up1 })
         continue
@@ -145,7 +151,7 @@ function stringArrayV2(ast) {
         // The `stringArrayCallsWrapperName` is defined by VariableDeclarator
         up1 = up1.parentPath
         const node = t.variableDeclaration('var', [up1.node])
-        obj.stringArrayCodes.push(generator(node, { minified: true }).code)
+        obj.stringArrayCodes.push(generator(node, optGenMin).code)
         up1.node.init = null
         obj.stringArrayCalls.push({ name: up1.node.id.name, path: up1 })
         continue
@@ -159,7 +165,7 @@ function stringArrayV2(ast) {
         console.warn('Unexpected reference!')
         continue
       }
-      obj.stringArrayCodes.push(generator(up2.node, { minified: true }).code)
+      obj.stringArrayCodes.push(generator(up2.node, optGenMin).code)
       up2.node.body = t.blockStatement([])
       obj.stringArrayCalls.push({ name: wrapper, path: up2 })
     }
@@ -167,7 +173,7 @@ function stringArrayV2(ast) {
     bind.path.remove()
     // Add the rotate function
     const node = t.expressionStatement(path.node)
-    obj.stringArrayCodes.push(generator(node, { minified: true }).code)
+    obj.stringArrayCodes.push(generator(node, optGenMin).code)
     path.stop()
     if (path.parentPath.isUnaryExpression()) {
       path.parentPath.remove()
@@ -233,7 +239,7 @@ function stringArrayV3(ast) {
       }
       const nodes = [...body]
       nodes.shift()
-      const code = generator(t.BlockStatement(nodes)).code
+      const code = generator(t.BlockStatement(nodes), optGenMin).code
       const fp = `${name_func}=function(){return${string_var}}${name_func}()`
       if (!checkPattern(code, fp)) {
         return
@@ -275,7 +281,7 @@ function stringArrayV3(ast) {
         if (name_func == rm_path.node.id.name) {
           return
         }
-        const code = generator(rm_path.node, { minified: true }).code
+        const code = generator(rm_path.node, optGenMin).code
         rm_path.node.body = t.blockStatement([])
         nodes.push([code, 'func3', rm_path])
       } else {
@@ -287,7 +293,7 @@ function stringArrayV3(ast) {
       return
     }
     ob_string_func_name = name_func
-    ob_func_str.push(generator(path.node, { minified: true }).code)
+    ob_func_str.push(generator(path.node, optGenMin).code)
     nodes.map(function (item) {
       if (item[1] == 'func3') {
         ob_func_str.push(item[0])
@@ -298,7 +304,7 @@ function stringArrayV3(ast) {
       if (t.isCallExpression(node)) {
         node = t.expressionStatement(node)
       }
-      ob_func_str.push(generator(node, { minified: true }).code)
+      ob_func_str.push(generator(node, optGenMin).code)
     })
     path.stop()
     path.remove()
@@ -334,7 +340,7 @@ function decodeGlobal(ast) {
         Program(path) {
           let loc = path.scope.getBinding(lost).path
           let obj = t.variableDeclaration(loc.parent.kind, [loc.node])
-          ob_func_str.unshift(generator(obj, { minified: true }).code)
+          ob_func_str.unshift(generator(obj, optGenMin).code)
           loc.node.init = null
           ob_dec_call.push({ name: lost, path: loc })
           path.stop()
@@ -358,7 +364,7 @@ function decodeGlobal(ast) {
       // FunctionDeclaration
       // function A (...) { return function B (...) }
       root = func
-      code = generator(root.node, { minified: true }).code
+      code = generator(root.node, optGenMin).code
     } else {
       // FunctionExpression
       // var A = function (...) { return function B (...) }
@@ -975,22 +981,13 @@ module.exports = function (code) {
   console.log('清理死代码...')
   ast = cleanDeadCode(ast)
   // 刷新代码
-  ast = parse(
-    generator(ast, {
-      comments: false,
-      jsescOption: { minimal: true },
-    }).code,
-    { errorRecovery: true }
-  )
+  ast = parse(generator(ast, optGenMin).code, { errorRecovery: true })
   console.log('提高代码可读性...')
   ast = purifyCode(ast)
   console.log('解除环境限制...')
   ast = unlockEnv(ast)
   console.log('净化完成')
-  code = generator(ast, {
-    comments: false,
-    jsescOption: { minimal: true },
-  }).code
+  code = generator(ast, optGenMin).code
   if (global_eval) {
     code = PluginEval.pack(code)
   }
