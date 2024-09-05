@@ -987,7 +987,7 @@ module.exports = function (code) {
   console.log('解除环境限制...')
   ast = unlockEnv(ast)
   console.log('净化完成')
-  code = generator(ast, optGenMin).code
+  code = generator(ast, { jsescOption: { minimal: true } }).code
   if (global_eval) {
     code = PluginEval.pack(code)
   }
