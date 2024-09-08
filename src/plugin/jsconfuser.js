@@ -327,6 +327,9 @@ function processAssignLeft(vm, cache, path, prop_name, stk_name) {
   const father = path.parentPath
   const right = father.get('right')
   if (right.isBinaryExpression()) {
+    cache[prop_name] = {
+      type: 'invalid',
+    }
     return
   }
   if (right.isLiteral()) {
@@ -353,10 +356,8 @@ function processAssignLeft(vm, cache, path, prop_name, stk_name) {
     }
     let ref = safeGetName(right_prop)
     if (!Object.prototype.hasOwnProperty.call(cache, ref)) {
-      vm.evalSync(generator(father.node).code)
       cache[prop_name] = {
-        type: 'value',
-        value: undefined,
+        type: 'invalid',
       }
       return
     }
@@ -473,6 +474,43 @@ function tryStackReplace(path, len, invalid) {
   return changed
 }
 
+function getStackParamLen(path) {
+  const stk_name = path.node.params[0].argument.name
+  const body_path = path.get('body')
+  let len = 'unknown'
+  body_path.traverse({
+    MemberExpression: {
+      exit(path) {
+        if (path.node.object.name !== stk_name) {
+          return
+        }
+        const prop = path.get('property')
+        if (prop.isBinaryExpression()) {
+          return
+        }
+        const prop_name = safeGetName(prop)
+        if (!prop_name || prop_name !== 'length') {
+          return
+        }
+        const father = path.parentPath
+        if (!father.isAssignmentExpression() || path.key !== 'left') {
+          return
+        }
+        const right = father.get('right')
+        if (right.isBinaryExpression()) {
+          return
+        }
+        if (!right.isLiteral()) {
+          return
+        }
+        len = right.node.value
+        path.stop()
+      },
+    },
+  })
+  return len
+}
+
 function processStackParam(path, len) {
   if (path.isArrowFunctionExpression()) {
     console.log(`Process arrowFunctionExpression, len: ${len}`)
@@ -520,6 +558,20 @@ const deStackFuncLen = {
     if (!binding.references) {
       obj.path.remove()
     }
+  },
+}
+
+const deStackFuncOther = {
+  RestElement(path) {
+    if (path.listKey !== 'params') {
+      return
+    }
+    const func = path.getFunctionParent()
+    const len = getStackParamLen(func)
+    if (len === 'unknown') {
+      return
+    }
+    processStackParam(func, len)
   },
 }
 
@@ -809,6 +861,7 @@ module.exports = function (code) {
   traverse(ast, deDuplicateLiteral)
   // Stack
   traverse(ast, deStackFuncLen)
+  traverse(ast, deStackFuncOther)
   // StringCompression
   traverse(ast, deStringCompression)
   // StringConcealing
