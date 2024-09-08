@@ -706,6 +706,93 @@ const deStringCompression = {
   },
 }
 
+/**
+ * Template:
+ * ```javascript
+ * // GetGlobalTemplate Begin
+ * function {getGlobalFnName}(){
+ *   var localVar = false;
+ *   eval(${transform.jsConfuserVar("localVar")} + " = true")
+ *   if (!localVar) {
+ *     {countermeasures}
+ *   }
+ *   const root = eval("this");
+ *   return root;
+ * }
+ * // GetGlobalTemplate End
+ * // BufferToStringTemplate Begin
+ * var __globalObject = {getGlobalFnName}() || {};
+ * var __TextDecoder = __globalObject["TextDecoder"];
+ * var __Uint8Array = __globalObject["Uint8Array"];
+ * var __Buffer = __globalObject["Buffer"];
+ * var __String = __globalObject["String"] || String;
+ * var __Array = __globalObject["Array"] || Array;
+ * var utf8ArrayToStr = (function () {
+ *   // ...
+ * })();
+ * function bufferToStringName () {
+ *   if(typeof __TextDecoder !== "undefined" && __TextDecoder) {
+ *     return new __TextDecoder()["decode"](new __Uint8Array(buffer));
+ *   } else if(typeof __Buffer !== "undefined" && __Buffer) {
+ *     return __Buffer["from"](buffer)["toString"]("utf-8");
+ *   } else {          
+ *     return utf8ArrayToStr(buffer);
+ *   }
+ * }
+ * // BufferToStringTemplate End
+ * 
+ * var cacheName = [], arrayName = []
+ * 
+ * // Below will appear multiple times
+ * var getterFnName = (x, y, z, a, b)=>{
+ *   if ( x !== y ) {
+ *     return b[x] || (b[x] = a(arrayName[x]))
+ *   }
+ *   // Add fake ifStatements
+ *   if(typeof a === "undefined") {
+ *     a = decodeFn
+ *   }
+ *   if(typeof b === "undefined") {
+ *     b = cacheName
+ *   }
+ * }
+ * // Base91 Algo
+ * function decodeFn (str){
+ *   var table = {__strTable__};
+ *   var raw = "" + (str || "");
+ *   var len = raw.length;
+ *   var ret = [];
+ *   var b = 0;
+ *   var n = 0;
+ *   var v = -1;
+ *   for (var i = 0; i < len; i++) {
+ *     var p = table.indexOf(raw[i]);
+ *     if (p === -1) continue;
+ *     if (v < 0) {
+ *       v = p;
+ *     } else {
+ *       v += p * 91;
+ *       b |= v << n;
+ *       n += (v & 8191) > 88 ? 13 : 14;
+ *       do {
+ *         ret.push(b & 0xff);
+ *         b >>= 8;
+ *         n -= 8;
+ *       } while (n > 7);
+ *       v = -1;
+ *     }
+ *   }
+ *   if (v > -1) {
+ *     ret.push((b | (v << n)) & 0xff);
+ *   }
+ *   return bufferToStringName(ret);
+ * }
+ * ```
+ */
+const deStringConcealing = {
+  ArrayExpression(path) {},
+}
+
 module.exports = function (code) {
   let ast
   try {
@@ -724,6 +811,8 @@ module.exports = function (code) {
   traverse(ast, deStackFuncLen)
   // StringCompression
   traverse(ast, deStringCompression)
+  // StringConcealing
+  traverse(ast, deStringConcealing)
   code = generator(ast, {
     comments: false,
     jsescOption: { minimal: true },
