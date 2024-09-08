@@ -3,6 +3,7 @@ const generator = require('@babel/generator').default
 const traverse = require('@babel/traverse').default
 const t = require('@babel/types')
 const ivm = require('isolated-vm')
+const calculateConstantExp = require('../visitor/calculate-constant-exp')
 
 const isolate = new ivm.Isolate()
 
@@ -20,6 +21,16 @@ function safeReplace(path, value) {
     return
   }
   path.replaceWithSourceString(value)
+}
+
+function safeGetName(path) {
+  if (path.isIdentifier()) {
+    return path.node.name
+  }
+  if (path.isLiteral()) {
+    return path.node.value
+  }
+  return null
 }
 
 function deAntiToolingCheckFunc(path) {
@@ -299,6 +310,185 @@ function checkFuncLen(path) {
   }
 }
 
+/**
+ * type: param, value, ref, invalid
+ */
+function initStackCache(len) {
+  const cache = {}
+  for (let i = 0; i < len; ++i) {
+    cache[i] = {
+      type: 'param',
+    }
+  }
+  return cache
+}
+
+function processAssignLeft(vm, cache, path, prop_name, stk_name) {
+  const father = path.parentPath
+  const right = father.get('right')
+  if (right.isBinaryExpression()) {
+    return
+  }
+  if (right.isLiteral()) {
+    vm.evalSync(generator(father.node).code)
+    cache[prop_name] = {
+      type: 'value',
+      value: right.node.value,
+    }
+    return
+  }
+  if (right.isUnaryExpression() && right.node.operator === '-') {
+    const value = vm.evalSync(generator(right.node).code)
+    vm.evalSync(generator(father.node).code)
+    cache[prop_name] = {
+      type: 'value',
+      value: value,
+    }
+    return
+  }
+  if (right.isMemberExpression() && right.node.object?.name === stk_name) {
+    const right_prop = right.get('property')
+    if (right_prop.isBinaryExpression()) {
+      return
+    }
+    let ref = safeGetName(right_prop)
+    if (!Object.prototype.hasOwnProperty.call(cache, ref)) {
+      vm.evalSync(generator(father.node).code)
+      cache[prop_name] = {
+        type: 'value',
+        value: undefined,
+      }
+      return
+    }
+    while (cache[ref].type === 'ref') {
+      ref = cache[ref].value
+    }
+    if (cache[ref].type === 'value') {
+      safeReplace(right, cache[ref].value)
+      vm.evalSync(generator(father.node).code)
+      cache[prop_name] = {
+        type: 'value',
+        value: cache[ref].value,
+      }
+    } else {
+      cache[prop_name] = {
+        type: 'ref',
+        value: ref,
+      }
+    }
+    return
+  }
+  cache[prop_name] = {
+    type: 'invalid',
+  }
+}
+
+function processAssignInvalid(cache, path, prop_name) {
+  cache[prop_name] = {
+    type: 'invalid',
+  }
+}
+
+function processReplace(cache, path, prop_name) {
+  const value = cache[prop_name].value
+  const type = cache[prop_name].type
+  if (type === 'ref') {
+    path.node.computed = true
+    safeReplace(path.get('property'), value)
+    return true
+  }
+  if (type === 'value') {
+    safeReplace(path, value)
+    return true
+  }
+  return false
+}
+
+function checkStackInvalid(path) {
+  const stk_name = path.node.params[0].argument.name
+  const body_path = path.get('body')
+  const obj = {}
+  body_path.traverse({
+    MemberExpression: {
+      exit(path) {
+        if (path.node.object.name !== stk_name) {
+          return
+        }
+        const father = path.parentPath
+        if (body_path.scope == father.scope) {
+          return
+        }
+        if (!father.isAssignmentExpression() || path.key !== 'left') {
+          return
+        }
+        const prop = path.get('property')
+        const prop_name = safeGetName(prop)
+        obj[prop_name] = 1
+      },
+    },
+  })
+  return obj
+}
+
+function tryStackReplace(path, len, invalid) {
+  const stk_name = path.node.params[0].argument.name
+  const body_path = path.get('body')
+  const cache = initStackCache(len)
+  const vm = isolate.createContextSync()
+  vm.evalSync(`var ${stk_name} = []`)
+  let changed = false
+  body_path.traverse({
+    MemberExpression: {
+      exit(path) {
+        if (path.node.object.name !== stk_name) {
+          return
+        }
+        const prop = path.get('property')
+        if (prop.isBinaryExpression()) {
+          return
+        }
+        const prop_name = safeGetName(prop)
+        if (!prop_name) {
+          return
+        }
+        if (Object.prototype.hasOwnProperty.call(invalid, prop_name)) {
+          processAssignInvalid(cache, path, prop_name)
+          return
+        }
+        const exist = Object.prototype.hasOwnProperty.call(cache, prop_name)
+        if (exist && cache[prop_name].type === 'param') {
+          return
+        }
+        const father = path.parentPath
+        if (father.isAssignmentExpression() && path.key === 'left') {
+          processAssignLeft(vm, cache, path, prop_name, stk_name)
+        } else if (exist) {
+          changed |= processReplace(cache, path, prop_name)
+        }
+      },
+    },
+  })
+  const binding = body_path.scope.getBinding(stk_name)
+  binding.scope.crawl()
+  return changed
+}
+
+function processStackParam(path, len) {
+  if (path.isArrowFunctionExpression()) {
+    console.log(`Process arrowFunctionExpression, len: ${len}`)
+  } else if (path.isFunctionExpression()) {
+    console.log(`Process functionExpression, len: ${len}`)
+  } else {
+    console.log(`Process Function ${path.node.id.name}, len: ${len}`)
+  }
+  let changed = true
+  const invalid = checkStackInvalid(path)
+  while (changed) {
+    changed = tryStackReplace(path, len, invalid)
+    path.traverse(calculateConstantExp)
+  }
+}
+
 const deStackFuncLen = {
   Identifier(path) {
     let obj = checkFuncLen(path)
@@ -314,10 +504,15 @@ const deStackFuncLen = {
       }
       const repl_path = ref.parentPath
       const arg = repl_path.node.arguments[0]
+      const len = repl_path.node.arguments[1].value
       if (t.isIdentifier(arg)) {
+        const func_name = arg.name
+        const func_decl = repl_path.scope.getBinding(func_name).path
+        processStackParam(func_decl, len)
         repl_path.remove()
       } else {
         repl_path.replaceWith(arg)
+        processStackParam(repl_path, len)
       }
     }
     binding.scope.crawl()
