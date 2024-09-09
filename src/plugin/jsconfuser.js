@@ -444,14 +444,18 @@ function checkStackInvalid(path) {
           return
         }
         const father = path.parentPath
+        const prop = path.get('property')
+        const prop_name = safeGetName(prop)
+        if (father.isUpdateExpression()) {
+          obj[prop_name] = 1
+          return
+        }
         if (body_path.scope == father.scope) {
           return
         }
         if (!father.isAssignmentExpression() || path.key !== 'left') {
           return
         }
-        const prop = path.get('property')
-        const prop_name = safeGetName(prop)
         obj[prop_name] = 1
       },
     },
