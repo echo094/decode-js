@@ -1204,6 +1204,35 @@ const deStringConcealing = {
   },
 }
 
+/**
+ * Template:
+ * ```javascript
+ * // This is defined in the glocal space
+ * var predicateName = (function () {
+ *   var tempName = {
+ *     prop_array_1: [],
+ *     prop_array: function (paramName = 'length') {
+ *       if (!predicateName[prop_array_1][0]) {
+ *          predicateName[prop_array_1][0].push(rand1)
+ *       }
+ *       return predicateName[prop_array_1][paramName]
+ *     },
+ *     prop_number: rand2,
+ *     prop_string: rand_str,
+ *   }
+ *   return tempName
+ * })()
+ * // Below will appear multiple times
+ * predicateName[prop_array]() ? test : fake
+ * predicateName[prop_number] > rand3 ? test : fake
+ * predicateName[prop_string].charAt(index) == real_char ? test : fake
+ * predicateName[prop_string].charCodeAt(index) == real_char ? test : fake
+ * ```
+ */
+const deOpaquePredicates = {
+  MemberExpression(path) {},
+}
+
 module.exports = function (code) {
   let ast
   try {
@@ -1227,6 +1256,8 @@ module.exports = function (code) {
   traverse(ast, deStringConcealing)
   // StringSplitting
   traverse(ast, calculateConstantExp)
+  // OpaquePredicates
+  traverse(ast, deOpaquePredicates)
   code = generator(ast, {
     comments: false,
     jsescOption: { minimal: true },
