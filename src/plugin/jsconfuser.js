@@ -1225,6 +1225,8 @@ module.exports = function (code) {
   traverse(ast, deStringCompression)
   // StringConcealing
   traverse(ast, deStringConcealing)
+  // StringSplitting
+  traverse(ast, calculateConstantExp)
   code = generator(ast, {
     comments: false,
     jsescOption: { minimal: true },
