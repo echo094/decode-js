@@ -4,6 +4,7 @@ const traverse = require('@babel/traverse').default
 const t = require('@babel/types')
 const ivm = require('isolated-vm')
 const calculateConstantExp = require('../visitor/calculate-constant-exp')
+const pruneIfBranch = require('../visitor/prune-if-branch')
 
 const isolate = new ivm.Isolate()
 
@@ -844,6 +845,9 @@ function insertDepItemVar(deps, name, path) {
  */
 function findGlobalFn(path) {
   const glo_fn_name = path.node.id?.name
+  if (path.parentPath.getFunctionParent()) {
+    return null
+  }
   if (!glo_fn_name) {
     return null
   }
@@ -963,6 +967,9 @@ function findBufferToString(obj) {
     insertDepItemVar(obj.deps, obj.a2s_name, obj.a2s_path)
     break
   }
+  if (!obj.a2s_name) {
+    return false
+  }
   binding = obj.a2s_path.scope.getBinding(obj.a2s_name)
   const b2s_path = binding.referencePaths[0].getFunctionParent()
   obj.b2s_name = safeGetName(b2s_path.get('id'))
@@ -986,7 +993,7 @@ function findBufferToString(obj) {
       },
     })
     if (!valid) {
-      return
+      return false
     }
     child.push({
       name: decode_fn.node.id.name,
@@ -994,6 +1001,7 @@ function findBufferToString(obj) {
     })
   }
   obj.child = child
+  return true
 }
 
 function generatorStringConcealingDepCode(obj) {
@@ -1192,7 +1200,9 @@ const deStringConcealing = {
       return
     }
     findGlobalFnRef(obj)
-    findBufferToString(obj)
+    if (!findBufferToString(obj)) {
+      return
+    }
     generatorStringConcealingDepCode(obj)
     for (const item of obj.child) {
       processSingleGetter(obj, item.name, item.decoder)
@@ -1204,10 +1214,147 @@ const deStringConcealing = {
   },
 }
 
+function tryStringConcealingPlace(path) {
+  const parent = path.parentPath
+  if (!parent.isAssignmentExpression()) {
+    return
+  }
+  const name = safeGetName(parent.get('left'))
+  let binding = parent.scope.getBinding(name)
+  if (binding?.constantViolations?.length !== 1) {
+    return
+  }
+  const code = generator(parent.node).code
+  const vm = isolate.createContextSync()
+  vm.evalSync('var ' + code)
+  for (const ref of binding.referencePaths) {
+    if (ref.key !== 'object') {
+      continue
+    }
+    const test = generator(ref.parent).code
+    const res = vm.evalSync(test)
+    safeReplace(ref.parentPath, res)
+  }
+  safeDeleteNode(name, parent)
+}
+
+const deStringConcealingPlace = {
+  ArrayExpression(path) {
+    let valid = true
+    if (path.node.elements.length === 0) {
+      return
+    }
+    for (const ele of path.node.elements) {
+      if (!t.isStringLiteral(ele)) {
+        valid = false
+        break
+      }
+    }
+    if (!valid) {
+      return
+    }
+    tryStringConcealingPlace(path)
+  },
+  ObjectExpression(path) {
+    let valid = true
+    if (path.node.properties.length === 0) {
+      return
+    }
+    for (const ele of path.node.properties) {
+      if (!t.isStringLiteral(ele.value)) {
+        valid = false
+        break
+      }
+    }
+    if (!valid) {
+      return
+    }
+    tryStringConcealingPlace(path)
+  },
+}
+
+function checkOpaqueObject(path) {
+  const parent = path.parentPath
+  if (!parent.isAssignmentExpression()) {
+    return null
+  }
+  const tmp_name = safeGetName(parent.get('left'))
+  const func_path = parent.getFunctionParent()
+  if (
+    !func_path ||
+    func_path.key !== 'callee' ||
+    !func_path.parentPath.isCallExpression()
+  ) {
+    return null
+  }
+  const func_body = func_path.node.body?.body
+  if (!func_body || func_body.length < 2) {
+    return null
+  }
+  const last_node = func_body[func_body.length - 1]
+  if (
+    !t.isReturnStatement(last_node) ||
+    last_node.argument?.name !== tmp_name
+  ) {
+    return null
+  }
+  const root_path = func_path.parentPath.parentPath
+  if (!root_path.isAssignmentExpression()) {
+    return null
+  }
+  const pred_name = safeGetName(root_path.get('left'))
+  const obj = {
+    pred_name: pred_name,
+    pred_path: root_path,
+    props: {},
+  }
+  for (const prop of path.node.properties) {
+    const key = prop.key.name
+    const value = prop.value
+    if (t.isNumericLiteral(value)) {
+      obj.props[key] = {
+        type: 'number',
+      }
+      continue
+    }
+    if (t.isStringLiteral(value)) {
+      obj.props[key] = {
+        type: 'string',
+      }
+      continue
+    }
+    if (t.isArrayExpression(value)) {
+      if (value.elements.length === 0) {
+        obj.props[key] = {
+          type: 'array_dep',
+        }
+      }
+      continue
+    }
+    if (t.isArrowFunctionExpression(value) || t.isFunctionExpression(value)) {
+      const param = value.params?.[0]?.left?.name
+      if (!param) {
+        continue
+      }
+      const code = generator(value).code
+      const template =
+        `(${param}=){if(${pred_name}[0])${pred_name}push()` +
+        `return${pred_name}${param}}`
+      if (checkPattern(code, template)) {
+        obj.props[key] = {
+          type: 'array',
+        }
+      }
+      continue
+    }
+  }
+  return obj
+}
+
 /**
  * Template:
  * ```javascript
- * // This is defined in the glocal space
+ * // This is defined in the global space
  * var predicateName = (function () {
  *   var tempName = {
  *     prop_array_1: [],
@@ -1230,7 +1377,41 @@ const deStringConcealing = {
  * ```
  */
 const deOpaquePredicates = {
-  MemberExpression(path) {},
+  ObjectExpression(path) {
+    const obj = checkOpaqueObject(path)
+    if (!obj) {
+      return
+    }
+    console.log(`[OpaquePredicates] predicateName : ${obj.pred_name}`)
+    const vm = isolate.createContextSync()
+    const code = generator(obj.pred_path.node).code
+    vm.evalSync('var ' + code)
+    obj.pred_path.get('right').replaceWith(t.numericLiteral(0))
+    let binding = obj.pred_path.scope.getBinding(obj.pred_name)
+    binding.scope.crawl()
+    binding = binding.scope.getBinding(obj.pred_name)
+    for (const ref of binding.referencePaths) {
+      if (ref.key !== 'object') {
+        continue
+      }
+      const member = ref.parentPath
+      const prop = member.get('property')
+      if (!prop || !Object.prototype.hasOwnProperty.call(obj.props, prop)) {
+        continue
+      }
+      let expr = member
+      while (
+        expr.parentPath.isCallExpression() ||
+        expr.parentPath.isMemberExpression()
+      ) {
+        expr = expr.parentPath
+      }
+      const test = generator(expr.node).code
+      const res = vm.evalSync(test)
+      safeReplace(expr, res)
+    }
+    safeDeleteNode(obj.pred_name, obj.pred_path)
+  },
 }
 
 module.exports = function (code) {
@@ -1254,10 +1435,13 @@ module.exports = function (code) {
   traverse(ast, deStringCompression)
   // StringConcealing
   traverse(ast, deStringConcealing)
+  traverse(ast, deStringConcealingPlace)
   // StringSplitting
   traverse(ast, calculateConstantExp)
   // OpaquePredicates
   traverse(ast, deOpaquePredicates)
+  traverse(ast, calculateConstantExp)
+  traverse(ast, pruneIfBranch)
   code = generator(ast, {
     comments: false,
     jsescOption: { minimal: true },
