@@ -42,24 +42,25 @@ function safeDeleteNode(name, path) {
     binding = path.scope.getBinding(name)
   }
   if (!binding) {
-    return
+    return false
   }
   binding.scope.crawl()
   binding = binding.scope.getBinding(name)
   if (binding.references) {
-    return
+    return false
   }
   for (const item of binding.constantViolations) {
     item.remove()
   }
   const decl = binding.path
   if (decl.removed) {
-    return
+    return true
   }
   if (!decl.isVariableDeclarator() && !decl.isFunctionDeclaration()) {
-    return
+    return true
   }
   binding.path.remove()
+  return true
 }
 
 function deAntiToolingCheckFunc(path) {
@@ -845,9 +846,6 @@ function insertDepItemVar(deps, name, path) {
  */
 function findGlobalFn(path) {
   const glo_fn_name = path.node.id?.name
-  if (path.parentPath.getFunctionParent()) {
-    return null
-  }
   if (!glo_fn_name) {
     return null
   }
@@ -1197,7 +1195,10 @@ const deStringConcealing = {
   FunctionDeclaration(path) {
     const obj = findGlobalFn(path)
     if (!obj) {
-      return
+      return null
+    }
+    if (obj.glo_fn_path.parentPath.getFunctionParent()) {
+      return null
     }
     findGlobalFnRef(obj)
     if (!findBufferToString(obj)) {
@@ -1239,6 +1240,26 @@ function tryStringConcealingPlace(path) {
 }
 
 const deStringConcealingPlace = {
+  StringLiteral(path) {
+    if (path.key !== 'right' || !path.parentPath.isAssignmentExpression()) {
+      return
+    }
+    const name = safeGetName(path.parentPath.get('left'))
+    if (!name) {
+      return
+    }
+    const binding = path.scope.getBinding(name)
+    if (binding.constantViolations.length !== 1) {
+      return
+    }
+    for (const ref of binding.referencePaths) {
+      if (ref.node.start < path.node.start) {
+        continue
+      }
+      ref.replaceWith(path.node)
+    }
+    safeDeleteNode(name, path.parentPath)
+  },
   ArrayExpression(path) {
     let valid = true
     if (path.node.elements.length === 0) {
@@ -1414,6 +1435,125 @@ const deOpaquePredicates = {
   },
 }
 
+function findGlobalVar(glo_name, glo_path) {
+  let tmp_path = glo_path.parentPath.getFunctionParent()
+  if (
+    !tmp_path ||
+    !tmp_path.parentPath.isMemberExpression() ||
+    !tmp_path.parentPath.parentPath.isCallExpression()
+  ) {
+    return null
+  }
+  const tmp_body = tmp_path.node.body.body
+  tmp_path = tmp_path.parentPath.parentPath
+  const ret_node = tmp_body[tmp_body.length - 1]
+  if (
+    !t.isReturnStatement(ret_node) ||
+    !t.isAssignmentExpression(ret_node.argument)
+  ) {
+    return null
+  }
+  const code = generator(ret_node.argument.right).code
+  const template = `${glo_name}call(this)`
+  if (!checkPattern(code, template)) {
+    return null
+  }
+  const glo_var = ret_node.argument.left.name
+  const binding = glo_path.scope.getBinding(glo_var)
+  for (const ref of binding.referencePaths) {
+    if (
+      !ref.parentPath.isMemberExpression() ||
+      !ref.parentPath.parentPath.isReturnStatement()
+    ) {
+      continue
+    }
+    const func_path = ref.getFunctionParent()
+    const func_name = func_path.node.id.name
+    return {
+      glo_var: glo_var,
+      tmp_path: tmp_path,
+      glo_fn_name: func_name,
+      glo_fn_path: func_path,
+    }
+  }
+  return null
+}
+
+function getGlobalConcealingNames(glo_fn_path) {
+  const obj = {}
+  glo_fn_path.traverse({
+    SwitchCase(path) {
+      const key = parseInt(generator(path.node.test).code)
+      let consequent = path.node.consequent[0]
+      if (t.isReturnStatement(consequent)) {
+        obj[key] = consequent.argument.property.value
+      } else {
+        if (t.isExpressionStatement(consequent)) {
+          consequent = consequent.expression
+        }
+        obj[key] = consequent.right.left.value
+      }
+    },
+  })
+  return obj
+}
+
+/**
+ * Hide the global vars found by module GlobalAnalysis
+ *
+ * Template:
+ * ```javascript
+ * // Add to head:
+ * var globalVar, tempVar = function () {
+ *   getGlobalVariableFnName = createGetGlobalTemplate()
+ *   return globalVar = getGlobalVariableFnName.call(this)
+ * }["call"]()
+ * // Add to foot:
+ * function globalFn (indexParamName) {
+ *   var returnName
+ *   switch (indexParamName) {
+ *     case state_x: {
+ *       return globalVar[name]
+ *     }
+ *     case state_y: {
+ *       returnName = name || globalVar[name]
+ *       break
+ *     }
+ *   }
+ *   return globalVar[returnName]
+ * }
+ * // References:
+ * // name -> globalFn(state)
+ * ```
+ */
+const deGlobalConcealing = {
+  FunctionDeclaration(path) {
+    const glo_obj = findGlobalFn(path)
+    if (!glo_obj) {
+      return null
+    }
+    const obj = findGlobalVar(glo_obj.glo_fn_name, glo_obj.glo_fn_path)
+    if (!obj) {
+      return null
+    }
+    console.log(`[GlobalConcealing] globalVar: ${obj.glo_var}`)
+    const glo_vars = getGlobalConcealingNames(obj.glo_fn_path)
+    console.log(`[GlobalConcealing] globalFn: ${obj.glo_fn_name}`)
+    let binding = obj.glo_fn_path.parentPath.scope.getBinding(obj.glo_fn_name)
+    for (const ref of binding.referencePaths) {
+      const repl_path = ref.parentPath
+      if (ref.key !== 'callee' || !repl_path.isCallExpression()) {
+        continue
+      }
+      const key = parseInt(generator(repl_path.node.arguments[0]).code)
+      repl_path.replaceWith(t.identifier(glo_vars[key]))
+    }
+    if (safeDeleteNode(obj.glo_fn_name, obj.glo_fn_path)) {
+      obj.tmp_path.remove()
+    }
+  },
+}
+
 module.exports = function (code) {
   let ast
   try {
@@ -1442,6 +1582,8 @@ module.exports = function (code) {
   traverse(ast, deOpaquePredicates)
   traverse(ast, calculateConstantExp)
   traverse(ast, pruneIfBranch)
+  // GlobalConcealing
+  traverse(ast, deGlobalConcealing)
   code = generator(ast, {
     comments: false,
     jsescOption: { minimal: true },
