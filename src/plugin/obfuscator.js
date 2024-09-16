@@ -166,6 +166,7 @@ function stringArrayV2(ast) {
         continue
       }
       obj.stringArrayCodes.push(generator(up2.node, optGenMin).code)
+      up1.remove()
       up2.node.body = t.blockStatement([])
       obj.stringArrayCalls.push({ name: wrapper, path: up2 })
     }
