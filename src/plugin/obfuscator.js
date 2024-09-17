@@ -85,6 +85,110 @@ function decodeObject(ast) {
 }
 
 /**
+ * If the StringArrayRotateFunction does not exist, we can only verify a
+ * string-array by checking the StringArrayCallsWrapper.
+ *
+ * @param {t.File} ast The ast file
+ * @returns Object
+ */
+function stringArrayV0(ast) {
+  console.info('Try v0 mode...')
+  function check_wrapper(ref, array_name) {
+    ref = ref.parentPath
+    const index = ref.node.property?.name
+    if (ref.key !== 'init') {
+      return null
+    }
+    ref = ref.parentPath
+    const value = ref.node.id?.name
+    ref = ref.getFunctionParent()
+    if (!index || ref.node.params?.[0]?.name !== index) {
+      return null
+    }
+    const container = ref.node.body.body
+    const ret_node = container[container.length - 1]
+    if (!t.isReturnStatement(ret_node) || ret_node.argument?.name !== value) {
+      return null
+    }
+    if (ref.key !== 'init') {
+      return null
+    }
+    const rm_path = ref.parentPath
+    if (array_name == rm_path.node.id.name) {
+      return null
+    }
+    return rm_path
+  }
+  // check if all the binding references are wrapper
+  function check_other_function(path, array_name) {
+    const binding = path.scope.getBinding(array_name)
+    if (!binding.referencePaths) {
+      return
+    }
+    const ob_func_str = []
+    const ob_dec_call = []
+    for (const ref of binding.referencePaths) {
+      if (ref.findParent((path) => path.removed)) {
+        continue
+      }
+      if (ref.parentPath.isMemberExpression() && ref.key === 'object') {
+        const rm_path = check_wrapper(ref, array_name)
+        if (!rm_path) {
+          console.error('Unexpected reference')
+          return null
+        }
+        const code = generator(rm_path.node, optGenMin).code
+        rm_path.get('body').replaceWith(t.blockStatement([]))
+        ob_func_str.push(code)
+        ob_dec_call.push({ name: rm_path.node.id.name, path: rm_path })
+      } else {
+        console.error('Unexpected reference')
+        return null
+      }
+    }
+    if (!ob_func_str.length) {
+      return null
+    }
+    ob_func_str.push(generator(path.node, optGenMin).code)
+    path.remove()
+    return {
+      version: 0,
+      stringArrayName: array_name,
+      stringArrayCodes: ob_func_str,
+      stringArrayCalls: ob_dec_call,
+    }
+  }
+  let ret_obj = {
+    version: 0,
+    stringArrayName: null,
+    stringArrayCodes: [],
+    stringArrayCalls: [],
+  }
+  function check_string_array(path) {
+    if (path.getFunctionParent()) {
+      return
+    }
+    const init = path.get('init')
+    if (!init.isArrayExpression()) {
+      return
+    }
+    if (!init.node.elements.length) {
+      return
+    }
+    const array_name = path.node.id.name
+    const obj = check_other_function(path, array_name)
+    if (obj) {
+      ret_obj = obj
+      path.stop()
+    }
+  }
+  traverse(ast, {
+    VariableDeclarator: check_string_array,
+  })
+  return ret_obj
+}
+
+/**
  * Before version 2.19.0, the string-array is a single array.
  * Hence, we have to find StringArrayRotateFunction instead.
  *
@@ -323,10 +427,13 @@ function decodeGlobal(ast) {
   let obj = stringArrayV3(ast)
   if (!obj.stringArrayName) {
     obj = stringArrayV2(ast)
-    if (!obj.stringArrayName) {
-      console.error('Cannot find string list!')
-      return false
-    }
+  }
+  if (!obj.stringArrayName) {
+    obj = stringArrayV0(ast)
+  }
+  if (!obj.stringArrayName) {
+    console.error('Cannot find string list!')
+    return false
   }
   console.log(`String List Name: ${obj.stringArrayName}`)
   let ob_func_str = obj.stringArrayCodes
