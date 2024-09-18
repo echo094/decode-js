@@ -15,7 +15,7 @@ module.exports = {
     if (!binding || binding.referenced || !binding.constant) {
       return
     }
-    if (t.isCallExpression(node.init)) {
+    if (!t.isLiteral(node.init)) {
       return
     }
     const up1 = path.parentPath
