@@ -18,6 +18,7 @@ function splitVariableDeclaration(path) {
     path.insertBefore(t.variableDeclaration(kind, [item]))
   }
   path.remove()
+  path.scope.crawl()
 }
 
 /**
