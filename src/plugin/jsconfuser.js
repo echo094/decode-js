@@ -1210,8 +1210,11 @@ const deStringConcealing = {
     }
     safeDeleteNode(obj.array_name, obj.array_path)
     safeDeleteNode(obj.cache_name, obj.cache_path)
-    safeDeleteNode(obj.b2s_name, obj.b2s_path)
-    safeDeleteNode(obj.a2s_name, obj.a2s_path)
+    // a2s and b2s are pairs
+    if (safeDeleteNode(obj.b2s_name, obj.b2s_path)) {
+      obj.a2s_path.remove()
+      obj.a2s_path.scope.crawl()
+    }
   },
 }
 
