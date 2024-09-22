@@ -50,6 +50,8 @@ function calculateBinaryExpression(path) {
  * - the operator is `!` and the argument is ArrayExpression or Literal.
  * - the operator is `-` and the argument is a negative number
  * - the operator is `+`, or `~`, and the argument is a number
+ * - the operator is 'void' and the argument is Literal.
+ * - the operator is 'typeof' and the argument is Literal.
  *
  * Otherwise, the expression can't be simplified.
  * For example, `typeof window` can be calculated but it's not constant.
@@ -81,6 +83,19 @@ function calculateUnaryExpression(path) {
     if (isLiteral === 'negative' || isLiteral === 'positive') {
       const code = generator(node0).code
       path.replaceWithSourceString(eval(code))
+    }
+    return
+  }
+  if (node0.operator === 'void') {
+    if (isLiteral) {
+      path.replaceWith(t.identifier('undefined'))
+    }
+    return
+  }
+  if (node0.operator === 'typeof') {
+    if (isLiteral) {
+      const code = generator(node0).code
+      path.replaceWith(t.stringLiteral(eval(code)))
     }
     return
   }
