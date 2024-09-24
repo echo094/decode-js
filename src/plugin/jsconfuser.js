@@ -379,16 +379,25 @@ function processAssignLeft(vm, cache, path, prop_name, stk_name) {
     vm.evalSync(generator(father.node).code)
     cache[prop_name] = {
       type: 'value',
-      value: right.node.value,
+      value: right.node,
     }
     return
   }
+  if (right.isArrayExpression()) {
+    const elements = right.node.elements
+    if (elements.length === 1 && elements[0]?.value === 'charCodeAt') {
+      cache[prop_name] = {
+        type: 'value',
+        value: right.node,
+      }
+      return
+    }
+  }
   if (right.isUnaryExpression() && right.node.operator === '-') {
-    const value = vm.evalSync(generator(right.node).code)
     vm.evalSync(generator(father.node).code)
     cache[prop_name] = {
       type: 'value',
-      value: value,
+      value: right.node,
     }
     return
   }
@@ -442,7 +451,7 @@ function processReplace(cache, path, prop_name) {
     return true
   }
   if (type === 'value') {
-    safeReplace(path, value)
+    path.replaceWith(value)
     return true
   }
   return false
@@ -522,7 +531,10 @@ function tryStackReplace(path, len, invalid) {
 }
 
 function getStackParamLen(path) {
-  const stk_name = path.node.params[0].argument.name
+  const stk_name = path.node.params?.[0]?.argument?.name
+  if (!stk_name) {
+    return 'unknown'
+  }
   const body_path = path.get('body')
   let len = 'unknown'
   body_path.traverse({
@@ -1712,6 +1724,8 @@ module.exports = function (code) {
   traverse(ast, deStringConcealingPlace)
   // StringSplitting
   traverse(ast, calculateConstantExp)
+  // Stack (run again)
+  traverse(ast, deStackFuncOther)
   // OpaquePredicates
   traverse(ast, deOpaquePredicates)
   traverse(ast, calculateConstantExp)
