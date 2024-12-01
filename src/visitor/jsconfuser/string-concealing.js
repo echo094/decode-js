@@ -372,6 +372,11 @@ function tryStringConcealingPlace(path) {
   if (binding?.constantViolations?.length !== 1) {
     return
   }
+  for (const ref of binding.referencePaths) {
+    if (ref.key !== 'object' || ref.parentPath.key === 'callee') {
+      return
+    }
+  }
   const code = generator(parent.node).code
   const vm = isolate.createContextSync()
   vm.evalSync('var ' + code)

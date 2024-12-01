@@ -27,10 +27,14 @@ function checkFuncLen(path) {
   if (obj.node.properties[0]?.key?.name !== 'value') {
     return null
   }
-  if (obj.listKey !== 'arguments' || obj.key !== 2) {
+  if (obj.listKey !== 'arguments') {
     return null
   }
-  const func_name = obj.container[0]?.name
+  const arg_num = obj.container.length
+  if (obj.key !== arg_num - 1) {
+    return null
+  }
+  const func_name = obj.container[arg_num - 3]?.name
   const warp = obj.getFunctionParent()
   if (warp.node.params?.[0]?.name !== func_name) {
     return null
@@ -149,10 +153,9 @@ function processReplace(cache, path, prop_name) {
   return false
 }
 
-function checkStackInvalid(path) {
+function checkStackInvalid(path, invalid) {
   const stk_name = path.node.params[0].argument.name
   const body_path = path.get('body')
-  const obj = {}
   body_path.traverse({
     MemberExpression: {
       exit(path) {
@@ -163,7 +166,7 @@ function checkStackInvalid(path) {
         const prop = path.get('property')
         const prop_name = safeGetName(prop)
         if (father.isUpdateExpression()) {
-          obj[prop_name] = 1
+          invalid[prop_name] = 1
           return
         }
         if (body_path.scope == father.scope) {
@@ -172,14 +175,24 @@ function checkStackInvalid(path) {
         if (!father.isAssignmentExpression() || path.key !== 'left') {
           return
         }
-        obj[prop_name] = 1
+        invalid[prop_name] = 1
       },
     },
   })
-  return obj
+  return invalid
 }
 
-function tryStackReplace(path, len, invalid) {
+function checkChangeValid(invalid, used) {
+  let valid = true
+  Object.keys(used).forEach(function(key) {
+    if (Object.prototype.hasOwnProperty.call(invalid, key)) {
+      valid = false
+    }
+  })
+  return valid
+}
+
+function tryStackReplace(path, len, invalid, used) {
   const stk_name = path.node.params[0].argument.name
   const body_path = path.get('body')
   const cache = initStackCache(len)
@@ -212,6 +225,7 @@ function tryStackReplace(path, len, invalid) {
         if (father.isAssignmentExpression() && path.key === 'left') {
           processAssignLeft(vm, cache, path, prop_name, stk_name)
         } else if (exist) {
+          used[prop_name] = 1
           changed |= processReplace(cache, path, prop_name)
         }
       },
@@ -264,16 +278,23 @@ function getStackParamLen(path) {
 
 function processStackParam(path, len) {
   if (path.isArrowFunctionExpression()) {
-    console.log(`Process arrowFunctionExpression, len: ${len}`)
+    console.log(`[Stack] Process arrowFunctionExpression, len: ${len}`)
   } else if (path.isFunctionExpression()) {
-    console.log(`Process functionExpression, len: ${len}`)
+    console.log(`[Stack] Process functionExpression, len: ${len}`)
   } else {
-    console.log(`Process Function ${path.node.id.name}, len: ${len}`)
+    console.log(`[Stack] Process Function ${path.node.id.name}, len: ${len}`)
   }
+  const orig_code = generator(path.node).code
   let changed = true
-  const invalid = checkStackInvalid(path)
+  const invalid = {}
+  let used = {}
   while (changed) {
-    changed = tryStackReplace(path, len, invalid)
+    checkStackInvalid(path, invalid)
+    if (!checkChangeValid(invalid, used)) {
+      path.replaceWith(prase(orig_code))
+      used = {}
+    }
+    changed = tryStackReplace(path, len, invalid, used)
     path.traverse(calculateConstantExp)
   }
 }
@@ -284,11 +305,11 @@ const deStackFuncLen = {
     if (!obj) {
       return
     }
-    console.log(`Find functionLengthName: ${obj.name}`)
+    console.log(`[Stack] Find functionLengthName: ${obj.name}`)
     let binding = obj.path.parentPath.scope.bindings[obj.name]
     for (const ref of binding.referencePaths) {
       if (ref.key !== 'callee') {
-        console.warn(`Unexpected ref of functionLengthName: ${obj.name}`)
+        console.warn(`[Stack] Unexpected ref of functionLengthName: ${obj.name}`)
         continue
       }
       const repl_path = ref.parentPath
