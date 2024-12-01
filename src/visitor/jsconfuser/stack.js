@@ -109,7 +109,7 @@ function processAssignLeft(vm, cache, path, prop_name, stk_name) {
       ref = cache[ref].value
     }
     if (cache[ref].type === 'value') {
-      safeReplace(right, cache[ref].value)
+      right.replaceWith(cache[ref].value)
       vm.evalSync(generator(father.node).code)
       cache[prop_name] = {
         type: 'value',
