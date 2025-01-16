@@ -1,3 +1,4 @@
+const { parse } = require('@babel/parser')
 const generator = require('@babel/generator').default
 const t = require('@babel/types')
 
@@ -184,7 +185,7 @@ function checkStackInvalid(path, invalid) {
 
 function checkChangeValid(invalid, used) {
   let valid = true
-  Object.keys(used).forEach(function(key) {
+  Object.keys(used).forEach(function (key) {
     if (Object.prototype.hasOwnProperty.call(invalid, key)) {
       valid = false
     }
@@ -291,7 +292,7 @@ function processStackParam(path, len) {
   while (changed) {
     checkStackInvalid(path, invalid)
     if (!checkChangeValid(invalid, used)) {
-      path.replaceWith(prase(orig_code))
+      path.replaceWith(parse(orig_code))
       used = {}
     }
     changed = tryStackReplace(path, len, invalid, used)
@@ -309,7 +310,9 @@ const deStackFuncLen = {
     let binding = obj.path.parentPath.scope.bindings[obj.name]
     for (const ref of binding.referencePaths) {
       if (ref.key !== 'callee') {
-        console.warn(`[Stack] Unexpected ref of functionLengthName: ${obj.name}`)
+        console.warn(
+          `[Stack] Unexpected ref of functionLengthName: ${obj.name}`
+        )
         continue
       }
       const repl_path = ref.parentPath
