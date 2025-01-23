@@ -137,6 +137,7 @@ function parseObject(path) {
       }
     }
   }
+  path.scope.crawl()
   // 如果没有全部使用 就先不删除
   if (usedCount !== bind.length) {
     console.log(`不完整使用: ${objName} ${usedCount}/${bind.length}`)
