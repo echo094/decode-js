@@ -15,7 +15,7 @@ module.exports = {
     if (!binding || binding.referenced || !binding.constant) {
       return
     }
-    if (!t.isLiteral(node.init)) {
+    if (node.init && !t.isLiteral(node.init)) {
       return
     }
     const up1 = path.parentPath
