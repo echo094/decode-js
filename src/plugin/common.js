@@ -10,8 +10,10 @@ module.exports = function (code) {
     console.error(`Cannot parse code: ${e.reasonCode}`)
     return null
   }
-  const deleteExtra = require('../visitor/delete-extra')
-  traverse(ast, deleteExtra)
+  const deleteUnreachableCode = require('../visitor/delete-unreachable-code')
+  traverse(ast, deleteUnreachableCode)
+  const deleteNestedBlocks = require('../visitor/delete-nested-blocks')
+  traverse(ast, deleteNestedBlocks)
   const calculateConstantExp = require('../visitor/calculate-constant-exp')
   traverse(ast, calculateConstantExp)
   const calculateRString = require('../visitor/calculate-rstring')
