@@ -283,7 +283,11 @@ function decodeGlobal(ast) {
     if (item.path.isFunctionDeclaration()) {
       scope = item.path.parentPath.scope
     }
-    const refs = scope.bindings[cur_val].referencePaths
+    // var is function scoped and let is block scoped
+    // Hence, var may not be in the current scope, e.g., in a for-loop
+    const binding = scope.getBinding(cur_val)
+    scope = binding.scope
+    const refs = binding.referencePaths
     const refs_next = []
     for (let ref of refs) {
       const parent = ref.parentPath
@@ -294,12 +298,21 @@ function decodeGlobal(ast) {
           path: parent,
           code: 'var ' + parent,
         })
+      } else if (ref.key === 'right') {
+        // AssignmentExpression
+        refs_next.push({
+          name: parent.node.left.name,
+          path: parent,
+          code: 'var ' + parent,
+        })
       } else if (ref.key === 'object') {
         // MemberExpression
         memToStr(parent)
       } else if (ref.key === 'callee') {
         // CallExpression
         funToStr(parent)
+      } else {
+        console.error('Unexpected reference')
       }
     }
     for (let ref of refs_next) {
