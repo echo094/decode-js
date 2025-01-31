@@ -18,6 +18,7 @@ import lintIfStatement from '../visitor/lint-if-statement.js'
 import mergeObject from '../visitor/merge-object.js'
 import parseControlFlowStorage from '../visitor/parse-control-flow-storage.js'
 import pruneIfBranch from '../visitor/prune-if-branch.js'
+import splitAssignment from '../visitor/split-assignment.js'
 import splitSequence from '../visitor/split-sequence.js'
 import splitVarDeclaration from '../visitor/split-variable-declaration.js'
 
@@ -732,18 +733,6 @@ function cleanDeadCode(ast) {
   return ast
 }
 
-const splitVariableDeclarator = {
-  VariableDeclarator(path) {
-    const init = path.get('init')
-    if (!init.isAssignmentExpression()) {
-      return
-    }
-    path.parentPath.insertBefore(init.node)
-    init.replaceWith(init.node.left)
-    path.parentPath.scope.crawl()
-  },
-}
-
 function standardIfStatement(path) {
   const consequent = path.get('consequent')
   const alternate = path.get('alternate')
@@ -802,8 +791,8 @@ function purifyCode(ast) {
       path.remove()
     },
   })
+  traverse(ast, splitAssignment)
   // 删除未使用的变量
-  traverse(ast, splitVariableDeclarator)
   traverse(ast, deleteUnusedVar)
   // 替换索引器
   function FormatMember(path) {
