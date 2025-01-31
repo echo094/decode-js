@@ -1,4 +1,4 @@
-const t = require('@babel/types')
+import * as t from '@babel/types'
 
 function splitVariableDeclaration(path) {
   // The scope of a for statement is its body
@@ -26,6 +26,6 @@ function splitVariableDeclaration(path) {
  *
  * This operation will only be performed when its container is an array
  */
-module.exports = {
+export default {
   VariableDeclaration: splitVariableDeclaration,
 }

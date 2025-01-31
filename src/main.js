@@ -1,10 +1,10 @@
-﻿const fs = require('fs')
-const PluginCommon = require('./plugin/common.js')
-const PluginJjencode = require('./plugin/jjencode.js')
-const PluginSojson = require('./plugin/sojson.js')
-const PluginSojsonV7 = require('./plugin/sojsonv7.js')
-const PluginObfuscator = require('./plugin/obfuscator.js')
-const PluginAwsc = require('./plugin/awsc.js')
+import fs from 'fs'
+import PluginCommon from './plugin/common.js'
+import PluginJjencode from './plugin/jjencode.js'
+import PluginSojson from './plugin/sojson.js'
+import PluginSojsonV7 from './plugin/sojsonv7.js'
+import PluginObfuscator from './plugin/obfuscator.js'
+import PluginAwsc from './plugin/awsc.js'
 
 // 读取参数
 let type = 'common'

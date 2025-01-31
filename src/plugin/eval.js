@@ -1,7 +1,9 @@
-const { parse } = require('@babel/parser')
-const generator = require('@babel/generator').default
-const traverse = require('@babel/traverse').default
-const t = require('@babel/types')
+import { parse } from '@babel/parser'
+import _generate from '@babel/generator'
+const generator = _generate.default
+import _traverse from '@babel/traverse'
+const traverse = _traverse.default
+import * as t from '@babel/types'
 
 function unpack(code) {
   let ast = parse(code, { errorRecovery: true })
@@ -46,7 +48,7 @@ function pack(code) {
   return code
 }
 
-module.exports = {
+export default {
   unpack,
   pack,
 }

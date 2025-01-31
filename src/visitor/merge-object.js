@@ -1,4 +1,4 @@
-const t = require('@babel/types')
+import * as t from '@babel/types'
 
 function mergeObject(path) {
   const { id, init } = path.node
@@ -206,6 +206,6 @@ function mergeObject(path) {
  * - Constant objects in the original code can be splitted
  * - AssignmentExpression can be moved to ReturnStatement
  */
-module.exports = {
+export default {
   VariableDeclarator: mergeObject,
 }

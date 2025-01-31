@@ -1,13 +1,20 @@
 /**
  * For jsjiami.com.v7
  */
-const { parse } = require('@babel/parser')
-const generator = require('@babel/generator').default
-const traverse = require('@babel/traverse').default
-const t = require('@babel/types')
-const ivm = require('isolated-vm')
-const PluginEval = require('./eval.js')
-const calculateConstantExp = require('../visitor/calculate-constant-exp')
+import { parse } from '@babel/parser'
+import _generate from '@babel/generator'
+const generator = _generate.default
+import _traverse from '@babel/traverse'
+const traverse = _traverse.default
+import * as t from '@babel/types'
+import ivm from 'isolated-vm'
+import PluginEval from './eval.js'
+import calculateConstantExp from '../visitor/calculate-constant-exp.js'
+import deleteIllegalReturn from '../visitor/delete-illegal-return.js'
+import deleteUnusedVar from '../visitor/delete-unused-var.js'
+import parseControlFlowStorage from '../visitor/parse-control-flow-storage.js'
+import pruneIfBranch from '../visitor/prune-if-branch.js'
+import splitSequence from '../visitor/split-sequence.js'
 
 const isolate = new ivm.Isolate()
 const globalContext = isolate.createContextSync()
@@ -490,7 +497,6 @@ function cleanSwitchCode2(path) {
 
 function cleanDeadCode(ast) {
   traverse(ast, calculateConstantExp)
-  const pruneIfBranch = require('../visitor/prune-if-branch')
   traverse(ast, pruneIfBranch)
   traverse(ast, { WhileStatement: { exit: cleanSwitchCode1 } })
   traverse(ast, { ForStatement: { exit: cleanSwitchCode2 } })
@@ -735,7 +741,6 @@ function purifyCode(ast) {
   }
   traverse(ast, { MemberExpression: FormatMember })
   // 分割表达式
-  const splitSequence = require('../visitor/split-sequence')
   traverse(ast, splitSequence)
   // 删除空语句
   traverse(ast, {
@@ -744,11 +749,10 @@ function purifyCode(ast) {
     },
   })
   // 删除未使用的变量
-  const deleteUnusedVar = require('../visitor/delete-unused-var')
   traverse(ast, deleteUnusedVar)
 }
 
-module.exports = function (code) {
+export default function (code) {
   let ret = PluginEval.unpack(code)
   let global_eval = false
   if (ret) {
@@ -763,7 +767,6 @@ module.exports = function (code) {
     return null
   }
   // IllegalReturn
-  const deleteIllegalReturn = require('../visitor/delete-illegal-return')
   traverse(ast, deleteIllegalReturn)
   // 清理二进制显示内容
   traverse(ast, {
@@ -782,7 +785,6 @@ module.exports = function (code) {
     return null
   }
   console.log('处理代码块加密...')
-  const parseControlFlowStorage = require('../visitor/parse-control-flow-storage')
   traverse(ast, parseControlFlowStorage)
   console.log('清理死代码...')
   ast = cleanDeadCode(ast)

@@ -33,6 +33,6 @@ function splitMemberObject(path) {
  * a['b'] = c;
  * ```
  */
-module.exports = {
+export default {
   MemberExpression: splitMemberObject,
 }

@@ -1,7 +1,7 @@
 /**
  * delete ReturnStatement in Program scope
  */
-module.exports = {
+export default {
   ReturnStatement(path) {
     if (!path.getFunctionParent()) {
       path.remove()

@@ -14,7 +14,7 @@ const isIntersect = (path, bindings) => {
  * This is slightly different from the @putout/plugin-remove-nested-blocks :
  * https://github.com/coderaiser/putout/issues/224#issuecomment-2614051528
  */
-module.exports = {
+export default {
   BlockStatement: (path) => {
     const { parentPath } = path
     if (!parentPath.isBlockStatement() && !parentPath.isProgram()) {

@@ -34,7 +34,7 @@ function pruneIfBranch(path) {
  *
  * The code must be reloaded to update the references
  */
-module.exports = {
+export default {
   IfStatement: pruneIfBranch,
   ConditionalExpression: pruneIfBranch,
 }
