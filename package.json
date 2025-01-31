@@ -6,6 +6,7 @@
     "deob": "node src/main.js -t obfuscator",
     "deso": "node src/main.js -t sojson",
     "desov7": "node src/main.js -t sojsonv7",
+    "test": "vitest --config vitest.config.js",
     "lint": "eslint --ext .js --fix src"
   },
   "dependencies": {
@@ -18,5 +19,9 @@
     "eslint-plugin-prettier": "^4.2.1",
     "isolated-vm": "^4.7.2",
     "prettier": "^2.7.1"
+  },
+  "devDependencies": {
+    "@vitest/coverage-v8": "^3.0.4",
+    "vitest": "^3.0.4"
   }
 }
