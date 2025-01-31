@@ -220,7 +220,7 @@ function stringArrayV2(ast) {
     const args = path.node.arguments
     if (
       !callee.isFunctionExpression() ||
-      callee.node.params.length !== 2 ||
+      callee.node.params.length !== 1 ||
       args.length == 0 ||
       args.length > 2 ||
       !t.isIdentifier(args[0])
@@ -228,11 +228,11 @@ function stringArrayV2(ast) {
       return
     }
     const arr = callee.node.params[0].name
-    const cmpV = callee.node.params[1].name
+    // const cmpV = callee.node.params[1].name
     // >= 2.10.0
     const fp1 = `(){try{if()break${arr}push(${arr}shift())}catch(){${arr}push(${arr}shift())}}`
     // < 2.10.0
-    const fp2 = `=function(){while(--){${arr}push(${arr}shift)}}${cmpV}`
+    const fp2 = `function(){(--)${arr}push(${arr}shift)}`
     const code = '' + callee.get('body')
     if (!checkPattern(code, fp1) && !checkPattern(code, fp2)) {
       return
@@ -1055,6 +1055,7 @@ export default function (code) {
   traverse(ast, lintIfStatement)
   // Split declarations to avoid bugs
   traverse(ast, splitVarDeclaration)
+  traverse(ast, splitSequence)
   // 清理二进制显示内容
   traverse(ast, {
     StringLiteral: ({ node }) => {
