@@ -10,6 +10,6 @@ function checkPattern(code, pattern) {
   return j == pattern.length
 }
 
-module.exports = {
+export default {
   checkPattern,
 }

@@ -1,4 +1,5 @@
-const generator = require('@babel/generator').default
+import _generate from '@babel/generator'
+const generator = _generate.default
 
 function checkArrowWrap(path) {
   if (path.node?.name !== 'arguments') {
@@ -59,7 +60,7 @@ function checkArrowWrap(path) {
  * }
  * ```
  */
-module.exports = function () {
+export default function () {
   let arrowFunc = null
   const deMinifyArrow = {
     Identifier(path) {

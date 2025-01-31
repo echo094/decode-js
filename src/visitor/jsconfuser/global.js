@@ -1,9 +1,10 @@
-const generator = require('@babel/generator').default
-const t = require('@babel/types')
+import _generate from '@babel/generator'
+const generator = _generate.default
+import * as t from '@babel/types'
 
-const safeFunc = require('../../utility/safe-func')
+import safeFunc from '../../utility/safe-func.js'
 const safeGetName = safeFunc.safeGetName
-const checkFunc = require('../../utility/check-func')
+import checkFunc from '../../utility/check-func.js'
 const checkPattern = checkFunc.checkPattern
 
 /**
@@ -80,4 +81,4 @@ function findGlobalFn(path) {
   }
 }
 
-module.exports = findGlobalFn
+export default findGlobalFn

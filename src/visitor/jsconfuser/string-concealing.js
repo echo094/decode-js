@@ -1,11 +1,12 @@
-const generator = require('@babel/generator').default
-const t = require('@babel/types')
+import _generate from '@babel/generator'
+const generator = _generate.default
+import * as t from '@babel/types'
 
-const ivm = require('isolated-vm')
+import ivm from 'isolated-vm'
 const isolate = new ivm.Isolate()
 
-const findGlobalFn = require('./global')
-const safeFunc = require('../../utility/safe-func')
+import findGlobalFn from './global.js'
+import safeFunc from '../../utility/safe-func.js'
 const safeDeleteNode = safeFunc.safeDeleteNode
 const safeGetName = safeFunc.safeGetName
 const safeReplace = safeFunc.safeReplace
@@ -446,7 +447,7 @@ const deStringConcealingPlace = {
   },
 }
 
-module.exports = {
+export default {
   deStringConcealing,
   deStringConcealingPlace,
 }

@@ -1,20 +1,22 @@
-const { parse } = require('@babel/parser')
-const generator = require('@babel/generator').default
-const traverse = require('@babel/traverse').default
+import { parse } from '@babel/parser'
+import _generate from '@babel/generator'
+const generator = _generate.default
+import _traverse from '@babel/traverse'
+const traverse = _traverse.default
 
-const calculateConstantExp = require('../visitor/calculate-constant-exp')
-const pruneIfBranch = require('../visitor/prune-if-branch')
-const jcAntiTooling = require('../visitor/jsconfuser/anti-tooling')
-const jcControlFlow = require('../visitor/jsconfuser/control-flow')
-const jcDuplicateLiteral = require('../visitor/jsconfuser/duplicate-literal')
-const jcGlobalConcealing = require('../visitor/jsconfuser/global-concealing')
-const jcMinifyInit = require('../visitor/jsconfuser/minify')
-const jcOpaquePredicates = require('../visitor/jsconfuser/opaque-predicates')
-const jcStackInit = require('../visitor/jsconfuser/stack')
-const jcStringCompression = require('../visitor/jsconfuser/string-compression')
-const jcStringConceal = require('../visitor/jsconfuser/string-concealing')
+import calculateConstantExp from '../visitor/calculate-constant-exp.js'
+import pruneIfBranch from '../visitor/prune-if-branch.js'
+import jcAntiTooling from '../visitor/jsconfuser/anti-tooling.js'
+import jcControlFlow from '../visitor/jsconfuser/control-flow.js'
+import jcDuplicateLiteral from '../visitor/jsconfuser/duplicate-literal.js'
+import jcGlobalConcealing from '../visitor/jsconfuser/global-concealing.js'
+import jcMinifyInit from '../visitor/jsconfuser/minify.js'
+import jcOpaquePredicates from '../visitor/jsconfuser/opaque-predicates.js'
+import jcStackInit from '../visitor/jsconfuser/stack.js'
+import jcStringCompression from '../visitor/jsconfuser/string-compression.js'
+import jcStringConceal from '../visitor/jsconfuser/string-concealing.js'
 
-module.exports = function (code) {
+export default function (code) {
   let ast
   try {
     ast = parse(code, { errorRecovery: true })

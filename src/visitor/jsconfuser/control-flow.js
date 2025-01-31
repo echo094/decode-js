@@ -1,4 +1,4 @@
-const safeFunc = require('../../utility/safe-func')
+import safeFunc from '../../utility/safe-func.js'
 const safeGetLiteral = safeFunc.safeGetLiteral
 const safeGetName = safeFunc.safeGetName
 const safeReplace = safeFunc.safeReplace
@@ -176,7 +176,7 @@ const deControlFlowFlatteningState = {
   },
 }
 
-module.exports = {
+export default {
   deControlFlowFlatteningStateless,
   deControlFlowFlatteningState,
 }

@@ -1,4 +1,4 @@
-const t = require('@babel/types')
+import * as t from '@babel/types'
 
 function safeDeleteNode(name, path) {
   let binding
@@ -64,7 +64,7 @@ function safeReplace(path, value) {
   path.replaceWithSourceString(value)
 }
 
-module.exports = {
+export default {
   safeDeleteNode,
   safeGetLiteral,
   safeGetName,

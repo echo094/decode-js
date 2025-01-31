@@ -1,10 +1,11 @@
-const generator = require('@babel/generator').default
-const t = require('@babel/types')
+import _generate from '@babel/generator'
+const generator = _generate.default
+import * as t from '@babel/types'
 
-const ivm = require('isolated-vm')
+import ivm from 'isolated-vm'
 const isolate = new ivm.Isolate()
 
-const safeFunc = require('../../utility/safe-func')
+import safeFunc from '../../utility/safe-func.js'
 const safeReplace = safeFunc.safeReplace
 
 function checkArrayName(path) {
@@ -117,4 +118,4 @@ const deDuplicateLiteral = {
   },
 }
 
-module.exports = deDuplicateLiteral
+export default deDuplicateLiteral

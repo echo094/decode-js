@@ -1,11 +1,12 @@
-const generator = require('@babel/generator').default
+import _generate from '@babel/generator'
+const generator = _generate.default
 
-const ivm = require('isolated-vm')
+import ivm from 'isolated-vm'
 const isolate = new ivm.Isolate()
 
-const safeFunc = require('../../utility/safe-func')
+import safeFunc from '../../utility/safe-func.js'
 const safeReplace = safeFunc.safeReplace
-const checkFunc = require('../../utility/check-func')
+import checkFunc from '../../utility/check-func.js'
 const checkPattern = checkFunc.checkPattern
 
 function findStringDecoder(path) {
@@ -179,4 +180,4 @@ const deStringCompression = {
   },
 }
 
-module.exports = deStringCompression
+export default deStringCompression

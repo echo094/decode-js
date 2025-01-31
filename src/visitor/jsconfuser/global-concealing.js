@@ -1,10 +1,11 @@
-const generator = require('@babel/generator').default
-const t = require('@babel/types')
+import _generate from '@babel/generator'
+const generator = _generate.default
+import * as t from '@babel/types'
 
-const findGlobalFn = require('./global')
-const safeFunc = require('../../utility/safe-func')
+import findGlobalFn from './global.js'
+import safeFunc from '../../utility/safe-func.js'
 const safeDeleteNode = safeFunc.safeDeleteNode
-const checkFunc = require('../../utility/check-func')
+import checkFunc from '../../utility/check-func.js'
 const checkPattern = checkFunc.checkPattern
 
 function findGlobalVar(glo_name, glo_path) {
@@ -126,4 +127,4 @@ const deGlobalConcealing = {
   },
 }
 
-module.exports = deGlobalConcealing
+export default deGlobalConcealing

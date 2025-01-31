@@ -1,4 +1,4 @@
-const t = require('@babel/types')
+import * as t from '@babel/types'
 
 function deAntiToolingCheckFunc(path) {
   if (path.node.params.length) {
@@ -50,4 +50,4 @@ const deAntiTooling = {
   },
 }
 
-module.exports = deAntiTooling
+export default deAntiTooling

@@ -1,14 +1,15 @@
-const generator = require('@babel/generator').default
-const t = require('@babel/types')
+import _generate from '@babel/generator'
+const generator = _generate.default
+import * as t from '@babel/types'
 
-const ivm = require('isolated-vm')
+import ivm from 'isolated-vm'
 const isolate = new ivm.Isolate()
 
-const safeFunc = require('../../utility/safe-func')
+import safeFunc from '../../utility/safe-func.js'
 const safeDeleteNode = safeFunc.safeDeleteNode
 const safeGetName = safeFunc.safeGetName
 const safeReplace = safeFunc.safeReplace
-const checkFunc = require('../../utility/check-func')
+import checkFunc from '../../utility/check-func.js'
 const checkPattern = checkFunc.checkPattern
 
 function checkOpaqueObject(path) {
@@ -152,4 +153,4 @@ const deOpaquePredicates = {
   },
 }
 
-module.exports = deOpaquePredicates
+export default deOpaquePredicates
