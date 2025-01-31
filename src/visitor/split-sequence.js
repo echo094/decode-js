@@ -1,4 +1,4 @@
-const t = require('@babel/types')
+import * as t from '@babel/types'
 
 function doSplit(insertPath, path) {
   const expressions = path.node.expressions
@@ -48,6 +48,6 @@ function splitSequence(path) {
  * - ReturnStatement
  * - ExpressionStatement
  */
-module.exports = {
+export default {
   SequenceExpression: splitSequence,
 }

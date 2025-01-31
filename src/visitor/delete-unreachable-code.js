@@ -1,4 +1,4 @@
-const t = require('@babel/types')
+import * as t from '@babel/types'
 
 /**
  * DFS the BlockStatement to find and return the location of the first
@@ -26,7 +26,7 @@ const checkReturnLocation = (body) => {
  * This is slightly different from the @putout/plugin-remove-unreachable-code :
  * https://github.com/coderaiser/putout/issues/224#issuecomment-2614051528
  */
-module.exports = {
+export default {
   BlockStatement: (path) => {
     const body = path.node.body
     const loc = checkReturnLocation(body)

@@ -1,5 +1,6 @@
-const generator = require('@babel/generator').default
-const t = require('@babel/types')
+import _generate from '@babel/generator'
+const generator = _generate.default
+import * as t from '@babel/types'
 
 function checkLiteral(node) {
   if (t.isNumericLiteral(node)) {
@@ -101,7 +102,7 @@ function calculateUnaryExpression(path) {
   }
 }
 
-module.exports = {
+export default {
   BinaryExpression: { exit: calculateBinaryExpression },
   UnaryExpression: { exit: calculateUnaryExpression },
 }

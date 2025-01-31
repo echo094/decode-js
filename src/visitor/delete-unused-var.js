@@ -1,4 +1,4 @@
-const t = require('@babel/types')
+import * as t from '@babel/types'
 
 /**
  * Delete unused variables with the following exceptions:
@@ -7,7 +7,7 @@ const t = require('@babel/types')
  * - ForInStatement
  *
  */
-module.exports = {
+export default {
   VariableDeclarator: (path) => {
     const { node, scope } = path
     const name = node.id.name

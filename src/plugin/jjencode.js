@@ -57,7 +57,7 @@ function getCode(code) {
  * This encoding method originates from http://utf-8.jp/public/jjencode.html,
  * and it does not change the original code (encoder, not obfuscation).
  */
-module.exports = function (code) {
+export default function (code) {
   code = getCode(code)
   if (!code) {
     return null

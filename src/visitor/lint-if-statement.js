@@ -1,4 +1,4 @@
-const t = require('@babel/types')
+import * as t from '@babel/types'
 
 function LintIfStatement(path) {
   let { test, consequent, alternate } = path.node
@@ -17,6 +17,8 @@ function LintIfStatement(path) {
   path.replaceWith(t.ifStatement(test, consequent, alternate))
 }
 
-module.exports = {
-  IfStatement: { exit: LintIfStatement },
+export default {
+  IfStatement: {
+    exit: LintIfStatement,
+  },
 }
