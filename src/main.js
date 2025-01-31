@@ -25,26 +25,32 @@ console.log(`类型: ${type}`)
 console.log(`输入: ${encodeFile}`)
 console.log(`输出: ${decodeFile}`)
 
-// 读取源代码
-const sourceCode = fs.readFileSync(encodeFile, { encoding: 'utf-8' })
+const main = () => {
+  // 读取源代码
+  const sourceCode = fs.readFileSync(encodeFile, { encoding: 'utf-8' })
 
-// 净化源代码
-let code
-if (type === 'sojson') {
-  code = PluginSojson(sourceCode)
-} else if (type === 'sojsonv7') {
-  code = PluginSojsonV7(sourceCode)
-} else if (type === 'obfuscator') {
-  code = PluginObfuscator(sourceCode)
-} else if (type === 'awsc') {
-  code = PluginAwsc(sourceCode)
-} else if (type === 'jjencode') {
-  code = PluginJjencode(sourceCode)
-} else {
-  code = PluginCommon(sourceCode)
+  // 净化源代码
+  let code
+  if (type === 'sojson') {
+    code = PluginSojson(sourceCode)
+  } else if (type === 'sojsonv7') {
+    code = PluginSojsonV7(sourceCode)
+  } else if (type === 'obfuscator') {
+    code = PluginObfuscator(sourceCode)
+  } else if (type === 'awsc') {
+    code = PluginAwsc(sourceCode)
+  } else if (type === 'jjencode') {
+    code = PluginJjencode(sourceCode)
+  } else {
+    code = PluginCommon(sourceCode)
+  }
+
+  // 输出代码
+  if (code) {
+    fs.writeFile(decodeFile, code, () => {})
+  }
 }
 
-// 输出代码
-if (code) {
-  fs.writeFile(decodeFile, code, () => {})
-}
+process.nextTick(async () => {
+  main()
+})
