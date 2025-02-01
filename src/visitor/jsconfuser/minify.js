@@ -69,11 +69,13 @@ export default function () {
         return
       }
       arrowFunc = obj.name
-      console.log(`Find arrowFunctionName: ${obj.name}`)
+      console.log(`[Minify] Find arrowFunctionName: ${obj.name}`)
       let binding = obj.path.parentPath.scope.bindings[obj.name]
       for (const ref of binding.referencePaths) {
         if (ref.key !== 'callee') {
-          console.warn(`Unexpected ref of arrowFunctionName: ${obj.name}`)
+          console.warn(
+            `[Minify] Unexpected ref of arrowFunctionName: ${obj.name}`
+          )
           continue
         }
         const repl_path = ref.parentPath

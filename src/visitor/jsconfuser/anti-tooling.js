@@ -45,7 +45,7 @@ const deAntiTooling = {
     if (!deAntiToolingCheckFunc(path)) {
       return
     }
-    console.log(`AntiTooling Func Name: ${func_name}`)
+    console.log(`[AntiTooling] Func Name: ${func_name}`)
     deAntiToolingExtract(path, func_name)
   },
 }

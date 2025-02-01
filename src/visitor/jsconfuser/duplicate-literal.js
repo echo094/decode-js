@@ -56,12 +56,14 @@ function parseArrayWarp(vm, path) {
     name = func.node.id.name
     binding = func.parentPath.scope.getBinding(name)
   }
-  console.log(`Process array warp function: ${name}`)
+  console.log(`[DuplicateLiteral] Process array warp function: ${name}`)
   vm.evalSync(generator(func.node).code)
   for (const ref of binding.referencePaths) {
     const call = ref.parentPath
     if (ref.key !== 'callee') {
-      console.warn(`Unexpected ref of array warp function: ${call}`)
+      console.warn(
+        `[DuplicateLiteral] Unexpected ref of array warp function: ${call}`
+      )
       continue
     }
     const value = vm.evalSync(generator(call.node).code)
@@ -89,7 +91,7 @@ const deDuplicateLiteral = {
     if (!obj) {
       return
     }
-    console.log(`Find arrayName: ${obj.array_name}`)
+    console.log(`[DuplicateLiteral] Find arrayName: ${obj.array_name}`)
     let decl_node = t.variableDeclarator(
       obj.array_path.node.left,
       obj.array_path.node.right

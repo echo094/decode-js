@@ -132,7 +132,7 @@ const deStringCompression = {
     if (!get_obj) {
       return
     }
-    console.log(`Find stringCompression Fn: ${fn_obj.name}`)
+    console.log(`[StringCompression] Find stringCompression Fn: ${fn_obj.name}`)
     const vm = isolate.createContextSync()
     vm.evalSync(generator(decoder_obj.path.node).code)
     vm.evalSync(generator(get_obj.path.node).code)
@@ -142,7 +142,7 @@ const deStringCompression = {
     for (const ref of binding.referencePaths) {
       if (ref.key !== 'callee') {
         console.warn(
-          `Unexpected ref of stringCompression Fn: ${ref.parentPath}`
+          `[StringCompression] Unexpected ref of stringCompression Fn: ${ref.parentPath}`
         )
         continue
       }
@@ -152,7 +152,7 @@ const deStringCompression = {
         safeReplace(repl_path, value)
       } catch (e) {
         console.warn(
-          `Unexpected ref of stringCompression Fn: ${ref.parentPath}`
+          `[StringCompression] Unexpected ref of stringCompression Fn: ${ref.parentPath}`
         )
       }
     }
