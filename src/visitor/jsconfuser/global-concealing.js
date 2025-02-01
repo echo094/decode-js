@@ -56,7 +56,13 @@ function getGlobalConcealingNames(glo_fn_path) {
   const obj = {}
   glo_fn_path.traverse({
     SwitchCase(path) {
-      const key = parseInt(generator(path.node.test).code)
+      const code = generator(path.node.test).code
+      const key = parseInt(code)
+      if (Number.isNaN(key)) {
+        console.error(`[GlobalConcealing] concealed key: ${code}`)
+        obj['invalid'] = true
+        return
+      }
       let consequent = path.node.consequent[0]
       if (t.isReturnStatement(consequent)) {
         obj[key] = consequent.argument.property.value
@@ -113,15 +119,20 @@ const deGlobalConcealing = {
     const glo_vars = getGlobalConcealingNames(obj.glo_fn_path)
     console.log(`[GlobalConcealing] globalFn: ${obj.glo_fn_name}`)
     let binding = obj.glo_fn_path.parentPath.scope.getBinding(obj.glo_fn_name)
+    let remain = false
     for (const ref of binding.referencePaths) {
       const repl_path = ref.parentPath
       if (ref.key !== 'callee' || !repl_path.isCallExpression()) {
         continue
       }
       const key = parseInt(generator(repl_path.node.arguments[0]).code)
-      repl_path.replaceWith(t.identifier(glo_vars[key]))
+      if (glo_vars[key]) {
+        repl_path.replaceWith(t.identifier(glo_vars[key]))
+      } else {
+        remain = true
+      }
     }
-    if (safeDeleteNode(obj.glo_fn_name, obj.glo_fn_path)) {
+    if (!remain && safeDeleteNode(obj.glo_fn_name, obj.glo_fn_path)) {
       obj.tmp_path.remove()
     }
   },

@@ -293,7 +293,7 @@ function processStackParam(path, len) {
   while (changed) {
     checkStackInvalid(path, invalid)
     if (!checkChangeValid(invalid, used)) {
-      path.replaceWith(parse(orig_code))
+      path.replaceWith(parse(orig_code).program.body[0])
       used = {}
     }
     changed = tryStackReplace(path, len, invalid, used)
