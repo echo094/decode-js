@@ -6,6 +6,7 @@ const traverse = _traverse.default
 
 import calculateConstantExp from '../visitor/calculate-constant-exp.js'
 import pruneIfBranch from '../visitor/prune-if-branch.js'
+import splitVarDeclaration from '../visitor/split-variable-declaration.js'
 import jcAntiTooling from '../visitor/jsconfuser/anti-tooling.js'
 import jcControlFlow from '../visitor/jsconfuser/control-flow.js'
 import jcDuplicateLiteral from '../visitor/jsconfuser/duplicate-literal.js'
@@ -29,6 +30,8 @@ export default function (code) {
   // Minify
   const jcMinify = jcMinifyInit()
   traverse(ast, jcMinify.deMinifyArrow)
+  // MovedDeclarations
+  traverse(ast, splitVarDeclaration)
   // DuplicateLiteralsRemoval
   traverse(ast, jcDuplicateLiteral)
   // Stack
