@@ -22,9 +22,9 @@ An AST analyzer and processor based on Babel that can handle the following situa
 
 **If problems occur during installation and execution, please check the requirements of [isolated-vm](https://github.com/laverdet/isolated-vm?tab=readme-ov-file#requirements) first**
 
-1. 准备一个nodejs环境 (18.x以上)
+1. 准备一个nodejs环境 (22.x以上)
 
-   Prepare a nodejs environment (>=18.x)
+   Prepare a nodejs environment (>=22.x)
    
 2. 通过`npm i`安装依赖
    
