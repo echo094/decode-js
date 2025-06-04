@@ -18,15 +18,12 @@ function mergeObject(path) {
       if (item.node.start <= start) {
         continue
       }
-      if (item.isVariableDeclarator()) {
-        end = item.node.start
-        violation = item
-        break
-      }
-      if (item.isAssignmentExpression()) {
-        end = item.node.start
-        violation = item
-        break
+      if (item.isVariableDeclarator() || item.isAssignmentExpression()) {
+        if (end === -1 || item.node.start < end) {
+          end = item.node.start
+          violation = item
+        }
+        continue
       }
       return
     }
