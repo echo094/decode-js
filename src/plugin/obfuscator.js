@@ -733,44 +733,6 @@ function cleanDeadCode(ast) {
   return ast
 }
 
-function standardIfStatement(path) {
-  const consequent = path.get('consequent')
-  const alternate = path.get('alternate')
-  const test = path.get('test')
-  const evaluateTest = test.evaluateTruthy()
-
-  if (!consequent.isBlockStatement()) {
-    consequent.replaceWith(t.BlockStatement([consequent.node]))
-  }
-  if (alternate.node !== null && !alternate.isBlockStatement()) {
-    alternate.replaceWith(t.BlockStatement([alternate.node]))
-  }
-
-  if (consequent.node.body.length == 0) {
-    if (alternate.node == null) {
-      path.replaceWith(test.node)
-    } else {
-      consequent.replaceWith(alternate.node)
-      alternate.remove()
-      path.node.alternate = null
-      test.replaceWith(t.unaryExpression('!', test.node, true))
-    }
-  }
-
-  if (alternate.isBlockStatement() && alternate.node.body.length == 0) {
-    alternate.remove()
-    path.node.alternate = null
-  }
-
-  if (evaluateTest === true) {
-    path.replaceWithMultiple(consequent.node.body)
-  } else if (evaluateTest === false) {
-    alternate.node === null
-      ? path.remove()
-      : path.replaceWithMultiple(alternate.node.body)
-  }
-}
-
 function standardLoop(path) {
   const node = path.node
   if (!t.isBlockStatement(node.body)) {
@@ -780,7 +742,8 @@ function standardLoop(path) {
 
 function purifyCode(ast) {
   // 标准化if语句
-  traverse(ast, { IfStatement: standardIfStatement })
+  traverse(ast, lintIfStatement)
+  traverse(ast, pruneIfBranch)
   // 标准化for语句
   traverse(ast, { ForStatement: standardLoop })
   // 标准化while语句
