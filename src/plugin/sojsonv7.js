@@ -14,6 +14,7 @@ import deleteIllegalReturn from '../visitor/delete-illegal-return.js'
 import deleteUnusedVar from '../visitor/delete-unused-var.js'
 import parseControlFlowStorage from '../visitor/parse-control-flow-storage.js'
 import pruneIfBranch from '../visitor/prune-if-branch.js'
+import removeControlFlowOb from '../visitor/remove-control-flow-ob.js'
 import splitSequence from '../visitor/split-sequence.js'
 
 const isolate = new ivm.Isolate()
@@ -340,84 +341,6 @@ function decodeGlobal(ast) {
   return ast
 }
 
-function cleanSwitchCode1(path) {
-  // 扁平控制：
-  // 会使用一个恒为true的while语句包裹一个switch语句
-  // switch语句的执行顺序又while语句上方的字符串决定
-  // 首先碰断是否符合这种情况
-  const node = path.node
-  if (!(t.isBooleanLiteral(node.test) || t.isUnaryExpression(node.test))) {
-    return
-  }
-  if (!(node.test.prefix || node.test.value)) {
-    return
-  }
-  if (!t.isBlockStatement(node.body)) {
-    return
-  }
-  const body = node.body.body
-  if (
-    !t.isSwitchStatement(body[0]) ||
-    !t.isMemberExpression(body[0].discriminant) ||
-    !t.isBreakStatement(body[1])
-  ) {
-    return
-  }
-  // switch语句的两个变量
-  const swithStm = body[0]
-  const arrName = swithStm.discriminant.object.name
-  const argName = swithStm.discriminant.property.argument.name
-  console.log(`扁平化还原: ${arrName}[${argName}]`)
-  // 在while上面的节点寻找这两个变量
-  let arr = []
-  path.getAllPrevSiblings().forEach((pre_path) => {
-    const { declarations } = pre_path.node
-    let { id, init } = declarations[0]
-    if (arrName == id.name) {
-      arr = init.callee.object.value.split('|')
-      pre_path.remove()
-    }
-    if (argName == id.name) {
-      pre_path.remove()
-    }
-  })
-  // 重建代码块
-  const caseList = swithStm.cases
-  let resultBody = []
-  arr.map((targetIdx) => {
-    // 从当前序号开始直到遇到continue
-    let valid = true
-    targetIdx = parseInt(targetIdx)
-    while (valid && targetIdx < caseList.length) {
-      const targetBody = caseList[targetIdx].consequent
-      const test = caseList[targetIdx].test
-      if (!t.isStringLiteral(test) || parseInt(test.value) !== targetIdx) {
-        console.log(`switch中出现乱序的序号: ${test.value}:${targetIdx}`)
-      }
-      for (let i = 0; i < targetBody.length; ++i) {
-        const s = targetBody[i]
-        if (t.isContinueStatement(s)) {
-          valid = false
-          break
-        }
-        if (t.isReturnStatement(s)) {
-          valid = false
-          resultBody.push(s)
-          break
-        }
-        if (t.isBreakStatement(s)) {
-          console.log(`switch中出现意外的break: ${arrName}[${argName}]`)
-        } else {
-          resultBody.push(s)
-        }
-      }
-      targetIdx++
-    }
-  })
-  // 替换整个while语句
-  path.replaceInline(resultBody)
-}
-
 function cleanSwitchCode2(path) {
   // 扁平控制：
   // 会使用一个空的for语句包裹一个switch语句
@@ -498,7 +421,7 @@ function cleanSwitchCode2(path) {
 function cleanDeadCode(ast) {
   traverse(ast, calculateConstantExp)
   traverse(ast, pruneIfBranch)
-  traverse(ast, { WhileStatement: { exit: cleanSwitchCode1 } })
+  traverse(ast, removeControlFlowOb)
   traverse(ast, { ForStatement: { exit: cleanSwitchCode2 } })
   return ast
 }
