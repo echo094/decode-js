@@ -487,6 +487,9 @@ function unlockDebugger(path) {
       if (rm.key === 'expression') {
         rm = rm.parentPath
       }
+      if (rm.key === 'callee') {
+        rm = rm.parentPath
+      }
       rm.remove()
     } else if (ref.key === 'callee') {
       // lint test for this method
