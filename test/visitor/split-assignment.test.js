@@ -5,6 +5,11 @@ import splitAssignment from '#visitor/split-assignment'
 
 const root = join(__dirname, 'split-assignment')
 
+test('call-valid-1', () => {
+  const tc = 'call-valid-1'
+  getResult(splitAssignment, true, join(root, tc))
+})
+
 test('if-invalid', () => {
   const tc = 'if-invalid'
   getResult(splitAssignment, false, join(root, tc))
@@ -17,6 +22,11 @@ test('if-assignment-valid', () => {
 
 test('if-member-valid', () => {
   const tc = 'if-member-valid'
+  getResult(splitAssignment, true, join(root, tc))
+})
+
+test('member-valid-1', () => {
+  const tc = 'member-valid-1'
   getResult(splitAssignment, true, join(root, tc))
 })
 
