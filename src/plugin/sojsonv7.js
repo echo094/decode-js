@@ -29,6 +29,36 @@ function evalOneTime(str) {
   return ret
 }
 
+function getAssignmentRange(item, binding) {
+  if (binding.constant) {
+    return undefined
+  }
+  if (!item.isVariableDeclarator() && !item.isAssignmentExpression()) {
+    // Other types cannot be handled now.
+    return undefined
+  }
+  let start = item.node.start
+  let end = -1
+  // Find the first constantViolation after this declaration
+  // According to packages/babel-traverse/src/scope/index.ts, there are four kinds of violations:
+  // AssignmentExpression, ForXStatement, UpdateExpression, UnaryExpression(delete)
+  for (let violation of binding.constantViolations) {
+    if (violation.node.start <= start) {
+      continue
+    }
+    if (end === -1 || violation.node.end < end) {
+      end = violation.node.end
+    }
+  }
+  if (end == -1) {
+    end = 0xffffffff
+  }
+  return {
+    start: start,
+    end: end,
+  }
+}
+
 function decodeGlobal(ast) {
   // 清理空语句
   let i = 0
@@ -295,9 +325,14 @@ function decodeGlobal(ast) {
     // Hence, var may not be in the current scope, e.g., in a for-loop
     const binding = scope.getBinding(cur_val)
     scope = binding.scope
+    const range = getAssignmentRange(item.path, binding)
     const refs = binding.referencePaths
     const refs_next = []
     for (let ref of refs) {
+      const loc = ref.node.start
+      if (range && (loc < range.start || loc > range.end)) {
+        continue
+      }
       const parent = ref.parentPath
       if (ref.key === 'init') {
         // VariableDeclarator
