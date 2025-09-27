@@ -13,6 +13,7 @@ import jcDuplicateLiteral from '../visitor/jsconfuser/duplicate-literal.js'
 import jcGlobalConcealing from '../visitor/jsconfuser/global-concealing.js'
 import jcMinifyInit from '../visitor/jsconfuser/minify.js'
 import jcOpaquePredicates from '../visitor/jsconfuser/opaque-predicates.js'
+import jcPack from '../visitor/jsconfuser/pack.js'
 import jcStackInit from '../visitor/jsconfuser/stack.js'
 import jcStringCompression from '../visitor/jsconfuser/string-compression.js'
 import jcStringConceal from '../visitor/jsconfuser/string-concealing.js'
@@ -25,6 +26,8 @@ export default function (code) {
     console.error(`Cannot parse code: ${e.reasonCode}`)
     return null
   }
+  // Pack
+  ast = jcPack(ast)
   // AntiTooling
   traverse(ast, jcAntiTooling)
   // Minify
