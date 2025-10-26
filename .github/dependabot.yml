@@ -12,8 +12,12 @@ updates:
     groups:
       # Specify a name for the group, which will be used in pull request titles
       # and branch names
-      minor-and-patch:
+      babel:
         applies-to: version-updates
-        update-types:
-          - "minor"
-          - "patch"
+        patterns:
+          - "@babel/*"
+      eslint:
+        applies-to: version-updates
+        patterns:
+          - "eslint"
+          - "eslint-*"
