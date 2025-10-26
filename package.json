@@ -15,7 +15,7 @@
     "@babel/traverse": "^7.25.2",
     "@babel/types": "^7.25.0",
     "eslint": "^8.23.0",
-    "eslint-config-prettier": "^8.5.0",
+    "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^4.2.1",
     "isolated-vm": "^5.0.4",
     "prettier": "^2.7.1"
