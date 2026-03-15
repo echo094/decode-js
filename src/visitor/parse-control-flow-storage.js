@@ -42,14 +42,14 @@ function parseObject(path) {
         // 二元运算类型
         repfunc = function (_path, args) {
           _path.replaceWith(
-            t.binaryExpression(retStmt.argument.operator, args[0], args[1])
+            t.binaryExpression(retStmt.argument.operator, args[0], args[1]),
           )
         }
       } else if (t.isLogicalExpression(retStmt.argument)) {
         // 逻辑判断类型
         repfunc = function (_path, args) {
           _path.replaceWith(
-            t.logicalExpression(retStmt.argument.operator, args[0], args[1])
+            t.logicalExpression(retStmt.argument.operator, args[0], args[1]),
           )
         }
       } else if (t.isCallExpression(retStmt.argument)) {
@@ -88,7 +88,7 @@ function parseObject(path) {
   }
   if (objPropertiesList.length !== replCount) {
     console.log(
-      `不完整替换: ${objName} ${replCount}/${objPropertiesList.length}`
+      `不完整替换: ${objName} ${replCount}/${objPropertiesList.length}`,
     )
     return
   }
@@ -97,7 +97,7 @@ function parseObject(path) {
   let objUsed = {}
   function getReplaceFunc(_node) {
     // 这里开始所有的调用应该都在列表中
-    let key = null
+    let key
     if (t.isStringLiteral(_node.property)) {
       key = _node.property.value
     } else if (t.isIdentifier(_node.property)) {

@@ -24,7 +24,7 @@ function LintConditionalAssign(path) {
   consequent = t.assignmentExpression(operator, left, consequent)
   alternate = t.assignmentExpression(operator, left, alternate)
   path.parentPath.replaceWith(
-    t.conditionalExpression(test, consequent, alternate)
+    t.conditionalExpression(test, consequent, alternate),
   )
 }
 

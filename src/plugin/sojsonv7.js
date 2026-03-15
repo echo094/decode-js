@@ -158,7 +158,7 @@ function decodeGlobal(ast) {
         while (node_table.getFunctionParent()) {
           node_table = node_table.getFunctionParent()
         }
-        let var_string_table = null
+        let var_string_table
         if (node_table.node.id) {
           var_string_table = node_table.node.id.name
         } else {
@@ -754,7 +754,7 @@ export default function (code) {
     generator(ast, {
       comments: false,
       jsescOption: { minimal: true },
-    }).code
+    }).code,
   )
   console.log('提高代码可读性...')
   purifyCode(ast)

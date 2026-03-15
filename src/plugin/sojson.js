@@ -442,7 +442,7 @@ export default function (code) {
     generator(ast, {
       comments: false,
       jsescOption: { minimal: true },
-    }).code
+    }).code,
   )
   console.log('提高代码可读性...')
   ast = purifyCode(ast)

@@ -345,7 +345,7 @@ function stringArrayV3(ast) {
       return
     }
     const name_func = path.node.id.name
-    let string_var = -1
+    let string_var
     try {
       if (
         body[0].declarations.length != 1 ||
@@ -529,7 +529,7 @@ function decodeGlobal(ast) {
           let new_str = virtualGlobalEval(old_call)
           console.log(`map: ${old_call} -> ${new_str}`)
           parent.replaceWith(t.StringLiteral(new_str))
-        } catch (e) {
+        } catch {
           // 运行失败则说明函数为其它混淆函数的子函数
           console.log(`sub: ${old_call}`)
           const ret = getChild(parent)
