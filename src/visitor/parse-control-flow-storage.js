@@ -40,6 +40,9 @@ function parseObject(path) {
       let repfunc = null
       if (t.isBinaryExpression(retStmt.argument)) {
         // 二元运算类型
+        if (prop.value.params.length !== 2) {
+          return
+        }
         repfunc = function (_path, args) {
           _path.replaceWith(
             t.binaryExpression(retStmt.argument.operator, args[0], args[1]),
@@ -47,6 +50,9 @@ function parseObject(path) {
         }
       } else if (t.isLogicalExpression(retStmt.argument)) {
         // 逻辑判断类型
+        if (prop.value.params.length !== 2) {
+          return
+        }
         repfunc = function (_path, args) {
           _path.replaceWith(
             t.logicalExpression(retStmt.argument.operator, args[0], args[1]),
