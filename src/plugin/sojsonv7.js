@@ -343,11 +343,15 @@ function decodeGlobal(ast) {
         })
       } else if (ref.key === 'right') {
         // AssignmentExpression
+        // issue #165
+        const code = 'var ' + parent
+        parent.replaceWith(parent.node.left)
         refs_next.push({
-          name: parent.node.left.name,
+          name: parent.node.name,
           path: parent,
-          code: 'var ' + parent,
+          code: code,
         })
+        parent.scope.crawl()
       } else if (ref.key === 'object') {
         // MemberExpression
         memToStr(parent)
@@ -362,8 +366,14 @@ function decodeGlobal(ast) {
       dfs(stk, ref)
     }
     scope.crawl()
-    item.path.remove()
-    scope.crawl()
+    let skip = false
+    if (item.path.parentPath.isStringLiteral()) {
+      skip = true
+    }
+    if (!skip) {
+      item.path.remove()
+      scope.crawl()
+    }
     console.log(`Exit sub ${stk.length}:${cur_val}`)
     stk.pop()
   }
