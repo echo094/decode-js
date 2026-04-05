@@ -21,7 +21,9 @@ jobs:
           cache: 'npm' # or 'yarn' / 'pnpm'
 
       - name: Install dependencies
-        run: npm ci
+        run: |
+          npm install -g node-gyp
+          npm ci
         env:
           # This ensures native modules like isolated-vm build correctly if 
           # there are versioning quirks with node-gyp
