@@ -13,6 +13,7 @@ export default defineConfig({
         'src',
       ],
       "reporter": ['text', 'json', 'json-summary'],
+      "reportOnFailure": true,
     },
     "passWithNoTests": true,
   },
