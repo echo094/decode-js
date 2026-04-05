@@ -12,6 +12,8 @@ export default defineConfig({
       "include": [
         'src',
       ],
+      "reporter": ['text', 'json', 'json-summary'],
+      "reportOnFailure": true,
     },
     "passWithNoTests": true,
   },

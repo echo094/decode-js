@@ -9,6 +9,10 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    # Permissions are required to post comments on the PR
+    permissions:
+      pull-requests: write
+      contents: read
 
     steps:
       - name: Checkout code
@@ -17,11 +21,26 @@ jobs:
       - name: Install Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: 'npm' # or 'yarn' / 'pnpm'
 
       - name: Install dependencies
-        run: npm ci
+        run: |
+          npm install -g node-gyp
+          npm ci
+        env:
+          # This ensures native modules like isolated-vm build correctly if 
+          # there are versioning quirks with node-gyp
+          npm_config_build_from_source: true
 
       - name: Run Vitest
+        # We use 'always()' so the report is posted even if tests fail
         run: npx vitest run
+        if: always()
+
+      - name: Vitest Pull Request Report
+        uses: davelosert/vitest-coverage-report-action@v2
+        if: always()
+        with:
+          json-summary-path: './coverage/coverage-summary.json'
+          json-final-path: './coverage/coverage-final.json'
