@@ -9,6 +9,10 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    # Permissions are required to post comments on the PR
+    permissions:
+      pull-requests: write
+      contents: read
 
     steps:
       - name: Checkout code
@@ -30,4 +34,13 @@ jobs:
           npm_config_build_from_source: true
 
       - name: Run Vitest
+        # We use 'always()' so the report is posted even if tests fail
         run: npx vitest run
+        if: always()
+
+      - name: Vitest Pull Request Report
+        uses: davelosert/vitest-coverage-report-action@v2
+        if: always()
+        with:
+          json-summary-path: './coverage/coverage-summary.json'
+          json-final-path: './coverage/coverage-final.json'
