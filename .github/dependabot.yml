@@ -21,6 +21,8 @@ updates:
         patterns:
           - "eslint"
           - "eslint-*"
+          - "@eslint/*"
+          - "globals"
       vitest:
         patterns:
           - "vitest"
