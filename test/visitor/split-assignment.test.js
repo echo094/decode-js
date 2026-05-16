@@ -1,6 +1,6 @@
 import { join } from 'path'
 import { test } from 'vitest'
-import getResult from '../helper.js'
+import { getVisitorResult as getResult } from '../helper.js'
 import splitAssignment from '#visitor/split-assignment'
 
 const root = join(__dirname, 'split-assignment')

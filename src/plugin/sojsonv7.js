@@ -3,9 +3,9 @@
  */
 import { parse } from '@babel/parser'
 import _generate from '@babel/generator'
-const generator = _generate.default
+const generator = _generate.default || _generate
 import _traverse from '@babel/traverse'
-const traverse = _traverse.default
+const traverse = _traverse.default || _traverse
 import * as t from '@babel/types'
 import ivm from 'isolated-vm'
 import PluginEval from './eval.js'
@@ -185,6 +185,7 @@ function decodeGlobal(ast) {
         // Instead, we can delete it directly
         const up2 = up1.parentPath
         up2.replaceWith(up2.node.left)
+        up2.scope.crawl()
       } else {
         console.warn(`Unexpected ref var_version: ${up1}`)
       }
@@ -247,8 +248,10 @@ function decodeGlobal(ast) {
       while (top.getFunctionParent()) {
         top = top.getFunctionParent()
       }
-      decrypt_code[2] = parse_main_call(top)
-      decrypt_val = top.node.id.name
+      if (top.node?.id?.name) {
+        decrypt_code[2] = parse_main_call(top)
+        decrypt_val = top.node.id.name
+      }
       continue
     }
     if (parent.isCallExpression() && !parent.node.arguments.length) {

@@ -4,7 +4,7 @@ import { parse } from '@babel/parser'
 import generate from '@babel/generator'
 import traverse from '@babel/traverse'
 
-export default function (visitor, fix, input) {
+export function getVisitorResult(visitor, fix, input) {
   const sourceCode = fs.readFileSync(input + '.js', { encoding: 'utf-8' })
   const ast = parse(sourceCode)
   traverse(ast, visitor)
@@ -13,5 +13,16 @@ export default function (visitor, fix, input) {
     expect(generate(ast).code).toBe(cmpCode)
   } else {
     expect(generate(ast).code).toBe(sourceCode)
+  }
+}
+
+export function getPluginResult(plugin, fix, input) {
+  const sourceCode = fs.readFileSync(input + '.js', { encoding: 'utf-8' })
+  const out = plugin(sourceCode)
+  if (fix) {
+    const cmpCode = fs.readFileSync(input + '.fix.js', { encoding: 'utf-8' })
+    expect(out).toBe(cmpCode)
+  } else {
+    expect(out).toBe(sourceCode)
   }
 }

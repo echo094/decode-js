@@ -1,5 +1,5 @@
 import _generate from '@babel/generator'
-const generator = _generate.default
+const generator = _generate.default || _generate
 import * as t from '@babel/types'
 
 function checkLiteral(node) {

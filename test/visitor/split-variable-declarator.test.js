@@ -1,6 +1,6 @@
 import { join } from 'path'
 import { test } from 'vitest'
-import getResult from '../helper.js'
+import { getVisitorResult as getResult } from '../helper.js'
 import splitVarDeclarator from '#visitor/split-variable-declarator'
 
 const root = join(__dirname, 'split-variable-declarator')

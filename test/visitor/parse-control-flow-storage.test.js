@@ -1,6 +1,6 @@
 import { join } from 'path'
 import { test } from 'vitest'
-import getResult from '../helper.js'
+import { getVisitorResult as getResult } from '../helper.js'
 import parseControlFlowStorage from '#visitor/parse-control-flow-storage'
 
 const root = join(__dirname, 'parse-control-flow-storage')
