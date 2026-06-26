@@ -1,0 +1,53 @@
+name: "Ops 🛠️ | Regenerate Lockfile"
+
+on:
+  workflow_dispatch: # Allows manual trigger from the GitHub Actions tab
+
+jobs:
+  regenerate-lockfile:
+    runs-on: ubuntu-latest
+    
+    # Required permissions to push a temporary branch and open the PR
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      # Step 1: Securely check out the repository
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      # Step 2: Use modern Node/npm to target the lockfileVersion v3 format
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 26
+
+      # Step 3: Wipe and cleanly rebuild the lockfile
+      - name: Clean and regenerate package-lock.json
+        run: |
+          rm -f package-lock.json
+          npm install
+
+      # Step 4: Open a safe, reviewable Pull Request instead of pushing to main
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v8
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "chore: cleanly regenerate package-lock.json"
+          branch: ops/regenerate-lockfile
+          delete-branch: true
+          title: "chore(ops): regenerate package-lock.json"
+          author: "github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>"
+          body: |
+            ### 🛠️ Automated Lockfile Regeneration
+            This PR was triggered manually via the **Ops | Regenerate Lockfile** workflow.
+            
+            #### What changed?
+            * The existing `package-lock.json` was deleted and cleanly regenerated using Node 20 / npm v10+.
+            * This forces the `lockfileVersion` to match the latest standard format (v3).
+            
+            Please verify that your CI tests pass before merging!
+          labels: |
+            dependencies
+            automated-pr
