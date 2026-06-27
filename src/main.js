@@ -1,6 +1,7 @@
 import fs from 'fs'
 import PluginCommon from './plugin/common.js'
 import PluginJjencode from './plugin/jjencode.js'
+import PluginJsconfuser from './plugin/jsconfuser.js'
 import PluginSojson from './plugin/sojson.js'
 import PluginSojsonV7 from './plugin/sojsonv7.js'
 import PluginObfuscator from './plugin/obfuscator.js'
@@ -41,6 +42,8 @@ const main = () => {
     code = PluginAwsc(sourceCode)
   } else if (type === 'jjencode') {
     code = PluginJjencode(sourceCode)
+  } else if (type === 'jsconfuser') {
+    code = PluginJsconfuser(sourceCode)
   } else {
     code = PluginCommon(sourceCode)
   }
