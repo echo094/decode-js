@@ -11,9 +11,9 @@
   },
   "dependencies": {
     "@babel/generator": "^8.0.0",
-    "@babel/parser": "^7.25.0",
+    "@babel/parser": "^8.0.0",
     "@babel/traverse": "^8.0.0",
-    "@babel/types": "^7.25.0",
+    "@babel/types": "^8.0.0",
     "isolated-vm": "^7.0.0"
   },
   "devDependencies": {
