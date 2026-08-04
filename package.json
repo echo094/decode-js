@@ -1,5 +1,6 @@
 {
   "name": "decode-js",
+  "license": "GPL-3.0-or-later",
   "type": "module",
   "engines": {
     "node": "26.x"
