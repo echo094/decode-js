@@ -185,3 +185,30 @@ test('string-concealing', () => {
   const tc = 'string-concealing'
   getPluginResult(PluginJsconfuser, true, join(root, tc))
 })
+
+// variableMasking + renameVariables: audited, CONFIRMED AFFECTED and fixed.
+// checkStackInvalid/tryStackReplace/getStackParamLen/collectMutatedKeys (variable-
+// masking.js) matched a MemberExpression's stack-array object purely by name text
+// (`path.node.object.name !== stk_name`), with no scope/binding check. Every
+// `body_path.traverse` call descends into nested function bodies by default, so a
+// nested masked function's own rest param - which RenameVariables frequently gives
+// the exact same text as its enclosing function's own stk_name, since the inner
+// legally shadows the outer - had its own stack accesses misread as the *outer*
+// function's own. In the reproduced sample, the nested function's own permanently-
+// unresolvable slot (`stk["a"]++`, an UpdateExpression - checkStackInvalid marks
+// any such key invalid unconditionally) poisoned the outer's `invalid` set under the
+// identical key text ("a"), leaving the outer's own real local (`total`) stuck in
+// raw `stk["a"] = ...` array-assignment form forever - runtime-correct (the raw form
+// is still valid JS) but never actually decoded, invisible to any check that only
+// looks for a residual interpreter/guard signature. Reproduced empirically: 6/40
+// fresh renameVariables runs hit this exact collision. Fixed via `isOwnStackMember`,
+// which resolves the actual binding at each match site and compares it against the
+// binding captured for this function's own rest param - compared by the bound
+// identifier node rather than the Binding wrapper itself, since this file's own
+// localvar/array-pattern promotion re-crawls the scope mid-traversal
+// (`getProgramParent().crawl()`), which rebuilds Binding objects for the very same
+// declaration (see variable-masking.js).
+test('variable-masking', () => {
+  const tc = 'variable-masking'
+  getPluginResult(PluginJsconfuser, true, join(root, tc))
+})

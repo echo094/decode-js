@@ -1,0 +1,1 @@
+function PPEyhb6(...PPEyhb6){function OeLAcUc(...PPEyhb6){PPEyhb6["a"]=PPEyhb6[0];PPEyhb6["a"]++;return PPEyhb6["a"]*2}PPEyhb6["a"]=PPEyhb6[0]+PPEyhb6[1]+OeLAcUc(PPEyhb6[2]);return PPEyhb6["a"]}function OeLAcUc(...PPEyhb6){PPEyhb6["a"]=PPEyhb6[0]*2;return PPEyhb6["a"]+PPEyhb6[1]}TEST_OUTPUT=[PPEyhb6(1,2,3),OeLAcUc(4,5)];
