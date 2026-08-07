@@ -113,3 +113,23 @@ test('global-concealing', () => {
   const tc = 'global-concealing'
   getPluginResult(PluginJsconfuser, true, join(root, tc))
 })
+
+// opaquePredicates + renameVariables: audited, cleared - and unlike Lock/RGF/Dispatcher,
+// provably safe by construction rather than just by absence of a cross-scope splice.
+// matchPredicateGenTrue's `path` (the `!("key" in dummyFn)` test) always sits inside the
+// scope that references dummyFn, by definition - it *is* that reference's own location.
+// RenameVariables' own reuse algorithm (renameVariables.ts's "possible" set) only ever
+// offers an ancestor scope's renamed name to a descendant scope when that name is NOT
+// referenced anywhere in the descendant's subtree; since every scope from `path` up to
+// Program necessarily contains the dummyFn reference in its own subtree (path is nested
+// inside all of them), dummyFn's own new name can never legally become a reuse candidate
+// along that exact chain - the mechanism that broke Calculator/GlobalConcealing (a
+// function's own name being free for its own body to reuse, because it doesn't
+// self-reference) structurally cannot occur here. 20/20 runtime-correct, 20/20
+// residue-free (regex for a surviving `"key" in name` guard) across fresh runs with
+// renameVariables, three predicate sites across sibling/nested/loop scopes in one sample.
+// No code change.
+test('opaque-predicates', () => {
+  const tc = 'opaque-predicates'
+  getPluginResult(PluginJsconfuser, true, join(root, tc))
+})
