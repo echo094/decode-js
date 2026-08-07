@@ -237,3 +237,28 @@ test('duplicate-literal', () => {
   const tc = 'duplicate-literal'
   getPluginResult(PluginJsconfuser, true, join(root, tc))
 })
+
+// movedDeclarations + renameVariables: audited, cleared - the strongest guarantee of
+// any transform in this sweep. split-variable-declaration.js (the only decode-side
+// pass wired to MovedDeclarations - it splits a merged `var a, b, c` back into
+// `var a; var b; var c`, undoing the incidental re-merge a later encoder stage can
+// apply to declarations MovedDeclarations already moved to the top of a block) reads
+// zero identifiers: it only inspects `path.node.kind`, `path.node.declarations`,
+// `path.listKey`, and `path.parentPath.isFor()`. There is no name comparison anywhere
+// in the file for RenameVariables to collide with, so the class of bug that hit
+// flatten.js/calculator.js/global-concealing.js/variable-masking.js/string-concealing.js
+// cannot occur here at all - not even a theoretical collision surface. Confirmed
+// empirically against a source built to stress MovedDeclarations' own two mechanisms
+// (single-declarator var hoisted into a function's own parameter list, and a nested
+// named function declaration turned into an `if(!name) name = function(){...}` guard)
+// nested three functions deep - 10/10 runtime-correct across 5 base + 5
+// base+renameVariables runs. The frozen sample below is confusing to read purely
+// because MovedDeclarations' own param-packing/guard-wrapping plus RenameVariables'
+// own renaming both apply (neither reversed by design - MovedDeclarations is cosmetic
+// restructuring the decoder doesn't attempt to undo, RenameVariables is the
+// unrestorable cosmetic pass every other fixture in this file also leaves in place),
+// not because of any decode defect. No code change.
+test('moved-declarations', () => {
+  const tc = 'moved-declarations'
+  getPluginResult(PluginJsconfuser, true, join(root, tc))
+})
