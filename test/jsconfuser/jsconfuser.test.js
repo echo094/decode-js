@@ -10,6 +10,11 @@ test('rgf-flatten', () => {
   getPluginResult(PluginJsconfuser, true, join(root, tc))
 })
 
+test('dead-code-opaque-predicates', () => {
+  const tc = 'dead-code-opaque-predicates'
+  getPluginResult(PluginJsconfuser, true, join(root, tc))
+})
+
 // A `high`-preset encode, and the first fixture that pins StringConcealing's dependency
 // cleanup across stage boundaries. Its sweeps are reference-count-gated and both ran while
 // the base91 decode function's `return bufferToString(...)` still referenced the whole
