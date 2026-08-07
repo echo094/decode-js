@@ -133,3 +133,20 @@ test('opaque-predicates', () => {
   const tc = 'opaque-predicates'
   getPluginResult(PluginJsconfuser, true, join(root, tc))
 })
+
+// stringSplitting + renameVariables: audited, cleared - the decoder side
+// (calculate-constant-exp.js's calculateBinaryExpression) is pure literal folding over
+// BinaryExpression/UnaryExpression/LogicalExpression nodes and never reads an
+// identifier's name at all, so there's no name-based matching for RenameVariables to
+// collide with in the first place (a stronger guarantee than the structural-only
+// clears above - this one doesn't even look at bindings). Confirmed empirically too:
+// the frozen sample below coincidentally renames a function and its own parameter to
+// the exact same identifier (`function BxHPT53(BxHPT53)`, the same shape that broke
+// calculator.js/global-concealing.js), and still decodes every split-string chain back
+// to a single literal with zero residue, because the fold never inspects that name.
+// 10/10 runtime-correct, 5/5 residue-free (no leftover `+ ""`-chain concatenation),
+// with and without renameVariables. No code change.
+test('string-splitting', () => {
+  const tc = 'string-splitting'
+  getPluginResult(PluginJsconfuser, true, join(root, tc))
+})
