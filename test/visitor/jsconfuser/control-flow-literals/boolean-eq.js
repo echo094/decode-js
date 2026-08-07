@@ -1,0 +1,1 @@
+var x = states[2] == 30;

@@ -1,0 +1,1 @@
+var z = states[2] < 40;

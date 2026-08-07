@@ -1,0 +1,1 @@
+var x = __xor(states[0] + 77, 2, 5);
