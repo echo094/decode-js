@@ -5,6 +5,11 @@ import PluginJsconfuser from '#plugin/jsconfuser.js'
 
 const root = __dirname
 
+test('rgf-flatten', () => {
+  const tc = 'rgf-flatten'
+  getPluginResult(PluginJsconfuser, true, join(root, tc))
+})
+
 // A `high`-preset encode, and the first fixture that pins StringConcealing's dependency
 // cleanup across stage boundaries. Its sweeps are reference-count-gated and both ran while
 // the base91 decode function's `return bufferToString(...)` still referenced the whole
@@ -162,6 +167,18 @@ test('control-flow-flattening-dispatcher', () => {
 // argument is a resolved string literal rather than a concealed call site.
 test('domain-lock-string-concealing', () => {
   const tc = 'domain-lock-string-concealing'
+  getPluginResult(PluginJsconfuser, true, join(root, tc))
+})
+
+// rgf + preserveFunctionLength: a real encoder sample (target: node, { rgf:
+// true, preserveFunctionLength: true }) where RGF shrinks the transformed
+// function to a zero-param stub and preserveFunctionLength wraps it in
+// {ph}_fnLength(fn, length). Confirms function-length.js's hasRestParam guard
+// (see variable-masking.md's Known gaps) lets the wrapper strip cleanly
+// without crashing on the rest-param-less target, and RGF's own decode still
+// finds the call-site shape underneath.
+test('rgf-function-length', () => {
+  const tc = 'rgf-function-length'
   getPluginResult(PluginJsconfuser, true, join(root, tc))
 })
 
