@@ -1,5 +1,8 @@
 import generator from '@babel/generator'
 import * as t from '@babel/types'
+import safeFunc from '../utility/safe-func.js'
+
+const uncomputeStringKey = safeFunc.uncomputeStringKey
 
 function checkLiteral(node) {
   if (t.isNumericLiteral(node)) {
@@ -37,6 +40,11 @@ function calculateBinaryExpression(path) {
     // For example, string "ab" will be parsed as identifier ab
     if (typeof ret === 'string') {
       path.replaceWith(t.stringLiteral(ret))
+      // A concealed key reaches this pass as a folded expression rather than as a call,
+      // so it is a second producer of the `["k"]` spelling `safeReplace` normalizes -
+      // and the two feed the *same* object literal, which is what made the population
+      // look half-fixed. Same guard, same two excluded keys.
+      uncomputeStringKey(path)
     } else {
       path.replaceWithSourceString(ret)
     }
@@ -96,12 +104,42 @@ function calculateUnaryExpression(path) {
     if (isLiteral) {
       const code = generator(node0).code
       path.replaceWith(t.stringLiteral(eval(code)))
+      uncomputeStringKey(path)
     }
     return
+  }
+}
+
+function checkSimpleLiteral(node) {
+  return (
+    t.isStringLiteral(node) ||
+    t.isNumericLiteral(node) ||
+    t.isBooleanLiteral(node) ||
+    t.isNullLiteral(node)
+  )
+}
+
+/**
+ * Short-circuit `&&`/`||` when the left side is a constant literal, e.g.
+ * `true && x` -> `x`, `false || x` -> `x`. Only the left side is checked since
+ * that's the side actually tested for short-circuiting; the right side is
+ * substituted as-is, whether or not it's itself constant.
+ */
+function calculateLogicalExpression(path) {
+  const { left, right, operator } = path.node
+  if (!checkSimpleLiteral(left)) {
+    return
+  }
+  const truthy = t.isNullLiteral(left) ? false : !!left.value
+  if (operator === '&&') {
+    path.replaceWith(truthy ? right : left)
+  } else if (operator === '||') {
+    path.replaceWith(truthy ? left : right)
   }
 }
 
 export default {
   BinaryExpression: { exit: calculateBinaryExpression },
   UnaryExpression: { exit: calculateUnaryExpression },
+  LogicalExpression: { exit: calculateLogicalExpression },
 }
