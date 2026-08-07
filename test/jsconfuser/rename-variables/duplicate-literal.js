@@ -1,0 +1,1 @@
+const qAkPsP=["shared-value",12345];function qdnfMu(){var qdnfMu=qAkPsP[0];var w7x6c9=qAkPsP[0];function GGsLSl(){var qdnfMu=qAkPsP[0];var w7x6c9=qAkPsP[1];var GGsLSl=qAkPsP[1];return qdnfMu+w7x6c9+GGsLSl}return qdnfMu+w7x6c9+GGsLSl()}function w7x6c9(){var qdnfMu=qAkPsP[0];var w7x6c9=qAkPsP[1];return qdnfMu+w7x6c9}TEST_OUTPUT=[qdnfMu(),w7x6c9()];

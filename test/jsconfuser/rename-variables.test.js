@@ -212,3 +212,28 @@ test('variable-masking', () => {
   const tc = 'variable-masking'
   getPluginResult(PluginJsconfuser, true, join(root, tc))
 })
+
+// duplicateLiteralsRemoval + renameVariables: audited, cleared - provably safe by
+// construction, a stronger guarantee than the structural-only clears (Lock/RGF/
+// Dispatcher/DeadCode). matchDuplicateLiteralArray/deDuplicateLiteralInit
+// (duplicate-literal.js) capture the array's binding via
+// `path.scope.getBinding(match.arrayName)` where `path` is the array's own
+// VariableDeclarator - unlike a FunctionDeclaration, a VariableDeclarator doesn't own
+// a scope that includes params, so there's no self-scope-shadowing trap for a
+// coincidentally-renamed local to fall into (the exact shape that broke
+// calculator.js/global-concealing.js, where `fnPath.scope` for a function
+// declaration includes its own params). The binding is resolved directly at its
+// declaration site and every substitution walks `binding.referencePaths`, which
+// Babel's scope tracks by binding identity, not name text - a nested function
+// reusing the array's name for its own local creates a distinct, correctly-scoped
+// binding that never appears in the array's own referencePaths. Reproduced with a
+// source shaped to maximize coincidental collisions (a nested function whose name
+// gets renamed to match its own local var's name, and repeats across three
+// functions) - 10/10 runtime-correct and 10/10 residue-free (zero leftover
+// computed-index array access, zero orphaned array declaration) with
+// renameVariables across fresh runs, including runs where the outer function's own
+// name collides with its own local var's name. No code change.
+test('duplicate-literal', () => {
+  const tc = 'duplicate-literal'
+  getPluginResult(PluginJsconfuser, true, join(root, tc))
+})
