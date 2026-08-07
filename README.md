@@ -1,14 +1,22 @@
 # decode-js
 
-基于 Babel 的 AST 分析器和处理器，可以处理以下情况：
+An AST analyzer and processor based on Babel that turns obfuscated JavaScript back into
+readable source.
 
-* stringArray（包括添加了旋转操作，以及嵌套调用的情况）
-* 死代码
-* 控制流扁平化（switch）
-* 局部代码变换（Object表达式、字符串分割等）
-* 自定义代码（自保护，禁止控制台调试，禁止控制台输出）
+## Supported targets
 
-An AST analyzer and processor based on Babel that can handle the following situations:
+One target per run, selected with `-t`:
+
+| `-t` | target |
+|---|---|
+| `common` | frequently-seen local obfuscation, not tied to any one tool — unreachable code, nested blocks, constant expressions, raw strings |
+| `jjencode` | jjencode, in the variant emitted by sojson.com |
+| `sojson` | sojson |
+| `sojsonv7` | sojson v7 |
+| `obfuscator` | [javascript-obfuscator](https://github.com/javascript-obfuscator/javascript-obfuscator) (obfuscator.io) |
+| `jsconfuser` | [JS-Confuser](https://github.com/MichaelXF/js-confuser) |
+
+### `obfuscator`
 
 * stringArray (including Rotate, Wrappers, and ChainedCalls)
 * deadCode
@@ -16,49 +24,41 @@ An AST analyzer and processor based on Babel that can handle the following situa
 * transformer (ObjectExpression, SplitString, and etc.)
 * customCode (self-defending, debug-protection, console-output)
 
-## 使用 Usage
+### `jsconfuser`
 
-**如果在安装和运行过程中出现问题，请先排查[isolated-vm](https://github.com/laverdet/isolated-vm?tab=readme-ov-file#requirements)的安装和使用要求**
+Covers JS-Confuser 2.x up to and including the `high` preset. Which transforms are
+reversed, which are not, and why: [docs/jsconfuser.md](docs/jsconfuser.md).
 
-**If problems occur during installation and execution, please check the requirements of [isolated-vm](https://github.com/laverdet/isolated-vm?tab=readme-ov-file#requirements) first**
+## Usage
 
-1. 准备一个nodejs环境 (26.x，需与`isolated-vm`版本匹配，详见其[兼容性表](https://github.com/laverdet/isolated-vm?tab=readme-ov-file#compatibility))
+**If problems occur during installation and execution, please check the requirements of
+[isolated-vm](https://github.com/laverdet/isolated-vm?tab=readme-ov-file#requirements)
+first.**
 
-   Prepare a nodejs environment (26.x — the required version depends on the `isolated-vm` version; see its [compatibility table](https://github.com/laverdet/isolated-vm?tab=readme-ov-file#compatibility))
-   
-2. 通过`npm i`安装依赖
-   
-   Install the dependencies via `npm i`
-   
-3. 按如下方式运行插件：
+1. Prepare a nodejs environment (26.x — the required version depends on the
+   `isolated-vm` version; see its
+   [compatibility table](https://github.com/laverdet/isolated-vm?tab=readme-ov-file#compatibility)).
 
-   Run the plugins as follows:
+2. Install the dependencies via `npm i`.
+
+3. Run the plugins as follows:
 
 ```shell
 # pre-defined command
 npm run xxx
 # or full command
-npm run decode -- -t type [-i input.js] [-o output.js]
+npm run decode -- -t type [-i input.js] [-o output.js] [-v]
 ```
 
-`xxx`为预定义的指令，见[package.json](package.json)中的`scripts`字段。
+`xxx` is one of the predefined commands, each a shorthand for one target — `deob`,
+`dejsc`, `deso`, `desov7`. See the `scripts` field in [package.json](package.json).
 
-`xxx` are predefined commands, see the `scripts` field in [package.json](package.json).
+The default input file is `input.js`. The file cannot contain additional codes other
+than obfuscated code (such as non-obfuscated code).
 
-`type`：
-* common (高频局部混淆)
-* jjencode (sojson.com 版本)
-* sojson
-* sojsonv7
-* obfuscator
+The default output file is `output.js`.
 
-默认输入文件为`input.js`，文件中不能包含除混淆代码以外的内容（例如非混淆代码）。
-
-The default input file is `input.js`. The file cannot contain additional codes other than obfuscated code (such as non-obfuscated code).
-
-默认输出文件为`output.js`。
-
-The default output file is `output.js`. 
+`-v` turns on per-pass progress tracing, which is off by default.
 
 ## Related Projects
 
@@ -66,4 +66,9 @@ The default output file is `output.js`.
 * [j4k0xb/webcrack](https://github.com/j4k0xb/webcrack)
 * [NXY666/Jsjiemi](https://github.com/NXY666/Jsjiemi)
 
+## License
 
+Copyright (c) 2022 the decode-js contributors.
+
+Licensed under the GNU General Public License, version 3 or later. See
+[LICENSE](LICENSE) for the full text.
