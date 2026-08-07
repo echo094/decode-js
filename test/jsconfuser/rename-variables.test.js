@@ -262,3 +262,26 @@ test('moved-declarations', () => {
   const tc = 'moved-declarations'
   getPluginResult(PluginJsconfuser, true, join(root, tc))
 })
+
+// astScrambler + renameVariables: audited, cleared. isAstScramblerHelper's own name
+// check (`expr.left.name !== node.id.name`) compares the FunctionDeclaration's id
+// against its own assignment target, never against a hardcoded string, so it holds
+// under any renamed spelling. The FunctionDeclaration(path) visitor's
+// `path.scope.getBinding(name)` uses the same fnPath-owns-its-scope convention that
+// broke calculator.js/global-concealing.js, but the AstScrambler helper is matched
+// with zero params and a single-statement body containing no declarations
+// (isAstScramblerHelper requires exactly `name = function(){}`), so its own inner
+// scope can never hold a competing binding for RenameVariables to shadow it with -
+// getBinding necessarily walks up to the real declaration. Call-site rewriting walks
+// `binding.referencePaths` (identity-based, not name text, same safe idiom as
+// duplicate-literal.js). The Program-level cleanup (`safeDeleteNode` in Program.exit)
+// resolves the helper from Program's own scope, which can't legally hold two
+// independent bindings under the same renamed text without the encoder itself
+// producing a runtime-breaking collision - not something RenameVariables can do while
+// staying semantics-preserving. 10/10 runtime-correct, 5/5 residue-free (no leftover
+// `_ast` helper or unresolved scrambled call), across a sample exercising Program-,
+// if-block-, and switch-case-level scrambling together. No code change.
+test('ast-scrambler', () => {
+  const tc = 'ast-scrambler'
+  getPluginResult(PluginJsconfuser, true, join(root, tc))
+})
