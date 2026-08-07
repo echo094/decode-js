@@ -50,3 +50,16 @@ test('rgf', () => {
   const tc = 'rgf'
   getPluginResult(PluginJsconfuser, true, join(root, tc))
 })
+
+// dispatcher + renameVariables: audited, cleared. dispatcher.js's own reconstructed
+// functions always get a fresh scope.generateUidIdentifier() name (guaranteed
+// non-colliding against whatever's already in scope) and are reinserted into the exact
+// same block they were extracted from, never a different/independently-renamed scope
+// - unlike flatten.js and rgf.js, there's no free-variable substitution or cross-scope
+// splice for a coincidental renameVariables collision to corrupt. Two dispatched
+// functions sharing an outer free variable (`counter`), 10/10 runtime-correct, 5/5
+// residue-free, with and without renameVariables.
+test('dispatcher', () => {
+  const tc = 'dispatcher'
+  getPluginResult(PluginJsconfuser, true, join(root, tc))
+})
