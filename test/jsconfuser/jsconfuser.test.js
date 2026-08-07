@@ -207,6 +207,39 @@ test('flatten-function-length', () => {
   getPluginResult(PluginJsconfuser, true, join(root, tc))
 })
 
+// The #11 blind-spot fixture: the only committed sample containing a template literal or a
+// regex literal. Neither is reversed - Preparation rewrites them to concatenation and
+// `new RegExp(...)` and nothing puts them back (preparation.md's Known Gaps) - so what this
+// pins is that they survive *intact*: the flags and the pattern source round-trip, and the
+// concatenation is folded rather than left in pieces.
+//
+// It exists because the 96-sample corpus contains zero of either construct, so every census
+// of them reads zero for want of input rather than for want of residue. It earned that on the
+// first run: the concatenation came back as `"hello " + "world" + "!"`, unfolded, because the
+// literal inliner had just been rescheduled past Flatten and no constant-fold pass ran after
+// it. The corpus could not see that regression at all - it has no template literal to expose
+// it - and its byte count was identical before and after the fix.
+test('high-template-regex', () => {
+  const tc = 'high-template-regex'
+  getPluginResult(PluginJsconfuser, true, join(root, tc))
+})
+
+// The trio behind the historical processAssignLeft / dispatcher-arity / variable-masking
+// bugs, encoded together: { controlFlowFlattening: 1, dispatcher: true, variableMasking: true,
+// renameVariables: true, minify: true }. Input carries 4 switches, 68 sequence expressions
+// and 8 rest params across 13 functions; the decode drives all of them to zero.
+//
+// It is an explicit combo rather than a `high` encode on purpose. `high` produced the same
+// coverage at 190KB-1.8MB depending on the run, against 68KB here, and the two committed
+// `high` fixtures contain no functions at all - both sources are straight-line statements -
+// so before this the entire function-oriented half of the pipeline had no committed
+// multi-transform coverage. The 96-sample corpus does cover it, but it is untracked, so a
+// fresh clone had none.
+test('cff-dispatcher-masking', () => {
+  const tc = 'cff-dispatcher-masking'
+  getPluginResult(PluginJsconfuser, true, join(root, tc))
+})
+
 // The string stack: stringConcealing + stringEncoding + stringSplitting together. No source
 // string survives verbatim in the input (checked: the concealed table is one literal over 100
 // chars, splitting leaves 7 concatenations, and the concealing runtime's array["slice"] is
