@@ -2,6 +2,7 @@ import fs from 'fs'
 import { parseArgs } from 'node:util'
 import PluginCommon from './plugin/common.js'
 import PluginJjencode from './plugin/jjencode.js'
+import PluginJsconfuser from './plugin/jsconfuser.js'
 import PluginSojson from './plugin/sojson.js'
 import PluginSojsonV7 from './plugin/sojsonv7.js'
 import PluginObfuscator from './plugin/obfuscator.js'
@@ -32,6 +33,7 @@ console.log(`Output: ${decodeFile}`)
 const plugins = {
   common: PluginCommon,
   jjencode: PluginJjencode,
+  jsconfuser: PluginJsconfuser,
   sojson: PluginSojson,
   sojsonv7: PluginSojsonV7,
   obfuscator: PluginObfuscator,
