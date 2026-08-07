@@ -1,0 +1,4 @@
+function myFunction() {
+  realCode();
+}
+myFunction();
