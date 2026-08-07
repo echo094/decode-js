@@ -77,3 +77,20 @@ test('dead-code', () => {
   const tc = 'dead-code'
   getPluginResult(PluginJsconfuser, true, join(root, tc))
 })
+
+// calculator + renameVariables: audited, CONFIRMED AFFECTED and fixed. The dispatch
+// FunctionDeclaration's own scope (fnPath.scope) includes its own params, so
+// RenameVariables can coincidentally assign the dispatch function the exact same name
+// as its own first param (`function S5tLFcy(S5tLFcy, a, b) { ... }`, reproduced here).
+// `fnPath.scope.getBinding(fnName)` then resolved to the shadowing *param* binding
+// instead of the function's own declaration binding one scope out - its
+// referencePaths never include the real call sites, so no call got rewritten and the
+// (still-referenced-elsewhere) dispatch function survived undeleted: runtime-correct
+// but 100% undecoded, invisible to a residual-signature check that only looks for a
+// missing switch. Fixed by resolving from `fnPath.scope.parent` instead, which skips
+// the function's own scope and finds the declaration's real binding in whichever
+// block actually contains it (see calculator.js).
+test('calculator', () => {
+  const tc = 'calculator'
+  getPluginResult(PluginJsconfuser, true, join(root, tc))
+})
