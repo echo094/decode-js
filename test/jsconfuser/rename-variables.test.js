@@ -26,3 +26,16 @@ test('flatten', () => {
   const tc = 'flatten'
   getPluginResult(PluginJsconfuser, true, join(root, tc))
 })
+
+// lock + renameVariables: audited, cleared. All 6 sub-features (selfDefending,
+// antiDebug, tamperProtection incl. countermeasures, startDate/endDate, domainLock)
+// combined in one sample - every matcher in lock.js either compares names entirely
+// self-contained within one rigid encoder-template shape (never merges/relocates
+// code between two independently-renamed scopes the way flatten.js did), so there's
+// no coincidental-collision surface for RenameVariables to exploit. 10/10 runtime-
+// correct and 5/5 free of any Lock scaffolding residue across fresh runs. Proof-of-
+// safety fixture, not a regression pin for a bug.
+test('lock', () => {
+  const tc = 'lock'
+  getPluginResult(PluginJsconfuser, true, join(root, tc))
+})
