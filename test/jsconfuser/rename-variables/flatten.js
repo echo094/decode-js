@@ -1,0 +1,1 @@
+function tpR8a35(tpR8a35,[n2c_v7,YfekxI]){var o_DF5M=n2c_v7+YfekxI;return tpR8a35["Kzo9Gts"]+o_DF5M}var n2c_v7="Correct Value";function YfekxI(...YfekxI){var M6pAtY={get"Kzo9Gts"(){return n2c_v7}};return tpR8a35(M6pAtY,YfekxI)}TEST_OUTPUT=YfekxI(1,2);
