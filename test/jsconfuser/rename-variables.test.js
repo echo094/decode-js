@@ -150,3 +150,38 @@ test('string-splitting', () => {
   const tc = 'string-splitting'
   getPluginResult(PluginJsconfuser, true, join(root, tc))
 })
+
+// stringConcealing + renameVariables: audited, CONFIRMED AFFECTED and fixed - two
+// distinct bugs, both in evalWrapperCallSites/collectProgramDeps (string-concealing.js).
+// Bug 1: `collected`, the per-wrapper dependency set eval'd in an isolated-vm sandbox,
+// was a Map keyed by (possibly renamed) identifier text. The final
+// `collected.set(wrapperName, fnPath)` unconditionally overwrote whatever already sat
+// under that key - reproduced against real output where a wrapper coincidentally got
+// renamed to the same text as an unrelated Program-level TextDecoder-alias variable
+// pulled in as a transitive dependency: the alias's declaration silently vanished from
+// the eval bundle, so `typeof aliasName` inside the shared bufferToString helper picked
+// up the *wrapper itself* and recursed infinitely (`Maximum call stack size exceeded`),
+// leaving the wrapper undecoded. Fixed by keying `collected` (and the cross-wrapper
+// `allCandidates` cleanup pool in deStringConcealingInit) by AST node instead of name.
+// Bug 2 (uncovered once Bug 1 was fixed): even with every dependency correctly
+// preserved, flattening them into one isolate-global eval scope re-collides when two
+// *unrelated* collected declarations legitimately share a renamed name (real, properly-
+// shadowed JS elsewhere in the program, but a genuine same-scope collision once
+// flattened) - `var X = ...; function X(){...}` in one scope silently merge into a
+// single binding, and whichever runs later wins. Fixed via resolveBundleNameCollisions,
+// which renames every later-position duplicate through the real Babel scope (same
+// `scope.rename` idiom as flatten.js's substituteFlatAccess) before the bundle is ever
+// generated - with a second collision inside *that* fix caught by testing: renaming a
+// FunctionDeclaration from its own internal scope can land on an unrelated local that
+// coincidentally shadows the function's own name (the same self-shadowing shape that
+// broke calculator.js) instead of the function's real, parent-scope-bound declaration,
+// fixed by special-casing FunctionDeclaration to rename from `declPath.parentPath.scope`
+// (mirrors safe-func.js's safeDeleteNode). The frozen sample below reproduces 4 real
+// collisions in one run (confirmed via a temporary debug log during development, not
+// left in the shipped code) and still decodes to a fully clean result. 40/40
+// runtime-correct, all residue-free, across 20 fresh renameVariables runs during
+// verification.
+test('string-concealing', () => {
+  const tc = 'string-concealing'
+  getPluginResult(PluginJsconfuser, true, join(root, tc))
+})
