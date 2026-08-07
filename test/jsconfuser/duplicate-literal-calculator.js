@@ -1,0 +1,1 @@
+const __p_g3Ka_dlrArray=[5,"llqYy3h"];function __p_i3PM_calc(operator,a,b){switch(operator){case __p_g3Ka_dlrArray[1]:return a+b}}var a=__p_g3Ka_dlrArray[0];var b=__p_g3Ka_dlrArray[0];var sum=__p_i3PM_calc(__p_g3Ka_dlrArray[1],1,2);console["log"](a,b,sum);

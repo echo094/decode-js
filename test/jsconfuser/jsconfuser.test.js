@@ -22,8 +22,26 @@ test('high-string-runtime-cleanup', () => {
   getPluginResult(PluginJsconfuser, true, join(root, tc))
 })
 
+// A `high`-preset encode, and what pins Calculator's *second* visit. At its own early slot
+// the dispatch function is still sealed inside the ControlFlowFlattening interpreter, so
+// that pass matches nothing - and the CFF decode then hands the function back as
+// `f = function (…) {…}`, which a `FunctionDeclaration`-keyed visitor cannot see either.
+// Both halves are needed: the second visit must also sit *after* the constant fold, because
+// StringSplitting leaves each case test as a concatenation until then. Expected output is
+// 74B against a 50B source, the two documented residues apart (RenameVariables, and the CFF
+// decode's split `var x;` + `x = v` - checkpoint 6.4).
+test('high-calculator-post-cff', () => {
+  const tc = 'high-calculator-post-cff'
+  getPluginResult(PluginJsconfuser, true, join(root, tc))
+})
+
 test('calculator-string-concealing', () => {
   const tc = 'calculator-string-concealing'
+  getPluginResult(PluginJsconfuser, true, join(root, tc))
+})
+
+test('duplicate-literal-calculator', () => {
+  const tc = 'duplicate-literal-calculator'
   getPluginResult(PluginJsconfuser, true, join(root, tc))
 })
 
