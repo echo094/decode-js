@@ -163,6 +163,16 @@ test('control-flow-flattening-dispatcher', () => {
   getPluginResult(PluginJsconfuser, true, join(root, tc))
 })
 
+// hexadecimalNumbers + stringEncoding (Finalizer, order 35): both just re-escape a
+// literal's raw source text without changing its parsed value, but Babel's generator
+// prefers node.extra.raw over the value when present, so a plain re-parse/re-generate
+// would otherwise print the hex/escaped form back out unchanged - deleteExtra strips
+// that raw text so the generator falls back to plain-value printing.
+test('finalizer', () => {
+  const tc = 'finalizer'
+  getPluginResult(PluginJsconfuser, true, join(root, tc))
+})
+
 // lock.domainLock + stringConcealing: a real encoder sample (target: node,
 // { lock: { domainLock: [...] }, stringConcealing: true }) with two domainLock
 // guards - one at Program level, one inside the function body, per lock.ts's
@@ -208,5 +218,18 @@ test('flatten-function-length', () => {
 // (preparation.md's Known Gaps) - nothing else.
 test('string-stack', () => {
   const tc = 'string-stack'
+  getPluginResult(PluginJsconfuser, true, join(root, tc))
+})
+
+// pack over a genuinely multi-transform payload (dispatcher + stringConcealing +
+// variableMasking + stringSplitting). The input is a single top-level statement - the whole
+// program sits inside one Function-constructor argument - and the decode unwraps it and drives
+// the payload's own transforms to zero. The trailing-return + Function-constructor unwrap had
+// only a unit test before this.
+//
+// Deliberately not combined with controlFlowFlattening: that costs 323KB against 8KB here for
+// the same pack coverage, and the CFF interaction is already pinned by cff-dispatcher-masking.
+test('pack-payload', () => {
+  const tc = 'pack-payload'
   getPluginResult(PluginJsconfuser, true, join(root, tc))
 })

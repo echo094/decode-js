@@ -1,0 +1,1 @@
+var greeting="\x48\x65\x6c\x6c\x6f\x2c\x20\x57\x6f\x72\x6c\x64\x21";var count=0x1000;var neg=-0xff;console["\x6c\x6f\x67"](greeting,count,neg);
