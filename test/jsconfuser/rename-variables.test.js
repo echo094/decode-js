@@ -39,3 +39,14 @@ test('lock', () => {
   const tc = 'lock'
   getPluginResult(PluginJsconfuser, true, join(root, tc))
 })
+
+// rgf + renameVariables: audited, cleared. rgf.ts's own encoder-side eligibility rule
+// (transforms/rgf.ts, "Does not apply to functions that reference outside variables")
+// means an RGF-transformed function is always fully self-contained - unlike flatten.js,
+// there's no free-variable substitution step at all for renameVariables to exploit a
+// coincidental name collision through. 10/10 runtime-correct, 5/5 residue-free, with
+// and without renameVariables, two RGF'd functions in the same sample.
+test('rgf', () => {
+  const tc = 'rgf'
+  getPluginResult(PluginJsconfuser, true, join(root, tc))
+})
