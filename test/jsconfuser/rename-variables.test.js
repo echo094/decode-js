@@ -94,3 +94,22 @@ test('calculator', () => {
   const tc = 'calculator'
   getPluginResult(PluginJsconfuser, true, join(root, tc))
 })
+
+// globalConcealing + renameVariables: same vulnerable code shape as calculator.js
+// (fnPath.scope.getBinding(fnName) from the switch function's own scope, which
+// includes its own param), hardened defensively even though 128 empirical runs
+// across two source shapes never triggered a live self-collision. Root cause of
+// the difference: GlobalConcealing prepends three declarations in a fixed order
+// (globalVar init, the sniffer fn, then the switch fn), so RenameVariables' own
+// name-reuse algorithm (renameVariables.ts's "possible" set, populated in
+// Program-defined-order) always offers the sniffer function's placeholder name to
+// the switch fn's param before ever reaching the switch fn's own name - an
+// encoder-ordering coincidence, not a documented guarantee, and not a reason to
+// leave the same code shape that broke Calculator unfixed. Hardened via the
+// identical fnPath.scope.parent fix. 10/10 runtime-correct, 5/5 residue-free with
+// and without renameVariables both before and after the hardening (no behavior
+// change in the non-colliding case).
+test('global-concealing', () => {
+  const tc = 'global-concealing'
+  getPluginResult(PluginJsconfuser, true, join(root, tc))
+})
