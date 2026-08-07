@@ -5,6 +5,33 @@ import PluginJsconfuser from '#plugin/jsconfuser.js'
 
 const root = __dirname
 
+// A `high`-preset encode, and the first fixture that pins StringConcealing's dependency
+// cleanup across stage boundaries. Its sweeps are reference-count-gated and both ran while
+// the base91 decode function's `return bufferToString(...)` still referenced the whole
+// getGlobal/TextDecoder/utf8 chain; DeadCode's second visit removes that reference two
+// stages later, so before the late cleanup slot the chain survived at zero references -
+// 2098B of a 2238B decode, from a 75B source. No visitor-level test can catch this: the
+// defect is in which pool the plugin hands each slot, not in any matcher.
+//
+// The expected output is 89B against a 75B source. What separates them is exactly two
+// documented residues and nothing else - RenameVariables (irreversible by design) and the
+// CFF decode's split `var x;` + `x = v` (checkpoint 6.4). When 6.4 lands this fixture is
+// one of the things that should change, to `var adGeota = true;`.
+test('high-string-runtime-cleanup', () => {
+  const tc = 'high-string-runtime-cleanup'
+  getPluginResult(PluginJsconfuser, true, join(root, tc))
+})
+
+test('calculator-string-concealing', () => {
+  const tc = 'calculator-string-concealing'
+  getPluginResult(PluginJsconfuser, true, join(root, tc))
+})
+
+test('duplicate-literal-string-concealing', () => {
+  const tc = 'duplicate-literal-string-concealing'
+  getPluginResult(PluginJsconfuser, true, join(root, tc))
+})
+
 // The three fixtures below are frozen real js-confuser dist/ obfuscations (CFF's output
 // is randomized per run, no seed option - same rationale as
 // test/visitor/jsconfuser/control-flow-graph/real-sample.js), covering the three distinct
@@ -105,5 +132,31 @@ test('control-flow-flattening-dead-code-throw', () => {
 // that decode drops the template's references to them.
 test('control-flow-flattening-dispatcher', () => {
   const tc = 'control-flow-flattening-dispatcher'
+  getPluginResult(PluginJsconfuser, true, join(root, tc))
+})
+
+// lock.domainLock + stringConcealing: a real encoder sample (target: node,
+// { lock: { domainLock: [...] }, stringConcealing: true }) with two domainLock
+// guards - one at Program level, one inside the function body, per lock.ts's
+// per-block Block:exit placement - both wrapping a StringConcealed regex
+// literal. Confirms lock.js's late pipeline position (after
+// string-concealing.js) still recognizes the guard shape once its REGEX
+// argument is a resolved string literal rather than a concealed call site.
+test('domain-lock-string-concealing', () => {
+  const tc = 'domain-lock-string-concealing'
+  getPluginResult(PluginJsconfuser, true, join(root, tc))
+})
+
+// The string stack: stringConcealing + stringEncoding + stringSplitting together. No source
+// string survives verbatim in the input (checked: the concealed table is one literal over 100
+// chars, splitting leaves 7 concatenations, and the concealing runtime's array["slice"] is
+// present), and the decode returns every one of them.
+//
+// The cleanest decode of the four whole-pipeline combos, and worth knowing why: with no CFF
+// or MovedDeclarations in the config nothing splits a declaration, so `var x = "..."` comes
+// back whole. What separates it from its source is renaming and the computed member spelling
+// (preparation.md's Known Gaps) - nothing else.
+test('string-stack', () => {
+  const tc = 'string-stack'
   getPluginResult(PluginJsconfuser, true, join(root, tc))
 })
