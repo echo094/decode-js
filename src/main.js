@@ -6,6 +6,7 @@ import PluginSojson from './plugin/sojson.js'
 import PluginSojsonV7 from './plugin/sojsonv7.js'
 import PluginObfuscator from './plugin/obfuscator.js'
 import PluginAwsc from './plugin/awsc.js'
+import logger from './utility/logger.js'
 
 // Read arguments
 const { values } = parseArgs({
@@ -13,11 +14,17 @@ const { values } = parseArgs({
     type: { type: 'string', short: 't', default: 'common' },
     input: { type: 'string', short: 'i', default: 'input.js' },
     output: { type: 'string', short: 'o', default: 'output.js' },
+    verbose: { type: 'boolean', short: 'v', default: false },
   },
 })
 const type = values.type
 const encodeFile = values.input
 const decodeFile = values.output
+// Per-pass progress tracing, off unless asked for. `DECODE_JS_DEBUG=1` does the same for a
+// caller that imports a plugin directly rather than going through this entry point.
+if (values.verbose) {
+  logger.setDebugLogging(true)
+}
 console.log(`Type: ${type}`)
 console.log(`Input: ${encodeFile}`)
 console.log(`Output: ${decodeFile}`)
