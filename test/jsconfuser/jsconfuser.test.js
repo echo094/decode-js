@@ -187,6 +187,16 @@ test('rgf-function-length', () => {
   getPluginResult(PluginJsconfuser, true, join(root, tc))
 })
 
+// flatten + preserveFunctionLength: a real encoder sample (target: node, {
+// flatten: true, preserveFunctionLength: true }) where Flatten's rest-param
+// wrapper has its length preserved via the same {ph}_fnLength(fn, length)
+// call. Here the target DOES have a rest param, so function-length.js hands
+// off to processStackParam, which resolves the wrapper's real param count.
+test('flatten-function-length', () => {
+  const tc = 'flatten-function-length'
+  getPluginResult(PluginJsconfuser, true, join(root, tc))
+})
+
 // The string stack: stringConcealing + stringEncoding + stringSplitting together. No source
 // string survives verbatim in the input (checked: the concealed table is one literal over 100
 // chars, splitting leaves 7 concatenations, and the concealing runtime's array["slice"] is
