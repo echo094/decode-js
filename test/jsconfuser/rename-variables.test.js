@@ -63,3 +63,17 @@ test('dispatcher', () => {
   const tc = 'dispatcher'
   getPluginResult(PluginJsconfuser, true, join(root, tc))
 })
+
+// deadCode + renameVariables: audited, cleared. matchDeadCodeGuard (dead-code.js) never
+// compares an identifier against a hardcoded/fixed name - both name reads
+// (`test.right.name`, `call.callee.name`) are only ever used to look up the binding at
+// that exact identifier's current (possibly renamed) spelling via `scope.getBinding`,
+// and the guard/dummy-fn shapes it matches are purely structural (`"prop" in dummyFn`,
+// a 0-param/empty-body FunctionDeclaration). No cross-scope splice like flatten.js's,
+// so there's no coincidental-collision surface for RenameVariables to exploit either.
+// 10/10 runtime-correct, 5/5 residue-free (0 leftover guards/dummy fns), with and
+// without renameVariables.
+test('dead-code', () => {
+  const tc = 'dead-code'
+  getPluginResult(PluginJsconfuser, true, join(root, tc))
+})
