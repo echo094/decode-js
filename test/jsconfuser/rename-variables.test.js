@@ -285,3 +285,25 @@ test('ast-scrambler', () => {
   const tc = 'ast-scrambler'
   getPluginResult(PluginJsconfuser, true, join(root, tc))
 })
+
+// controlFlowFlattening + renameVariables: the audit's one *confirmed* gap rather than a
+// candidate, and the worst class of it - not a coincidental-collision bug like flatten's,
+// but a total non-decode. `findProgramConstants` found CFF's Program-level runtime helpers
+// by the `_cff_*`/`_strings` name suffixes and `decodeControlFlowFlatteningInBlock` gated
+// candidates on `.endsWith('_main')`; renameVariables removes every one of those, so the
+// pre-pass returned null and its guard failed *every* application in the Program closed at
+// once. Runtime-correct throughout (the undecoded fallback runs), which is exactly why
+// nothing caught it until a before/after `switch` count was compared directly. Fixed by
+// resolving each helper from its own use site and filtering candidates with
+// `parseDispatcher`'s interpreter-loop shape (control-flow-graph.js).
+//
+// This sample's decode is real, not a passthrough: 3 `switch` in the obfuscated input, 0 in
+// the expected output, with the source's loop/continue/break and if/else-if chain both
+// recovered literally. The `_cff_slice` helper and its sequence array that do survive are
+// still referenced - by the entry vectors in the call harness `decodeInlineFlattenedFunction`
+// deliberately leaves in place - so the reference-gated cleanup correctly keeps them. That
+// harness is the separately-tracked Issue B residue, not a defect in this fix.
+test('control-flow-flattening', () => {
+  const tc = 'control-flow-flattening'
+  getPluginResult(PluginJsconfuser, true, join(root, tc))
+})
