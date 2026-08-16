@@ -1,0 +1,361 @@
+import traverse from '@babel/traverse'
+import * as t from '@babel/types'
+
+import logger from '../../utility/logger.js'
+
+const debugLog = logger.debugLog
+
+/**
+ * Strip javascript-obfuscator's custom code helpers: the self-defending guard, the console-output
+ * disabler, the debug-protection trap, and the calls controller the three of them run through.
+ *
+ * The encoder injects these at its *second* stage, so by the time anything here sees them they
+ * have been through dead-code injection, control-flow flattening, literal re-spelling, renaming
+ * and the string array. This pass therefore assumes those have already been reversed: it matches
+ * decoded shapes, and it is the last thing in the pipeline rather than the first.
+ *
+ * Each protection is emitted as two pieces in *different scopes* - a definition and a trigger -
+ * plus a per-group calls controller:
+ *
+ *     var C = (function () {                       // the calls controller, one PER GROUP
+ *       var first = true;
+ *       return function (context, fn) {
+ *         var r = first ? function () { if (fn) { ... } } : function () {};
+ *         first = false;
+ *         return r;
+ *       };
+ *     })();
+ *
+ *     var G = C(this, function () { ... });        // the definition
+ *     G();                                         // the trigger
+ *
+ * Debug protection is the exception: its guard is invoked where it is built, inside an IIFE with
+ * no name bound to it, and it additionally emits a top-level `function D(ret) { ... }` and an
+ * optional `setInterval` firing it.
+ *
+ * **Deleting the controller with its guard is only safe because of an encoder property**, not a
+ * decoder one: each helper group builds its *own* controller rather than sharing one, so a
+ * controller never has a second guard depending on it. This pass verifies that per controller
+ * instead of assuming it, and declines when it does not hold - which is what would happen against
+ * a variant encoder that shared them.
+ *
+ * **The console-output guard references its own controller from inside its callback**
+ * (`C.constructor.prototype.bind(C)`, `C.bind(C)`). So a liveness test on the controller must not
+ * count references that live inside the guard being removed. Here that is explicit: references are
+ * partitioned before anything is deleted, rather than relying on deleting the guard first and
+ * re-crawling.
+ *
+ * **Match completely, then mutate.** Every gate is checked before the first removal, so a guard is
+ * either taken out whole or left exactly as found. Declining costs legible residue that a census
+ * counts; a half-removed guard leaves a program referencing a binding that no longer exists.
+ */
+
+/** `function (...) {}` or `(...) => {}`, with a block body. */
+function isFnWithBlock(node) {
+  return (
+    (t.isFunctionExpression(node) || t.isArrowFunctionExpression(node)) && t.isBlockStatement(node.body)
+  )
+}
+
+/**
+ * A member key in the two spellings that reach this point: `o.k` and `o['k']`.
+ *
+ * Reading only the first is the trap that makes a matcher accept hand-built cases and reject every
+ * real one - our own `Converting` reversal un-computes most keys, but not all of them, so both
+ * spellings are live in this pass's input.
+ */
+function memberKey(node) {
+  if (!t.isMemberExpression(node)) return null
+  if (!node.computed && t.isIdentifier(node.property)) return node.property.name
+  if (node.computed && t.isStringLiteral(node.property)) return node.property.value
+  return null
+}
+
+/**
+ * Count nodes under `node` matching `pred`.
+ *
+ * A plain walk rather than a Babel traversal: the subjects here are block statements and function
+ * bodies, which `traverse` cannot be pointed at without a path or a synthetic program wrapper, and
+ * wrapping is what makes such a helper throw on the first node type it cannot convert.
+ */
+function countNodes(node, pred) {
+  let n = 0
+  const walk = (x) => {
+    if (!x || typeof x.type !== 'string') return
+    if (pred(x)) n++
+    for (const key of t.VISITOR_KEYS[x.type] || []) {
+      const v = x[key]
+      if (Array.isArray(v)) v.forEach(walk)
+      else walk(v)
+    }
+  }
+  walk(node)
+  return n
+}
+
+/**
+ * The calls controller, matched on shape: an immediately-invoked function taking no arguments,
+ * whose body returns a two-parameter function that chooses between two function expressions.
+ *
+ * Keyed on the choice rather than on the `firstCall` flag, because the flag is a renamed local and
+ * the conditional is the part that carries the meaning - the wrapper runs its target once.
+ */
+function isCallsControllerInit(node) {
+  if (!t.isCallExpression(node) || node.arguments.length || !isFnWithBlock(node.callee)) return false
+  return (
+    countNodes(node.callee.body, (n) =>
+      isFnWithBlock(n) &&
+      n.params.length === 2 &&
+      countNodes(n.body, (c) =>
+        t.isConditionalExpression(c) && isFnWithBlock(c.consequent) && isFnWithBlock(c.alternate)) > 0) > 0
+  )
+}
+
+/**
+ * Which protection a guard callback implements, or `null` for a shape this pass does not know.
+ *
+ * Returning `null` is a decline, never a default: an unrecognised callback is left in place so a
+ * residue census still counts it. The alternative - treating "matched the wrapper" as enough -
+ * would delete arbitrary code that happens to be called as `C(this, fn)`.
+ */
+function classifyGuard(body) {
+  const searches = countNodes(body, (n) => t.isCallExpression(n) && memberKey(n.callee) === 'search')
+  if (searches >= 2) return 'self-defending'
+
+  const regexps = countNodes(body, (n) => t.isNewExpression(n) && t.isIdentifier(n.callee, { name: 'RegExp' }))
+  if (regexps >= 2) return 'debug-protection-call'
+
+  const methodList = countNodes(body, (n) => {
+    if (!t.isArrayExpression(n) || n.elements.length < 5) return false
+    const strings = n.elements.filter((e) => t.isStringLiteral(e)).map((e) => e.value)
+    return strings.length >= 5 && strings.includes('log') && strings.includes('warn')
+  })
+  if (methodList > 0) return 'console-output'
+
+  // The era below `E-selfdef-search` builds its regexp through `constructor` rather than `RegExp`,
+  // and is recognised by the nested function it declares and immediately calls. Checked last
+  // because it is the loosest of the four.
+  const nested = countNodes(body, (n) => isFnWithBlock(n) || t.isFunctionDeclaration(n))
+  if (nested > 0) return 'self-defending'
+
+  return null
+}
+
+/** Is `path` inside `ancestor`? Asked of the live tree, never of cached positions. */
+function isInside(path, ancestorNode) {
+  return path.findParent((p) => p.node === ancestorNode) !== null
+}
+
+/**
+ * The outermost statement that exists only to hold this guard.
+ *
+ * Debug protection's guard is invoked where it is built, inside an IIFE that wraps nothing else:
+ *
+ *     (function () { C(this, function () { … })(); })();
+ *
+ * Removing the inner statement leaves `(function () {})();` behind - a statement with no effect
+ * that no census keyed on the *encoder's* shapes can see, because the encoder never emits it. We
+ * do. So the removal target is computed by ascending through every wrapper whose body holds this
+ * statement and nothing else, and the ascent is written as a loop because nesting depth is not
+ * something to assume.
+ */
+/**
+ * What to delete for a single effect.
+ *
+ * The encoder's adjacent-statement merging fuses neighbouring statements into one sequence
+ * expression, and it does not care whose they are - a removal target of ours can end up sharing a
+ * statement with the program's own calls. Deleting the statement then deletes those too, which is
+ * corruption rather than residue and is silent: the program runs and simply stops producing
+ * output. So delete the sequence *element* when there is one, and the statement otherwise.
+ */
+function effectPath(callPath) {
+  return callPath.parentPath && callPath.parentPath.isSequenceExpression()
+    ? callPath
+    : callPath.getStatementParent()
+}
+
+function outermostWrapperStatement(guardCall) {
+  // A fused guard yields its own element here, not a statement; the loop below then declines to
+  // walk outward on its first test, which is correct - there is no wrapper to unwrap.
+  let stmt = effectPath(guardCall)
+  for (;;) {
+    const block = stmt.parentPath
+    if (!block || !block.isBlockStatement()) break
+    if (block.node.body.length !== 1 || block.node.body[0] !== stmt.node) break
+    const fn = block.parentPath
+    if (!fn || !isFnWithBlock(fn.node) || fn.node.params.length) break
+    const call = fn.parentPath
+    if (!call || !call.isCallExpression() || call.node.callee !== fn.node || call.node.arguments.length) break
+    const outer = call.getStatementParent()
+    if (!outer || !outer.isExpressionStatement()) break
+    stmt = outer
+  }
+  return stmt
+}
+
+/**
+ * Remove one guard and the controller it runs through, or leave both untouched.
+ *
+ * Returns the protection's name when it removed something, `null` when it declined.
+ */
+function stripGuard(controllerPath, removed) {
+  const id = controllerPath.node.id
+  if (!t.isIdentifier(id)) return null
+  const binding = controllerPath.scope.getBinding(id.name)
+  if (!binding) return null
+
+  // Partition the controller's references BEFORE touching anything: the calls that build a guard,
+  // and everything else. The console-output callback puts several of the latter inside the former.
+  const guardCalls = []
+  const others = []
+  for (const ref of binding.referencePaths) {
+    const parent = ref.parentPath
+    if (
+      parent && parent.isCallExpression() && parent.node.callee === ref.node &&
+      parent.node.arguments.length === 2 &&
+      t.isThisExpression(parent.node.arguments[0]) && isFnWithBlock(parent.node.arguments[1])
+    ) {
+      guardCalls.push(parent)
+    } else {
+      others.push(ref)
+    }
+  }
+  if (guardCalls.length !== 1) {
+    debugLog(`unlock-env: declining ${id.name}, ${guardCalls.length} guards on one controller`)
+    return null
+  }
+  const guardCall = guardCalls[0]
+  const callback = guardCall.node.arguments[1]
+  const kind = classifyGuard(callback.body)
+  if (!kind) {
+    debugLog(`unlock-env: declining ${id.name}, unrecognised guard callback`)
+    return null
+  }
+  // Every remaining reference must be inside the callback we are about to delete. One that is not
+  // means something else uses this controller, and deleting it would break that caller.
+  if (others.some((ref) => !isInside(ref, callback))) {
+    debugLog(`unlock-env: declining ${id.name}, controller referenced outside its guard`)
+    return null
+  }
+
+  // Two definition shapes. `var G = C(this, fn); G()` binds a name, and the trigger is a separate
+  // statement; debug protection's call form invokes the guard where it is built and binds nothing.
+  const declarator = guardCall.parentPath.isVariableDeclarator() ? guardCall.parentPath : null
+  let triggers = []
+  if (declarator) {
+    if (!t.isIdentifier(declarator.node.id)) return null
+    const guardBinding = declarator.scope.getBinding(declarator.node.id.name)
+    if (!guardBinding) return null
+    for (const ref of guardBinding.referencePaths) {
+      const call = ref.parentPath
+      if (call && call.isCallExpression() && call.node.callee === ref.node && !call.node.arguments.length) {
+        triggers.push(call.parentPath.isExpressionStatement() ? call.parentPath : call)
+      } else if (!isInside(ref, callback)) {
+        debugLog(`unlock-env: declining ${id.name}, guard referenced outside its own trigger`)
+        return null
+      }
+    }
+  }
+
+  // --- past every gate; only now does anything move ---
+  for (const trigger of triggers) trigger.remove()
+  if (declarator) {
+    declarator.remove()
+  } else {
+    // the guard is invoked in place: remove the whole wrapper that exists only to hold it
+    outermostWrapperStatement(guardCall).remove()
+  }
+  controllerPath.remove()
+  removed.push(kind)
+  return kind
+}
+
+/**
+ * The debug-protection function and whatever fires it.
+ *
+ * Matched on its two-statement body - a nested function declaration and a `try`/`catch` - which is
+ * the shape the encoder's template guarantees and which no program body reaches by accident.
+ * Removed after the guards, because the guard callback that calls this function is one of its
+ * references and must be gone before the rest can be read.
+ */
+function stripDebugProtectionFunction(path, removed) {
+  const { id, params, body } = path.node
+  if (!t.isIdentifier(id) || params.length !== 1 || body.body.length !== 2) return
+  if (!t.isFunctionDeclaration(body.body[0]) || !t.isTryStatement(body.body[1])) return
+
+  const binding = path.scope.getBinding(id.name)
+  if (!binding) return
+
+  // Each remaining reference must be an interval firing it. Anything else and the function is
+  // still doing work we do not understand, so it stays.
+  const intervals = []
+  for (const ref of binding.referencePaths) {
+    const fnParent = ref.getFunctionParent()
+    const call = fnParent && fnParent.parentPath
+    if (call && call.isCallExpression() && t.isIdentifier(call.node.callee, { name: 'setInterval' })) {
+      intervals.push(effectPath(call))
+      continue
+    }
+    if (ref.parentPath.isCallExpression() &&
+        t.isIdentifier(ref.parentPath.node.callee, { name: 'setInterval' })) {
+      intervals.push(effectPath(ref.parentPath))
+      continue
+    }
+    debugLog(`unlock-env: declining ${id.name}, debug-protection referenced outside an interval`)
+    return
+  }
+
+  for (const interval of intervals) if (!interval.removed) interval.remove()
+  path.remove()
+  removed.push('debug-protection')
+}
+
+/**
+ * Strip every custom code helper the sample carries. Returns the list of protections removed, so a
+ * caller can report what it did rather than inferring it from a diff.
+ */
+export default function unlockEnv(ast) {
+  const removed = []
+
+  // This pass's gates read `binding.referencePaths`, so it depends on those references still
+  // pointing into the live tree. That is now guaranteed by the pass that breaks it rather than
+  // defended here: `prune-if-branch` detaches subtrees and crawls on its way out, so no stale
+  // reference reaches this point. This pass previously opened with a `traverse.cache.clear()` to
+  // repair it, which was a symptom patch at the consumer - removed once the producer was fixed,
+  // and its removal verified byte-identical over the corpus.
+  //
+  // Guards first. Each one's callback holds references to the debug-protection function and to its
+  // own controller, so removing guards is what makes the remaining references readable.
+  traverse(ast, {
+    VariableDeclarator(path) {
+      if (!isCallsControllerInit(path.node.init)) return
+      stripGuard(path, removed)
+    },
+  })
+
+  // Re-crawl before reading any binding again. The guard removals above detached nodes, and a
+  // binding records its references as of the last crawl - so without this the debug-protection
+  // function still lists the reference that lived inside the guard callback we just deleted, that
+  // reference matches none of the accepted shapes, and the pass declines on every sample that has
+  // one. This is the stale-scope trap, and the tell was exactly the one on record - a matcher that
+  // accepts a freshly parsed tree and rejects every tree a pass has touched.
+  //
+  // The crawl is the whole remedy here, because the only nodes detached before this point are the
+  // ones this pass's own first phase removed, and a crawl repairs what it detached. It used to be
+  // half of one: a `traverse.cache.clear()` opened this function to absorb staleness inherited
+  // from `prune-if-branch`, which is now repaired at that producer instead.
+  traverse(ast, {
+    Program(path) {
+      path.scope.crawl()
+    },
+  })
+
+  traverse(ast, {
+    FunctionDeclaration(path) {
+      stripDebugProtectionFunction(path, removed)
+    },
+  })
+
+  if (removed.length) debugLog(`unlock-env: removed ${removed.join(', ')}`)
+  return ast
+}
