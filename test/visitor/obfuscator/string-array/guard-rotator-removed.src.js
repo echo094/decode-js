@@ -1,0 +1,13 @@
+var s0 = 'value 0 / of twelve';
+var s1 = 'value 1 / of twelve';
+var s2 = 'value 2 / of twelve';
+var s3 = 'value 3 / of twelve';
+var s4 = 'value 4 / of twelve';
+var s5 = 'value 5 / of twelve';
+var s6 = 'value 6 / of twelve';
+var s7 = 'value 7 / of twelve';
+var s8 = 'value 8 / of twelve';
+var s9 = 'value 9 / of twelve';
+var s10 = 'value 10 / of twelve';
+var s11 = 'value 11 / of twelve';
+process.stdout.write(String(s0 + ',' + s1 + ',' + s2 + ',' + s3 + ',' + s4 + ',' + s5 + ',' + s6 + ',' + s7 + ',' + s8 + ',' + s9 + ',' + s10 + ',' + s11) + '\n');

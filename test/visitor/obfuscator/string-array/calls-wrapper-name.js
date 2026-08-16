@@ -1,0 +1,1 @@
+function a(){var e=['log'];a=function(){return e;};return a();}function b(c,d){var e=a();return b=function(f,g){f=f-0x140;var h=e[f];return h;},b(c,d);}(function(){function c(){console[b(0x140)]('a');var d;function d(){}}c();}());

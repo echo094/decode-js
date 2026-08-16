@@ -1,0 +1,2 @@
+var test = "test";
+process["stdout"]["write"](String(test) + '\x0a');
