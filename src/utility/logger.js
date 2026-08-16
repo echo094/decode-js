@@ -39,8 +39,29 @@ function debugLog(...args) {
   }
 }
 
+/**
+ * Always-on channels, for the two things a caller cannot act on if they are hidden behind `-v`.
+ *
+ * `debugLog` above is per-pass tracing and is correctly off by default. A **refusal** is not
+ * tracing: a plugin that returns falsy has told the caller only that it failed, so the reason has
+ * to reach them or the failure is unreadable — which is exactly the weakness of a silent
+ * fallthrough. A **verdict** the entry was asked to produce is likewise not tracing.
+ *
+ * Routed through here rather than written as bare `console.error` at each site so that the channel
+ * stays one thing a caller can redirect or silence, instead of several.
+ */
+function log(...args) {
+  console.log(...args)
+}
+
+function error(...args) {
+  console.error(...args)
+}
+
 export default {
   debugLog,
   setDebugLogging,
   isDebugLogging,
+  log,
+  error,
 }
