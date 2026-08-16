@@ -37,8 +37,18 @@ function replaceWithBranch(path, branch) {
   path.replaceWithMultiple(branch.body)
 }
 
+/**
+ * Whether this traversal detached anything, so the exit handler knows if a crawl is owed.
+ *
+ * Module-level because a visitor object carries no per-run state. Safe because every consumer
+ * invokes this as a standalone, synchronous `traverse(ast, pruneIfBranch)` and `Program.enter`
+ * resets it at the start of each run.
+ */
+let detachedSomething = false
+
 function pruneIfBranch(path) {
   function clear(path, toggle) {
+    detachedSomething = true
     // 判定成立
     if (toggle) {
       replaceWithBranch(path, path.node.consequent)
@@ -71,9 +81,30 @@ function pruneIfBranch(path) {
 /**
  * Prune the branch if the test is constant
  *
- * The code must be reloaded to update the references
+ * Removing a branch detaches its subtree, and Babel leaves every *other* binding's
+ * `referencePaths` pointing into it. Such a reference reports `removed === false` and its cached
+ * parent chain still reaches a Program, so only node reachability can see the difference — which
+ * is why this went unnoticed long enough to be documented as a caller's problem rather than
+ * repaired here. It is not a caller's problem. Of the four consuming plugins, three re-parse the
+ * whole program immediately after calling this visitor (`// 刷新代码`) — the same repair written
+ * out three times — and the fourth does not re-parse at all, so it carried the exposure with
+ * nothing answering for it. A fifth consumer, composing on a single AST, inherited stale bindings
+ * and emitted code that threw.
+ *
+ * So the invariant is restored where it is broken: one `scope.crawl()` on the way out, and only
+ * when something was actually detached. A crawl cannot change the tree — it rebuilds cached scope
+ * information — so this is invisible to output and costs nothing on a traversal that pruned
+ * nothing.
  */
 export default {
+  Program: {
+    enter() {
+      detachedSomething = false
+    },
+    exit(path) {
+      if (detachedSomething) path.scope.crawl()
+    },
+  },
   IfStatement: pruneIfBranch,
   ConditionalExpression: pruneIfBranch,
 }
