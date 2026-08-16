@@ -59,7 +59,13 @@ function procAssignment(path) {
     return
   }
   insertPath.insertBefore(t.expressionStatement(path.node))
-  path.replaceWith(path.node.left)
+  // Clone the target rather than re-using it. `path.node` has just been re-homed into the inserted
+  // statement, so `path.node.left` is already live there; handing that same node object back here
+  // would leave one node reachable at two positions - measured as two such nodes on one real
+  // sample. That is not a bookkeeping wart a crawl can repair, because the tree really does hold it
+  // twice: a later pass replacing both occurrences finds the second one's parent slot already
+  // rewritten, resyncs to a null key, and throws inside Babel's validator.
+  path.replaceWith(t.cloneNode(path.node.left, true))
   // Crawl from the program scope: a moved assignment can reference bindings in
   // an enclosing scope, so crawling only insertPath.scope would leave those
   // outer bindings with stale reference counts.
