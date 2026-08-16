@@ -53,6 +53,12 @@ function getInsertPath(path) {
   return insertPath
 }
 
+/**
+ * Whether this traversal split anything, so the exit handler knows if a crawl is owed. Module-level
+ * because a visitor object carries no per-run state; `Program.enter` resets it per run.
+ */
+let splitSomething = false
+
 function procAssignment(path) {
   const insertPath = getInsertPath(path)
   if (!insertPath) {
@@ -66,10 +72,7 @@ function procAssignment(path) {
   // twice: a later pass replacing both occurrences finds the second one's parent slot already
   // rewritten, resyncs to a null key, and throws inside Babel's validator.
   path.replaceWith(t.cloneNode(path.node.left, true))
-  // Crawl from the program scope: a moved assignment can reference bindings in
-  // an enclosing scope, so crawling only insertPath.scope would leave those
-  // outer bindings with stale reference counts.
-  insertPath.scope.getProgramParent().crawl()
+  splitSomething = true
 }
 
 /**
@@ -77,7 +80,32 @@ function procAssignment(path) {
  *
  * - In the test of IfStatement
  * - In the VariableDeclaration
+ *
+ * **The crawl restores an invariant this rewrite breaks**: after a pass, the scope information
+ * Babel has cached should equal what a fresh parse of that pass's own output would produce. The
+ * moved assignment is re-homed by `insertBefore`, and re-homing a subtree registers its references
+ * a second time - so a binding can end up listing the same live node twice, with nothing detached.
+ * A later consumer that gates a deletion on "have I resolved every reference to this binding" then
+ * passes that check while a live reference goes unhandled.
+ *
+ * **It must be program-scoped**, because a moved assignment can reference bindings in an enclosing
+ * scope and crawling only `insertPath.scope` would leave those outer bindings inconsistent - the
+ * defect this file was fixed for once already.
+ *
+ * **Once per traversal rather than once per split**, which is the only thing that changed since:
+ * the previous form crawled the whole program on every rewrite, so a sample with many splits paid
+ * for the entire program each time. Deferring is safe because nothing in this pass reads scope
+ * state - `getInsertPath` walks `parentPath` and tests node types and keys, never a binding - so no
+ * later invocation in the same traversal depends on the crawl having already run.
  */
 export default {
+  Program: {
+    enter() {
+      splitSomething = false
+    },
+    exit(path) {
+      if (splitSomething) path.scope.crawl()
+    },
+  },
   AssignmentExpression: procAssignment,
 }
