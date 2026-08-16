@@ -6,6 +6,7 @@ import PluginJsconfuser from './plugin/jsconfuser.js'
 import PluginSojson from './plugin/sojson.js'
 import PluginSojsonV7 from './plugin/sojsonv7.js'
 import PluginObfuscator from './plugin/obfuscator.js'
+import PluginObfuscatorX from './plugin/obfuscatorx.js'
 import PluginAwsc from './plugin/awsc.js'
 import logger from './utility/logger.js'
 
@@ -37,6 +38,7 @@ const plugins = {
   sojson: PluginSojson,
   sojsonv7: PluginSojsonV7,
   obfuscator: PluginObfuscator,
+  obfuscatorx: PluginObfuscatorX,
   awsc: PluginAwsc,
 }
 

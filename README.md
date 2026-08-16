@@ -14,6 +14,7 @@ One target per run, selected with `-t`:
 | `sojson` | sojson |
 | `sojsonv7` | sojson v7 |
 | `obfuscator` | [javascript-obfuscator](https://github.com/javascript-obfuscator/javascript-obfuscator) (obfuscator.io) |
+| `obfuscatorx` | the same obfuscator, version-aware — see below for how it differs |
 | `jsconfuser` | [JS-Confuser](https://github.com/MichaelXF/js-confuser) |
 
 ### `obfuscator`
@@ -23,6 +24,25 @@ One target per run, selected with `-t`:
 * controlFlowFlattening (switch)
 * transformer (ObjectExpression, SplitString, and etc.)
 * customCode (self-defending, debug-protection, console-output)
+
+### `obfuscatorx`
+
+The same encoder as `obfuscator`, decoded era by era rather than against one shape. It is an
+**additional** target, not a replacement: `obfuscator` is widely depended on and is left untouched,
+and the two are expected to disagree on some samples.
+
+Two differences worth knowing before choosing between them:
+
+* **It declines rather than half-decoding.** Where a string-array layer is present and cannot be
+  read, this entry returns nothing and says why, instead of emitting a partly-resolved program.
+  A layer it does not own is not that case — it returns the partial decode so the output can be
+  fed to another target, and logs what it left behind.
+* **It reports the encoder era.** The version range is derived from the emitted shape and printed
+  after the decode. Emitted output can only identify a *range*, never an exact version, and a
+  sample carrying no evidence on an axis is reported as such rather than guessed at.
+
+Coverage is **non-contiguous**: the 2.x eras and the pinned 5.5.0, with 3.0.0–4.2.2 unverified.
+A sample whose range overlaps that gap is reported as unknown rather than treated as covered.
 
 ### `jsconfuser`
 

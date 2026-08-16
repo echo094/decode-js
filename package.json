@@ -8,6 +8,7 @@
   "scripts": {
     "decode": "node src/main.js",
     "deob": "node src/main.js -t obfuscator",
+    "deobx": "node src/main.js -t obfuscatorx",
     "dejsc": "node src/main.js -t jsconfuser",
     "deso": "node src/main.js -t sojson",
     "desov7": "node src/main.js -t sojsonv7",
