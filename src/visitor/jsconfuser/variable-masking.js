@@ -140,7 +140,10 @@ function processAssignLeft(
       ref = cache[ref].value
     }
     if (cache[ref].type === 'value') {
-      right.replaceWith(cache[ref].value)
+      // Clone: the cache hands out one node object per entry, and inlining it directly puts that
+      // same node at every site the entry resolves. An AST is a tree, so a later pass resolving
+      // both occurrences replaces the first and then throws on the second.
+      right.replaceWith(t.cloneNode(cache[ref].value, true))
       vm.evalSync(generator(father.node).code)
       cache[prop_name] = {
         type: 'value',
@@ -350,7 +353,8 @@ function processReplace(cache, path, prop_name) {
     return true
   }
   if (type === 'value') {
-    path.replaceWith(value)
+    // Clone, for the same reason: `value` is the cache's own node and this runs once per use site.
+    path.replaceWith(t.cloneNode(value, true))
     return true
   }
   if (type === 'localvar') {
