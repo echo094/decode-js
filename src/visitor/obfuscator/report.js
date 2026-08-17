@@ -66,7 +66,7 @@ const SIGNATURE_ERAS = {
  * pinned 5.5.0. A range landing inside the hole is reported as unverified rather than interpolated
  * across releases that have not been built and run.
  */
-const COVERAGE_HOLE = ['4.2.1', '4.2.2']
+const COVERAGE_HOLE = ['4.2.1', '5.4.7']
 
 const parts = (v) => v.split('.').map(Number)
 function compareVersions(a, b) {

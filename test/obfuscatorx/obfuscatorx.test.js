@@ -172,7 +172,7 @@ describe('era report', () => {
     expect(v.range).toEqual({ low: '4.2.0', high: '5.5.0' })
   })
 
-  test('a range overlapping the remaining unverified 4.2.1–4.2.2 gap is flagged', () => {
+  test('a range overlapping the remaining unverified 4.2.1–5.4.7 gap is flagged', () => {
     const v = deriveEra({
       holder: 'fn-self-replacing',
       wrapper: 'function-declaration/plain/reads-call-hoisted',
