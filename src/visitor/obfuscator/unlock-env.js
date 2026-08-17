@@ -319,6 +319,96 @@ function inlineResolverEffectPath(effect, block, fn, iife, callPath) {
 }
 
 /**
+ * The service-worker resolver is the direct initialized-holder template:
+ *
+ *     (function () {
+ *       var holder = typeof global === 'object' ? global : this;
+ *       holder.setInterval(debugProtection, milliseconds);
+ *     })();
+ *
+ * This proof is intentionally narrower than the two resolver forms above. The conditional is the
+ * producer's target-specific template, and the binding checks make sure this IIFE owns the holder
+ * and the protection reference rather than merely resembling a resolver around user code.
+ */
+function directResolverEffectPath(
+  effect,
+  block,
+  fn,
+  iife,
+  callPath,
+  protectionBinding,
+) {
+  if (block.node.body.length !== 2 || block.node.body[1] !== effect.node)
+    return null
+
+  const holder = block.get('body.0')
+  if (!holder.isVariableDeclaration() || holder.node.kind !== 'var') return null
+  if (holder.node.declarations.length !== 1) return null
+
+  const holderDecl = holder.node.declarations[0]
+  if (
+    !t.isIdentifier(holderDecl.id) ||
+    !t.isConditionalExpression(holderDecl.init)
+  )
+    return null
+
+  const { test, consequent, alternate } = holderDecl.init
+  if (
+    !t.isBinaryExpression(test, { operator: '===' }) ||
+    !t.isUnaryExpression(test.left, { operator: 'typeof' }) ||
+    !t.isIdentifier(test.left.argument, { name: 'global' }) ||
+    !t.isStringLiteral(test.right, { value: 'object' }) ||
+    !t.isIdentifier(consequent, { name: 'global' }) ||
+    !t.isThisExpression(alternate)
+  ) {
+    return null
+  }
+
+  // `global` is the host global in the producer template, never a local shadow.
+  if (fn.scope.getBinding('global')) return null
+
+  const callee = callPath.node.callee
+  if (
+    !t.isMemberExpression(callee) ||
+    !t.isIdentifier(callee.object, { name: holderDecl.id.name }) ||
+    memberKey(callee) !== 'setInterval' ||
+    callPath.node.arguments.length !== 2
+  ) {
+    return null
+  }
+
+  const protection = callPath.node.arguments[0]
+  if (!t.isIdentifier(protection)) return null
+
+  const holderBinding = fn.scope.getBinding(holderDecl.id.name)
+  const resolvedProtection = callPath.scope.getBinding(protection.name)
+  if (
+    !holderBinding ||
+    !resolvedProtection ||
+    resolvedProtection !== protectionBinding
+  )
+    return null
+  if (holderBinding.path.node !== holderDecl) return null
+  if (
+    holderBinding.referencePaths.length !== 1 ||
+    holderBinding.referencePaths[0].node !== callee.object ||
+    holderBinding.constantViolations.length !== 0
+  ) {
+    return null
+  }
+  if (
+    protectionBinding.referencePaths.length !== 1 ||
+    protectionBinding.referencePaths[0].node !== protection ||
+    protectionBinding.constantViolations.length !== 0 ||
+    !protectionBinding.path.isFunctionDeclaration()
+  ) {
+    return null
+  }
+
+  return iife.getStatementParent()
+}
+
+/**
  * Remove the global-object resolver IIFE emitted around a member-qualified interval.
  *
  * The 4.0.0+ template has exactly two declaration statements before the interval call: a resolver
@@ -326,7 +416,7 @@ function inlineResolverEffectPath(effect, block, fn, iife, callPath) {
  * the declaration identities and their complete reference graph before selecting the IIFE
  * statement.
  */
-function intervalEffectPath(callPath) {
+function intervalEffectPath(callPath, protectionBinding) {
   const effect = effectPath(callPath)
   if (!effect.isExpressionStatement()) return effect
 
@@ -334,8 +424,8 @@ function intervalEffectPath(callPath) {
   if (
     !block ||
     !block.isBlockStatement() ||
-    block.node.body.length !== 3 ||
-    block.node.body[2] !== effect.node
+    ![2, 3].includes(block.node.body.length) ||
+    block.node.body[block.node.body.length - 1] !== effect.node
   ) {
     return effect
   }
@@ -350,6 +440,19 @@ function intervalEffectPath(callPath) {
   ) {
     return effect
   }
+
+  if (block.node.body.length === 2) {
+    const direct = directResolverEffectPath(
+      effect,
+      block,
+      fn,
+      iife,
+      callPath,
+      protectionBinding,
+    )
+    return direct || effect
+  }
+  if (block.node.body.length !== 3) return effect
 
   const inline = inlineResolverEffectPath(effect, block, fn, iife, callPath)
   if (inline) return inline
@@ -501,11 +604,11 @@ function stripDebugProtectionFunction(path, removed) {
     const fnParent = ref.getFunctionParent()
     const call = fnParent && fnParent.parentPath
     if (isSetIntervalCall(call)) {
-      intervals.push(intervalEffectPath(call))
+      intervals.push(intervalEffectPath(call, binding))
       continue
     }
     if (isSetIntervalCall(ref.parentPath)) {
-      intervals.push(intervalEffectPath(ref.parentPath))
+      intervals.push(intervalEffectPath(ref.parentPath, binding))
       continue
     }
     debugLog(`unlock-env: declining ${id.name}, debug-protection referenced outside an interval`)

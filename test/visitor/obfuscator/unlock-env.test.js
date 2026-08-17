@@ -99,6 +99,15 @@ test('debug protection with a member-qualified interval', () => {
   expectFixed('debug-protection-interval-member')
 })
 
+/**
+ * The direct initialized-holder template is the service-worker producer's 4.1.0+ resolver. The
+ * input is the smallest slice retained from the exact 4.1.0 seed-41001 pre-unlock stage: its
+ * holder conditional, member interval, protection function, and observable program effect.
+ */
+test('debug protection with the service-worker global resolver', () => {
+  expectFixedTrimmed('debug-protection-interval-member-service-worker')
+})
+
 test('debug protection with the transformed inline global resolver', () => {
   expectFixedTrimmed('debug-protection-interval-member-inline')
 })
@@ -162,4 +171,16 @@ test('declines a member call with a dynamic property', () => {
 
 test('declines a member interval when the protection has another reference', () => {
   expectDeclined('decline-member-with-other-reference')
+})
+
+test('declines a service-worker resolver with an altered condition', () => {
+  expectFixedTrimmed('decline-service-worker-resolver-condition')
+})
+
+test('declines a service-worker resolver with another holder reference', () => {
+  expectFixedTrimmed('decline-service-worker-holder-reference')
+})
+
+test('declines a service-worker resolver with a non-static member', () => {
+  expectDeclined('decline-service-worker-non-static-member')
 })
