@@ -71,6 +71,15 @@ function memberKey(node) {
   return null
 }
 
+/** A direct interval call, with the global or member-qualified spellings the encoder emits. */
+function isSetIntervalCall(path) {
+  if (!path || !path.isCallExpression()) return false
+  return (
+    t.isIdentifier(path.node.callee, { name: 'setInterval' }) ||
+    memberKey(path.node.callee) === 'setInterval'
+  )
+}
+
 /**
  * Count nodes under `node` matching `pred`.
  *
@@ -194,6 +203,85 @@ function outermostWrapperStatement(guardCall) {
 }
 
 /**
+ * Remove the global-object resolver IIFE emitted around a member-qualified interval.
+ *
+ * The 4.0.0+ template has exactly two declaration statements before the interval call: a resolver
+ * function and its one-use result. Ascending past that shape would delete user code, so require
+ * the declaration identities and their complete reference graph before selecting the IIFE
+ * statement.
+ */
+function intervalEffectPath(callPath) {
+  const effect = effectPath(callPath)
+  if (!effect.isExpressionStatement()) return effect
+
+  const block = effect.parentPath
+  if (
+    !block ||
+    !block.isBlockStatement() ||
+    block.node.body.length !== 3 ||
+    block.node.body[2] !== effect.node
+  ) {
+    return effect
+  }
+  const fn = block.parentPath
+  if (!fn || !isFnWithBlock(fn.node) || fn.node.params.length) return effect
+  const iife = fn.parentPath
+  if (
+    !iife ||
+    !iife.isCallExpression() ||
+    iife.node.callee !== fn.node ||
+    iife.node.arguments.length
+  ) {
+    return effect
+  }
+
+  const [resolver, global] = block.get('body').slice(0, 2)
+  if (!resolver.isVariableDeclaration() || !global.isVariableDeclaration()) {
+    return effect
+  }
+  if (
+    resolver.node.declarations.length !== 1 ||
+    global.node.declarations.length !== 1
+  ) {
+    return effect
+  }
+  const resolverDecl = resolver.node.declarations[0]
+  const globalDecl = global.node.declarations[0]
+  if (!t.isIdentifier(resolverDecl.id) || !isFnWithBlock(resolverDecl.init)) {
+    return effect
+  }
+  if (!t.isIdentifier(globalDecl.id) || !t.isCallExpression(globalDecl.init)) {
+    return effect
+  }
+  if (!t.isIdentifier(globalDecl.init.callee, { name: resolverDecl.id.name })) {
+    return effect
+  }
+  if (
+    !t.isMemberExpression(callPath.node.callee) ||
+    !t.isIdentifier(callPath.node.callee.object, { name: globalDecl.id.name })
+  ) {
+    return effect
+  }
+
+  const resolverBinding = fn.scope.getBinding(resolverDecl.id.name)
+  const globalBinding = fn.scope.getBinding(globalDecl.id.name)
+  if (!resolverBinding || !globalBinding) return effect
+  if (
+    resolverBinding.referencePaths.length !== 1 ||
+    resolverBinding.referencePaths[0].node !== globalDecl.init.callee
+  ) {
+    return effect
+  }
+  if (
+    globalBinding.referencePaths.length !== 1 ||
+    globalBinding.referencePaths[0].node !== callPath.node.callee.object
+  ) {
+    return effect
+  }
+  return iife.getStatementParent()
+}
+
+/**
  * Remove one guard and the controller it runs through, or leave both untouched.
  *
  * Returns the protection's name when it removed something, `null` when it declined.
@@ -292,13 +380,12 @@ function stripDebugProtectionFunction(path, removed) {
   for (const ref of binding.referencePaths) {
     const fnParent = ref.getFunctionParent()
     const call = fnParent && fnParent.parentPath
-    if (call && call.isCallExpression() && t.isIdentifier(call.node.callee, { name: 'setInterval' })) {
-      intervals.push(effectPath(call))
+    if (isSetIntervalCall(call)) {
+      intervals.push(intervalEffectPath(call))
       continue
     }
-    if (ref.parentPath.isCallExpression() &&
-        t.isIdentifier(ref.parentPath.node.callee, { name: 'setInterval' })) {
-      intervals.push(effectPath(ref.parentPath))
+    if (isSetIntervalCall(ref.parentPath)) {
+      intervals.push(intervalEffectPath(ref.parentPath))
       continue
     }
     debugLog(`unlock-env: declining ${id.name}, debug-protection referenced outside an interval`)

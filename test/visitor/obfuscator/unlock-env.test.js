@@ -84,6 +84,10 @@ test('debug protection with its interval', () => {
   expectFixed('debug-protection-interval')
 })
 
+test('debug protection with a member-qualified interval', () => {
+  expectFixed('debug-protection-interval-member')
+})
+
 /**
  * The interval fused into a sequence expression with the program's own calls - the encoder's
  * adjacent-statement merging does this and does not care whose statements it merges.
@@ -118,4 +122,16 @@ test('declines a controller the program itself still calls', () => {
 
 test('declines a guard whose callback matches no known protection', () => {
   expectDeclined('decline-unrecognised-guard')
+})
+
+test('declines a member call with a non-interval property', () => {
+  expectDeclined('decline-member-non-interval')
+})
+
+test('declines a member call with a dynamic property', () => {
+  expectDeclined('decline-member-dynamic-property')
+})
+
+test('declines a member interval when the protection has another reference', () => {
+  expectDeclined('decline-member-with-other-reference')
 })
