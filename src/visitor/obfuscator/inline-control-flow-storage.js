@@ -58,15 +58,24 @@ function parseObject(path) {
             : t.logicalExpression
           target.replaceWith(nodeFactory(value.operator, args[0], args[1]))
         }
-      } else if (t.isCallExpression(value)) {
+      } else if (
+        t.isCallExpression(value) ||
+        t.isOptionalCallExpression(value)
+      ) {
         if (
           !t.isIdentifier(value.callee) ||
           value.callee.name !== prop.value.params[0]?.name
         ) {
           continue
         }
-        replace = (target, args) =>
-          target.replaceWith(t.callExpression(args[0], args.slice(1)))
+        replace = (target, args) => {
+          const callee = args[0]
+          const callArguments = args.slice(1)
+          const call = t.isOptionalCallExpression(value)
+            ? t.optionalCallExpression(callee, callArguments, value.optional)
+            : t.callExpression(callee, callArguments)
+          target.replaceWith(call)
+        }
       }
     } else if (t.isStringLiteral(prop.value)) {
       const literal = prop.value.value

@@ -1,0 +1,4 @@
+(function () {
+  var _0x47e8b7 = null;
+  return _0x47e8b7?.(0x1, 0x2);
+})();

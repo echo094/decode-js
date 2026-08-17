@@ -70,6 +70,19 @@ describe('decodes', () => {
       .trimEnd()
     expect(PluginObfuscatorX(input)).toBe(expected)
   })
+
+  test('4.2.0-optional-cff — optional storage calls retain undefined', () => {
+    const fixture = join(
+      root,
+      '../visitor/obfuscator/inline-control-flow-storage/storage-optional-call',
+    )
+    const input = fs.readFileSync(`${fixture}.js`, 'utf-8')
+    const expected = `(function () {
+  var _0x47e8b7 = null;
+  return _0x47e8b7?.(1, 2);
+})();`
+    expect(PluginObfuscatorX(input)).toBe(expected)
+  })
 })
 
 /**

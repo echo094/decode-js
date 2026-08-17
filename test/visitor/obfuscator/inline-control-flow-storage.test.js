@@ -35,6 +35,10 @@ test('storage-call', () => {
   getResult(inlineControlFlowStorage, true, join(root, 'storage-call'))
 })
 
+test('storage-optional-call preserves optional semantics', () => {
+  getResult(inlineControlFlowStorage, true, join(root, 'storage-optional-call'))
+})
+
 test('object-invalid-1', () => {
   getResult(inlineControlFlowStorage, false, join(root, 'object-invalid-1'))
 })
@@ -61,4 +65,32 @@ test('unsupported member writes leave numeric storage untouched', () => {
   traverse(ast, inlineControlFlowStorage)
   expect(generate(ast).code).toBe(expected)
   expectConsistentState(ast)
+})
+
+test('unsupported optional member calls leave storage untouched', () => {
+  const input = fs.readFileSync(
+    join(root, 'storage-optional-member.js'),
+    'utf-8',
+  )
+  const ast = parse(input)
+  const expected = generate(ast).code
+  traverse(ast, inlineControlFlowStorage)
+  expect(generate(ast).code).toBe(expected)
+  expectConsistentState(ast)
+})
+
+test('optional member storage references leave storage untouched', () => {
+  const input = fs.readFileSync(
+    join(root, 'storage-optional-reference.js'),
+    'utf-8',
+  )
+  const ast = parse(input)
+  const expected = generate(ast).code
+  traverse(ast, inlineControlFlowStorage)
+  expect(generate(ast).code).toBe(expected)
+  expectConsistentState(ast)
+})
+
+test('nested ordinary storage calls replace from the inside out', () => {
+  getResult(inlineControlFlowStorage, true, join(root, 'storage-nested-call'))
 })
