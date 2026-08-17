@@ -6,8 +6,8 @@ import logger from '../utility/logger.js'
 import calculateConstantExp from '../visitor/calculate-constant-exp.js'
 import deleteExtra from '../visitor/delete-extra.js'
 import pruneIfBranch from '../visitor/prune-if-branch.js'
-import parseControlFlowStorage from '../visitor/parse-control-flow-storage.js'
 import normalizeStatements from '../visitor/obfuscator/normalize-statements.js'
+import inlineControlFlowStorage from '../visitor/obfuscator/inline-control-flow-storage.js'
 import decodeStringArray from '../visitor/obfuscator/string-array.js'
 import normalizeConverting from '../visitor/obfuscator/normalize-converting.js'
 import { createUnflattenSwitchDispatch } from '../visitor/obfuscator/unflatten-switch-dispatch.js'
@@ -48,7 +48,7 @@ function runGroup(ast, maxRounds = 8) {
     rounds = round + 1
     normalizeConverting(ast)
     traverse(ast, calculateConstantExp)
-    traverse(ast, parseControlFlowStorage)
+    traverse(ast, inlineControlFlowStorage)
     traverse(ast, calculateConstantExp)
     traverse(ast, pruneIfBranch)
     traverse(
@@ -77,6 +77,10 @@ export default function (code) {
   // operators, and every matcher below navigates by statement boundaries.
   normalizeStatements(ast)
 
+  // 3.2.0's calls-transform stores string-array indexes in numeric-valued storage. Resolve those
+  // indexes before string-array detection/evaluation; the group below remains for older traffic
+  // that is exposed only after string-array decoding.
+  traverse(ast, inlineControlFlowStorage)
   const sa = decodeStringArray(ast)
 
   // **Refusal is narrow and means one thing: a layer that is mine, which I could not read.**

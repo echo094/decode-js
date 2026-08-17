@@ -59,6 +59,17 @@ describe('decodes', () => {
       join(root, '2.19.0-dead-code-control'),
     )
   })
+
+  test('3.2.0-calls-transform — numeric storage is exposed before string-array decoding', () => {
+    const input = fs.readFileSync(
+      join(root, '3.2.0-calls-transform.js'),
+      'utf-8',
+    )
+    const expected = fs
+      .readFileSync(join(root, '3.2.0-calls-transform.fix.js'), 'utf-8')
+      .trimEnd()
+    expect(PluginObfuscatorX(input)).toBe(expected)
+  })
 })
 
 /**

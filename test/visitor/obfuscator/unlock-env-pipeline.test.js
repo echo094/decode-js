@@ -5,7 +5,7 @@ import traverse from '@babel/traverse'
 import normalizeStatements from '#visitor/obfuscator/normalize-statements'
 import decodeStringArray from '#visitor/obfuscator/string-array'
 import normalizeConverting from '#visitor/obfuscator/normalize-converting'
-import parseControlFlowStorage from '#visitor/parse-control-flow-storage'
+import inlineControlFlowStorage from '#visitor/obfuscator/inline-control-flow-storage'
 import calculateConstantExp from '#visitor/calculate-constant-exp'
 import pruneIfBranch from '#visitor/prune-if-branch'
 import { createUnflattenSwitchDispatch } from '#visitor/obfuscator/unflatten-switch-dispatch'
@@ -43,7 +43,7 @@ test('unlock-env strips debug protection on a tree the pipeline has rewritten', 
     for (let round = 0; round < 8; round++) {
       normalizeConverting(ast)
       traverse(ast, calculateConstantExp)
-      traverse(ast, parseControlFlowStorage)
+      traverse(ast, inlineControlFlowStorage)
       traverse(ast, calculateConstantExp)
       traverse(ast, pruneIfBranch)
       traverse(
