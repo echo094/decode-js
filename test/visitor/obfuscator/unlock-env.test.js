@@ -4,6 +4,7 @@ import { expect, test } from 'vitest'
 import { parse } from '@babel/parser'
 import generate from '@babel/generator'
 import unlockEnv from '#visitor/obfuscator/unlock-env'
+import { expectConsistentState } from '../../helper.js'
 
 const root = join(__dirname, 'unlock-env')
 
@@ -27,11 +28,21 @@ function run(name) {
   const input = fs.readFileSync(join(root, `${name}.js`), 'utf-8')
   const ast = parse(input, { errorRecovery: true, allowReturnOutsideFunction: true })
   unlockEnv(ast)
+  expectConsistentState(ast)
   return generate(ast, { comments: false }).code
 }
 
 function expectFixed(name) {
   expect(run(name)).toBe(fs.readFileSync(join(root, `${name}.fix.js`), 'utf-8'))
+}
+
+// New files are kept editable by the repository patch tool, which terminates text files with a
+// newline; generator output intentionally has none. Keep this normalization local to those
+// fixtures rather than weakening the existing exact-text checks.
+function expectFixedTrimmed(name) {
+  expect(run(name)).toBe(
+    fs.readFileSync(join(root, `${name}.fix.js`), 'utf-8').trimEnd(),
+  )
 }
 
 /**
@@ -86,6 +97,23 @@ test('debug protection with its interval', () => {
 
 test('debug protection with a member-qualified interval', () => {
   expectFixed('debug-protection-interval-member')
+})
+
+test('debug protection with the transformed inline global resolver', () => {
+  expectFixedTrimmed('debug-protection-interval-member-inline')
+})
+
+/**
+ * The inline resolver is only a larger removal target. Nearby wrappers still lose their own
+ * recognised interval and protection, but their wrapper must remain when its exact local shape is
+ * not proved. These hand-built cases exercise that match-before-mutate boundary.
+ */
+test('declines the inline resolver wrapper with an extra effect', () => {
+  expectFixedTrimmed('decline-inline-resolver-extra-effect')
+})
+
+test('declines the inline resolver with an altered Function signature', () => {
+  expectFixedTrimmed('decline-inline-resolver-signature')
 })
 
 /**

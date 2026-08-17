@@ -203,6 +203,122 @@ function outermostWrapperStatement(guardCall) {
 }
 
 /**
+ * The transformed global resolver has a split declaration and a try/catch assignment path:
+ *
+ *     var that;
+ *     try {
+ *       var get = Function('...return this...');
+ *       that = get();
+ *     } catch (e) {
+ *       that = window;
+ *     }
+ *     that.setInterval(debugProtection, delay);
+ *
+ * This proof is deliberately separate from the declaration-pair proof below. The two templates
+ * have different local reference graphs, and treating a matching first statement as enough would
+ * make an unrelated try/catch wrapper removable. `null` means that the caller must retain the
+ * interval effect rather than guessing at a larger removal target.
+ */
+function inlineResolverEffectPath(effect, block, fn, iife, callPath) {
+  const [holder, tryPath] = block.get('body').slice(0, 2)
+  if (!holder.isVariableDeclaration() || !tryPath.isTryStatement()) return null
+  if (holder.node.declarations.length !== 1 || tryPath.node.finalizer)
+    return null
+
+  const holderDecl = holder.node.declarations[0]
+  if (!t.isIdentifier(holderDecl.id) || holderDecl.init) return null
+  const handler = tryPath.get('handler')
+  if (!handler || !handler.isCatchClause() || !handler.node.body) return null
+
+  const tryBody = tryPath.get('block')
+  const catchBody = handler.get('body')
+  if (tryBody.node.body.length !== 2 || catchBody.node.body.length !== 1)
+    return null
+
+  const resolver = tryBody.get('body.0')
+  const tryAssignment = tryBody.get('body.1')
+  const catchAssignment = catchBody.get('body.0')
+  if (
+    !resolver.isVariableDeclaration() ||
+    resolver.node.declarations.length !== 1
+  )
+    return null
+
+  const resolverDecl = resolver.node.declarations[0]
+  if (!t.isIdentifier(resolverDecl.id)) return null
+  if (
+    !t.isCallExpression(resolverDecl.init) ||
+    !t.isIdentifier(resolverDecl.init.callee, { name: 'Function' }) ||
+    resolverDecl.init.arguments.length !== 1 ||
+    !t.isStringLiteral(resolverDecl.init.arguments[0]) ||
+    !/\breturn\s+this\b/.test(resolverDecl.init.arguments[0].value)
+  ) {
+    return null
+  }
+
+  const assignmentFor = (path, right) =>
+    path.isExpressionStatement() &&
+    t.isAssignmentExpression(path.node.expression, { operator: '=' }) &&
+    t.isIdentifier(path.node.expression.left, { name: holderDecl.id.name }) &&
+    right(path.node.expression.right)
+  if (
+    !assignmentFor(
+      tryAssignment,
+      (node) =>
+        t.isCallExpression(node) &&
+        t.isIdentifier(node.callee, { name: resolverDecl.id.name }) &&
+        node.arguments.length === 0,
+    ) ||
+    !assignmentFor(catchAssignment, (node) =>
+      t.isIdentifier(node, { name: 'window' }),
+    )
+  ) {
+    return null
+  }
+
+  if (
+    !t.isMemberExpression(callPath.node.callee) ||
+    !t.isIdentifier(callPath.node.callee.object, {
+      name: holderDecl.id.name,
+    }) ||
+    !isSetIntervalCall(callPath)
+  ) {
+    return null
+  }
+
+  const resolverBinding = fn.scope.getBinding(resolverDecl.id.name)
+  const holderBinding = fn.scope.getBinding(holderDecl.id.name)
+  if (!resolverBinding || !holderBinding) return null
+  if (
+    resolverBinding.referencePaths.length !== 1 ||
+    resolverBinding.referencePaths[0].node !==
+      tryAssignment.node.expression.right.callee ||
+    resolverBinding.constantViolations.length !== 0
+  ) {
+    return null
+  }
+  if (
+    holderBinding.referencePaths.length !== 1 ||
+    holderBinding.referencePaths[0].node !== callPath.node.callee.object ||
+    holderBinding.constantViolations.length !== 2 ||
+    !holderBinding.constantViolations.some(
+      (path) => path.node === tryAssignment.node.expression,
+    ) ||
+    !holderBinding.constantViolations.some(
+      (path) => path.node === catchAssignment.node.expression,
+    )
+  ) {
+    return null
+  }
+
+  // `effect` is the wrapper's final statement by the caller's exact-three-statement gate. Keep the
+  // identity check here as part of the local proof so this helper cannot be reused for an interior
+  // member call if that gate is loosened later.
+  if (block.node.body[2] !== effect.node) return null
+  return iife.getStatementParent()
+}
+
+/**
  * Remove the global-object resolver IIFE emitted around a member-qualified interval.
  *
  * The 4.0.0+ template has exactly two declaration statements before the interval call: a resolver
@@ -234,6 +350,9 @@ function intervalEffectPath(callPath) {
   ) {
     return effect
   }
+
+  const inline = inlineResolverEffectPath(effect, block, fn, iife, callPath)
+  if (inline) return inline
 
   const [resolver, global] = block.get('body').slice(0, 2)
   if (!resolver.isVariableDeclaration() || !global.isVariableDeclaration()) {
@@ -371,6 +490,7 @@ function stripDebugProtectionFunction(path, removed) {
   if (!t.isIdentifier(id) || params.length !== 1 || body.body.length !== 2) return
   if (!t.isFunctionDeclaration(body.body[0]) || !t.isTryStatement(body.body[1])) return
 
+  const programScope = path.scope.getProgramParent()
   const binding = path.scope.getBinding(id.name)
   if (!binding) return
 
@@ -394,6 +514,10 @@ function stripDebugProtectionFunction(path, removed) {
 
   for (const interval of intervals) if (!interval.removed) interval.remove()
   path.remove()
+  // A declined resolver proof can leave its wrapper in place while removing only the interval
+  // effect. That detaches the holder's final member reference, so refresh the state that later
+  // visitors read before reporting the function as removed.
+  programScope.crawl()
   removed.push('debug-protection')
 }
 
