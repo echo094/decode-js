@@ -52,6 +52,7 @@ const SIGNATURE_ERAS = {
       'E-sa-wrapper-self-replacing',
     'function-declaration/self-replacing/reads-call-hoisted':
       'E-sa-wrapper-array-fn-call',
+    'function-declaration/plain/reads-call-hoisted': 'E-sa-wrapper-flat',
   },
   rotate: {
     'counter-loop/none': 'E-sa-rotate-counter-loop',
@@ -61,11 +62,11 @@ const SIGNATURE_ERAS = {
 }
 
 /**
- * The range this entry has actually verified, which is deliberately **not contiguous**: the 2.x
- * eras studied in phase 1, and separately the pinned 5.5.0. Nothing between has been built or run,
- * so a range landing inside the hole is reported as unverified rather than interpolated across.
+ * The remaining unverified interval between the contiguous walk through 4.2.0 and the separately
+ * pinned 5.5.0. A range landing inside the hole is reported as unverified rather than interpolated
+ * across releases that have not been built and run.
  */
-const COVERAGE_HOLE = ['3.0.0', '4.2.2']
+const COVERAGE_HOLE = ['4.2.1', '4.2.2']
 
 const parts = (v) => v.split('.').map(Number)
 function compareVersions(a, b) {

@@ -162,10 +162,20 @@ describe('era report', () => {
     expect(v.range).toBe(null)
   })
 
-  test('a range overlapping the unverified 3.0.0–4.2.2 gap is flagged', () => {
+  test('the 4.2.0 flat wrapper reports its output-verified era', () => {
     const v = deriveEra({
       holder: 'fn-self-replacing',
-      wrapper: 'function-declaration/self-replacing/reads-call-hoisted',
+      wrapper: 'function-declaration/plain/reads-call-hoisted',
+      rotate: 'compare-loop/parseint-div',
+    })
+    expect(v.eras.wrapper).toBe('E-sa-wrapper-flat')
+    expect(v.range).toEqual({ low: '4.2.0', high: '5.5.0' })
+  })
+
+  test('a range overlapping the remaining unverified 4.2.1–4.2.2 gap is flagged', () => {
+    const v = deriveEra({
+      holder: 'fn-self-replacing',
+      wrapper: 'function-declaration/plain/reads-call-hoisted',
       rotate: 'compare-loop/parseint-div',
     })
     expect(v.inCoverageHole).toBe(true)
