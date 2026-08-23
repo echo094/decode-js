@@ -36,10 +36,10 @@ function run(name, fix) {
 }
 
 /**
- * Five of the seven cases below pin a **decline**, which is unusual for a fixture set and is the
- * whole point of this suite. The shared `remove-control-flow-ob.js` passes the two rewrite cases
- * and mishandles every decline case - two by corrupting output silently, one by throwing - so a
- * suite covering only the happy path would not tell the two implementations apart.
+ * Five of the ten cases below pin a **decline**, which is unusual for a fixture set and is the
+ * whole point of this suite. The shared `remove-control-flow-ob.js` passes the two original
+ * rewrite cases and mishandles every decline case - two by corrupting output silently, one by
+ * throwing - so a suite covering only the happy path would not tell the implementations apart.
  */
 
 test('baseline: the controller is a permutation, read left to right', () => {
@@ -88,6 +88,14 @@ test('directive-empty-case: a case emptied by directive re-hoisting drops out', 
   // Found by appending a corpus input carrying a directive: before that, the whole matrix had
   // none, and this pass declined on every cff cell of the new fixture at every column.
   expect(run('directive-empty-case', true)).toBe(1)
+})
+
+test('directive-retained-case: only the re-hoisted leading copy drops out', () => {
+  // From 5.2.0 Finalizing removes the original directive only from the scope's direct body. When
+  // flattening has nested it in a switch case, that copy survives beside the re-hoisted clone.
+  // The second identical string is deliberately later in source order and is therefore ordinary
+  // executable content; matching by value without the prologue-position gate would delete it too.
+  expect(run('directive-retained-case', true)).toBe(1)
 })
 
 test('all-cases-empty: a dispatch with nothing in any case removes the loop', () => {

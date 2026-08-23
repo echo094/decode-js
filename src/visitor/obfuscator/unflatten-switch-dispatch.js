@@ -81,6 +81,56 @@ function readConsequent(cs) {
   return null
 }
 
+/** Directive values already emitted at the top of the lexical scope containing this loop. */
+function readScopeDirectives(path) {
+  const directives = path.parentPath.node.directives
+  if (!Array.isArray(directives)) return []
+  return directives.map((directive) => directive.value.value)
+}
+
+/**
+ * Restore the permutation while omitting the original copy of a directive that Finalizing has
+ * already re-emitted at the top of this scope.
+ *
+ * From 5.2.0 the encoder removes a recorded directive only from the scope's direct `body`. If
+ * control-flow flattening moved it into a switch case first, that identity node survives there as
+ * an ordinary string expression even though a cloned directive is also present at scope level.
+ * It can only occupy the leading source slot: a directive recorded by the encoder came from the
+ * directive prologue. Matching only that prefix is important — an identical string expression
+ * later in the function is ordinary executable content and must survive.
+ */
+function rebuildStatements(statements, parts, scopeDirectives) {
+  const rebuilt = []
+  let directiveIndex = 0
+  let inDirectivePrefix = scopeDirectives.length > 0
+
+  for (const part of parts) {
+    const statement = statements[Number(part)]
+    if (statement === EMPTY_CASE) {
+      // Before 5.2.0 the recursive removal leaves the directive's case empty. It still occupies
+      // the leading source slot, so consume the corresponding already-emitted scope directive.
+      if (inDirectivePrefix && directiveIndex < scopeDirectives.length)
+        directiveIndex++
+      continue
+    }
+    if (
+      inDirectivePrefix &&
+      directiveIndex < scopeDirectives.length &&
+      t.isExpressionStatement(statement) &&
+      t.isStringLiteral(statement.expression, {
+        value: scopeDirectives[directiveIndex],
+      })
+    ) {
+      directiveIndex++
+      continue
+    }
+    inDirectivePrefix = false
+    rebuilt.push(statement)
+  }
+
+  return rebuilt
+}
+
 /**
  * Resolve a name to the declarator that binds it: a declarator in a **preceding sibling
  * declaration** of the loop, in the same block.
@@ -227,7 +277,13 @@ function match(path) {
   if (!usedOnlyInside(path, dispatch.controller)) return null
   if (!usedOnlyInside(path, dispatch.index)) return null
 
-  return { statements, parts, controllerDecl, indexDecl }
+  return {
+    statements,
+    parts,
+    controllerDecl,
+    indexDecl,
+    scopeDirectives: readScopeDirectives(path),
+  }
 }
 
 /**
@@ -240,14 +296,18 @@ export function createUnflattenSwitchDispatch(onChange) {
       exit(path) {
         const found = match(path)
         if (!found) return
-        const { statements, parts, controllerDecl, indexDecl } = found
+        const {
+          statements,
+          parts,
+          controllerDecl,
+          indexDecl,
+          scopeDirectives,
+        } = found
 
         // Read the controller left to right: position k names the case holding original
         // statement k. Empty cases drop out here rather than at the gate, so the permutation
         // check above still sees every index.
-        const rebuilt = parts
-          .map((part) => statements[Number(part)])
-          .filter((s) => s !== EMPTY_CASE)
+        const rebuilt = rebuildStatements(statements, parts, scopeDirectives)
 
         controllerDecl.remove()
         indexDecl.remove()
