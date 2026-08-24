@@ -1,9 +1,13 @@
 import fs from 'fs'
+import vm from 'node:vm'
 import { join } from 'path'
 import { expect, test } from 'vitest'
 import { parse } from '@babel/parser'
 import generate from '@babel/generator'
+import traverse from '@babel/traverse'
 import unlockEnv from '#visitor/obfuscator/unlock-env'
+import plugin from '#plugin/obfuscatorx'
+import deleteExtra from '#visitor/delete-extra'
 import { expectConsistentState } from '../../helper.js'
 
 const root = join(__dirname, 'unlock-env')
@@ -26,7 +30,10 @@ const root = join(__dirname, 'unlock-env')
  */
 function run(name) {
   const input = fs.readFileSync(join(root, `${name}.js`), 'utf-8')
-  const ast = parse(input, { errorRecovery: true, allowReturnOutsideFunction: true })
+  const ast = parse(input, {
+    errorRecovery: true,
+    allowReturnOutsideFunction: true,
+  })
   unlockEnv(ast)
   expectConsistentState(ast)
   return generate(ast, { comments: false }).code
@@ -54,7 +61,10 @@ function expectFixedTrimmed(name) {
  */
 function expectDeclined(name) {
   const input = fs.readFileSync(join(root, `${name}.js`), 'utf-8')
-  const untouched = generate(parse(input, { errorRecovery: true, allowReturnOutsideFunction: true }), { comments: false }).code
+  const untouched = generate(
+    parse(input, { errorRecovery: true, allowReturnOutsideFunction: true }),
+    { comments: false },
+  ).code
   expect(run(name)).toBe(untouched)
 }
 
@@ -86,8 +96,26 @@ test('self-defending, 5.4.5 newline bail', () => {
   expectFixedTrimmed('self-defending-newline-bail')
 })
 
+/**
+ * Browser-no-eval's older self-defending helper resolves RegExp through its target-specific global
+ * fallback. The nested-function classifier must still identify it after that producer spelling.
+ */
+test('browser-no-eval self-defending, the older global fallback form', () => {
+  expectFixedTrimmed('browser-no-eval-self-defending')
+})
+
 test('console output disabler', () => {
   expectFixed('console-output')
+})
+
+/**
+ * Current browser-no-eval console suppression shares GlobalVariableNoEvalTemplate with the
+ * interval helper, but its method-list guard is the consumer-specific shape. This exact 5.5.0
+ * output proves that both the guard/controller and the resolver are removed while the program call
+ * survives the binding-state consistency audit.
+ */
+test('browser-no-eval console output disabler', () => {
+  expectFixedTrimmed('browser-no-eval-console')
 })
 
 test('debug protection', () => {
@@ -106,6 +134,114 @@ test('debug protection with its interval', () => {
 
 test('debug protection with a member-qualified interval', () => {
   expectFixed('debug-protection-interval-member')
+})
+
+/**
+ * Browser-no-eval uses the exact window/process/require/global fallback and a literal debugger
+ * body. The producer also merges the wrapper with the program's console effect, so this asserts
+ * both target-specific removal and effect preservation.
+ */
+test('debug protection with the browser-no-eval resolver and literal debugger', () => {
+  expectFixedTrimmed('browser-no-eval-debugger')
+})
+
+test('declines a browser-no-eval resolver with an altered host test', () => {
+  expectFixedTrimmed('browser-no-eval-decline-condition')
+})
+
+test('domain lock with the nested ordinary resolver', () => {
+  expectFixedTrimmed('domain-lock-5.4.1')
+})
+
+test('domain lock with the browser-no-eval resolver', () => {
+  expectFixedTrimmed('domain-lock-browser-no-eval')
+})
+
+test('domain lock direct visitor and fresh plugin runs agree', () => {
+  const normalize = (code) => {
+    const ast = parse(code, {
+      errorRecovery: true,
+      allowReturnOutsideFunction: true,
+    })
+    traverse(ast, deleteExtra)
+    return generate(ast, { comments: false }).code
+  }
+  for (const name of ['domain-lock-5.4.1', 'domain-lock-browser-no-eval']) {
+    const input = fs.readFileSync(join(root, `${name}.js`), 'utf-8')
+    expect(normalize(plugin(input))).toBe(normalize(run(name)))
+    expect(normalize(plugin(input))).toBe(normalize(run(name)))
+  }
+})
+
+test('domain lock preserves a payload fused with its trigger', () => {
+  const input = fs
+    .readFileSync(join(root, 'domain-lock-browser-no-eval.js'), 'utf-8')
+    .replace(
+      "_0x34b715();console.log('payload');",
+      "_0x34b715(),console.log('payload');",
+    )
+  const ast = parse(input, {
+    errorRecovery: true,
+    allowReturnOutsideFunction: true,
+  })
+  unlockEnv(ast)
+  expectConsistentState(ast)
+  expect(generate(ast, { comments: false }).code.trim()).toBe(
+    fs
+      .readFileSync(join(root, 'domain-lock-browser-no-eval.fix.js'), 'utf-8')
+      .trim(),
+  )
+})
+
+test('domain-like near miss cannot fall through to the RegExp debugger heuristic', () => {
+  const input = fs
+    .readFileSync(join(root, 'domain-lock-5.4.1.js'), 'utf-8')
+    .replace(".split(';')", ".join(';')")
+  const ast = parse(input, {
+    errorRecovery: true,
+    allowReturnOutsideFunction: true,
+  })
+  const before = generate(ast, { comments: false }).code
+  unlockEnv(ast)
+  expectConsistentState(ast)
+  expect(generate(ast, { comments: false }).code).toBe(before)
+})
+
+test('domain lock declines when its calls controller has another owner', () => {
+  const input =
+    fs.readFileSync(join(root, 'domain-lock-browser-no-eval.js'), 'utf-8') +
+    ';void _0x54ea66;'
+  const ast = parse(input, {
+    errorRecovery: true,
+    allowReturnOutsideFunction: true,
+  })
+  const before = generate(ast, { comments: false }).code
+  unlockEnv(ast)
+  expectConsistentState(ast)
+  expect(generate(ast, { comments: false }).code).toBe(before)
+})
+
+test('domain lock raw and decoded behavior under a Node-hosted location model', () => {
+  const raw = fs.readFileSync(join(root, 'domain-lock-5.4.1.js'), 'utf-8')
+  const fixed = fs.readFileSync(join(root, 'domain-lock-5.4.1.fix.js'), 'utf-8')
+  const execute = (code, host) => {
+    const output = []
+    const context = {
+      console: { log: (value) => output.push(value) },
+      document: { domain: host, location: { hostname: host } },
+    }
+    context.window = context
+    vm.runInNewContext(code, context)
+    return { location: context.document.location, output }
+  }
+
+  expect(execute(raw, 'sub.example.com').output).toEqual(['match'])
+  expect(execute(raw, 'off.example.net')).toEqual({
+    location: 'about:blank',
+    output: ['redirect'],
+  })
+  expect(execute(fixed, 'sub.example.com').output).toEqual(['match'])
+  expect(execute(fixed, 'off.example.net').output).toEqual(['match'])
 })
 
 /**

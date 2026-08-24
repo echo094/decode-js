@@ -53,7 +53,8 @@ const debugLog = logger.debugLog
 /** `function (...) {}` or `(...) => {}`, with a block body. */
 function isFnWithBlock(node) {
   return (
-    (t.isFunctionExpression(node) || t.isArrowFunctionExpression(node)) && t.isBlockStatement(node.body)
+    (t.isFunctionExpression(node) || t.isArrowFunctionExpression(node)) &&
+    t.isBlockStatement(node.body)
   )
 }
 
@@ -67,7 +68,8 @@ function isFnWithBlock(node) {
 function memberKey(node) {
   if (!t.isMemberExpression(node)) return null
   if (!node.computed && t.isIdentifier(node.property)) return node.property.name
-  if (node.computed && t.isStringLiteral(node.property)) return node.property.value
+  if (node.computed && t.isStringLiteral(node.property))
+    return node.property.value
   return null
 }
 
@@ -110,13 +112,441 @@ function countNodes(node, pred) {
  * the conditional is the part that carries the meaning - the wrapper runs its target once.
  */
 function isCallsControllerInit(node) {
-  if (!t.isCallExpression(node) || node.arguments.length || !isFnWithBlock(node.callee)) return false
+  if (
+    !t.isCallExpression(node) ||
+    node.arguments.length ||
+    !isFnWithBlock(node.callee)
+  )
+    return false
   return (
-    countNodes(node.callee.body, (n) =>
-      isFnWithBlock(n) &&
-      n.params.length === 2 &&
-      countNodes(n.body, (c) =>
-        t.isConditionalExpression(c) && isFnWithBlock(c.consequent) && isFnWithBlock(c.alternate)) > 0) > 0
+    countNodes(
+      node.callee.body,
+      (n) =>
+        isFnWithBlock(n) &&
+        n.params.length === 2 &&
+        countNodes(
+          n.body,
+          (c) =>
+            t.isConditionalExpression(c) &&
+            isFnWithBlock(c.consequent) &&
+            isFnWithBlock(c.alternate),
+        ) > 0,
+    ) > 0
+  )
+}
+
+function bindingFor(path, node) {
+  return t.isIdentifier(node) ? path.scope.getBinding(node.name) : null
+}
+
+function singleDeclarator(path) {
+  return path.isVariableDeclaration() && path.node.declarations.length === 1
+    ? path.get('declarations.0')
+    : null
+}
+
+/**
+ * DomainLockTemplate's payload after the global resolver is a stable 22-statement program. The
+ * property names are deliberately hidden, so the proof follows declarations and bindings instead:
+ * encoded domains, four uninitialized property slots, a matcher plus three argument-permuting
+ * wrappers, the discovery loops, suffix comparison, and the final location assignment.
+ *
+ * This is also a firewall in front of the older `RegExp >= 2` debug-protection heuristic. A
+ * domain-like callback that fails any gate is declined, not allowed to fall through and be deleted
+ * under the wrong label.
+ */
+function domainLockClassification(callbackPath) {
+  const decline = (stage) => {
+    debugLog(`unlock-env: domain-lock proof declined at ${stage}`)
+    return { candidate: true, matched: false }
+  }
+  const body = callbackPath.get('body')
+  if (!body.isBlockStatement()) return { candidate: false, matched: false }
+
+  const statements = body.get('body')
+  const candidate =
+    countNodes(
+      body.node,
+      (node) =>
+        t.isNewExpression(node) &&
+        t.isIdentifier(node.callee, { name: 'RegExp' }),
+    ) === 2 &&
+    countNodes(body.node, (node) => t.isForInStatement(node)) === 4 &&
+    [23, 24].includes(statements.length)
+  if (!candidate) return { candidate: false, matched: false }
+
+  // The resolver occupies one statement for browser-no-eval and two for both ordinary forms.
+  const prefixLength = statements.length - 22
+  if (![1, 2].includes(prefixLength)) return decline('resolver-length')
+  const payload = statements.slice(prefixLength)
+  const expected = [
+    'VariableDeclaration',
+    'VariableDeclaration',
+    'VariableDeclaration',
+    'VariableDeclaration',
+    'VariableDeclaration',
+    'VariableDeclaration',
+    'VariableDeclaration',
+    'VariableDeclaration',
+    'VariableDeclaration',
+    'VariableDeclaration',
+    'ForInStatement',
+    'ForInStatement',
+    'ForInStatement',
+    'IfStatement',
+    'IfStatement',
+    'VariableDeclaration',
+    'VariableDeclaration',
+    'VariableDeclaration',
+    'IfStatement',
+    'VariableDeclaration',
+    'ForStatement',
+    'IfStatement',
+  ]
+  if (!payload.every((path, index) => path.node.type === expected[index])) {
+    return decline('statement-skeleton')
+  }
+
+  let globalBinding
+  if (prefixLength === 1) {
+    const holder = singleDeclarator(statements[0])
+    if (
+      !holder ||
+      !t.isIdentifier(holder.node.id) ||
+      !isBrowserNoEvalGlobalResolver(holder.node.init)
+    ) {
+      return decline('browser-no-eval-resolver')
+    }
+    if (
+      ['window', 'process', 'require', 'global'].some((name) =>
+        callbackPath.scope.getBinding(name),
+      )
+    ) {
+      return decline('shadowed-browser-no-eval-host')
+    }
+    globalBinding = callbackPath.scope.getBinding(holder.node.id.name)
+  } else {
+    const first = singleDeclarator(statements[0])
+    const second = statements[1]
+    if (!first || !t.isIdentifier(first.node.id))
+      return decline('ordinary-resolver-declaration')
+    if (second.isTryStatement() && !first.node.init) {
+      if (!isInlineDomainResolver(statements.slice(0, 2))) {
+        return decline('inline-resolver')
+      }
+      globalBinding = callbackPath.scope.getBinding(first.node.id.name)
+    } else {
+      const holder = singleDeclarator(second)
+      if (
+        !isFnWithBlock(first.node.init) ||
+        !holder ||
+        !t.isIdentifier(holder.node.id) ||
+        !t.isCallExpression(holder.node.init) ||
+        !t.isIdentifier(holder.node.init.callee, {
+          name: first.node.id.name,
+        }) ||
+        holder.node.init.arguments.length !== 0 ||
+        countNodes(
+          first.node.init.body,
+          (node) =>
+            t.isCallExpression(node) &&
+            t.isIdentifier(node.callee, { name: 'Function' }),
+        ) !== 1 ||
+        countNodes(first.node.init.body, (node) =>
+          t.isIdentifier(node, { name: 'window' }),
+        ) !== 1
+      ) {
+        return decline('function-resolver')
+      }
+      const resolverBinding = callbackPath.scope.getBinding(first.node.id.name)
+      if (
+        !resolverBinding ||
+        resolverBinding.referencePaths.length !== 1 ||
+        resolverBinding.referencePaths[0].node !== holder.node.init.callee
+      ) {
+        return decline('function-resolver-binding')
+      }
+      globalBinding = callbackPath.scope.getBinding(holder.node.id.name)
+    }
+  }
+  if (!globalBinding) return decline('global-binding')
+
+  const declarations = payload.slice(0, 10).map(singleDeclarator)
+  if (declarations.some((path) => !path || !t.isIdentifier(path.node.id))) {
+    return decline('payload-declarations')
+  }
+  const [regex, domains, ...rest] = declarations
+  const slots = rest.slice(0, 4)
+  const helpers = rest.slice(4)
+  if (slots.some((path) => path.node.init !== null))
+    return decline('property-slots')
+
+  if (
+    !t.isNewExpression(regex.node.init) ||
+    !t.isIdentifier(regex.node.init.callee, { name: 'RegExp' }) ||
+    regex.node.init.arguments.length !== 2 ||
+    !t.isStringLiteral(regex.node.init.arguments[0]) ||
+    !t.isStringLiteral(regex.node.init.arguments[1], { value: 'g' }) ||
+    callbackPath.scope.getBinding('RegExp')
+  ) {
+    return decline('domain-regexp')
+  }
+  const regexBinding = callbackPath.scope.getBinding(regex.node.id.name)
+  const domainsBinding = callbackPath.scope.getBinding(domains.node.id.name)
+  const split = domains.get('init')
+  if (
+    !regexBinding ||
+    !domainsBinding ||
+    !split.isCallExpression() ||
+    memberKey(split.node.callee) !== 'split' ||
+    split.node.arguments.length !== 1 ||
+    !t.isStringLiteral(split.node.arguments[0], { value: ';' })
+  ) {
+    return decline('domain-split')
+  }
+  const replace = split.get('callee.object')
+  if (
+    !replace.isCallExpression() ||
+    memberKey(replace.node.callee) !== 'replace' ||
+    replace.node.arguments.length !== 2 ||
+    bindingFor(replace, replace.node.arguments[0]) !== regexBinding ||
+    !t.isStringLiteral(replace.node.arguments[1], { value: '' }) ||
+    regexBinding.referencePaths.length !== 1
+  ) {
+    return decline('domain-replace')
+  }
+
+  // The first helper implements the character-position matcher. Each later helper may only call
+  // the previous binding, once, with a permutation of its own three parameters.
+  if (
+    !isFnWithBlock(helpers[0].node.init) ||
+    helpers[0].node.init.params.length !== 3 ||
+    countNodes(helpers[0].node.init.body, (node) => t.isForStatement(node)) !==
+      2 ||
+    countNodes(
+      helpers[0].node.init.body,
+      (node) =>
+        t.isCallExpression(node) && memberKey(node.callee) === 'charCodeAt',
+    ) !== 1
+  ) {
+    return decline('property-matcher')
+  }
+  let previousBinding = callbackPath.scope.getBinding(helpers[0].node.id.name)
+  if (!previousBinding) return decline('property-matcher-binding')
+  for (const helper of helpers.slice(1)) {
+    if (
+      !isFnWithBlock(helper.node.init) ||
+      helper.node.init.params.length !== 3 ||
+      helper.node.init.body.body.length !== 1 ||
+      !t.isReturnStatement(helper.node.init.body.body[0]) ||
+      !t.isCallExpression(helper.node.init.body.body[0].argument)
+    ) {
+      return decline('property-wrapper-shape')
+    }
+    const callPath = helper.get('init.body.body.0.argument')
+    const call = callPath.node
+    if (
+      bindingFor(callPath, call.callee) !== previousBinding ||
+      call.arguments.length !== 3
+    ) {
+      return decline('property-wrapper-call')
+    }
+    const fnPath = helper.get('init')
+    const params = new Set(
+      helper.node.init.params.map((param) => bindingFor(fnPath, param)),
+    )
+    const args = call.arguments.map((arg) => bindingFor(callPath, arg))
+    if (
+      params.has(null) ||
+      new Set(args).size !== 3 ||
+      !args.every((arg) => params.has(arg))
+    ) {
+      return decline('property-wrapper-permutation')
+    }
+    previousBinding = callbackPath.scope.getBinding(helper.node.id.name)
+    if (!previousBinding) return decline('property-wrapper-binding')
+  }
+
+  const slotBindings = slots.map((path) =>
+    callbackPath.scope.getBinding(path.node.id.name),
+  )
+  if (
+    slotBindings.some((binding) => !binding) ||
+    slotBindings
+      .map((binding) => binding.constantViolations.length)
+      .join(',') !== '1,2,1,1'
+  ) {
+    return decline('property-slot-bindings')
+  }
+  if (
+    payload
+      .slice(10, 13)
+      .some(
+        (path) =>
+          countNodes(path.node, (node) =>
+            t.isAssignmentExpression(node, { operator: '=' }),
+          ) !== 1,
+      )
+  ) {
+    return decline('property-discovery-loops')
+  }
+
+  // Pin the semantic tail as well as its statement skeleton.
+  const methodCounts = Object.fromEntries(
+    ['replace', 'fromCharCode', 'slice', 'indexOf'].map((key) => [
+      key,
+      countNodes(
+        body.node,
+        (node) => t.isCallExpression(node) && memberKey(node.callee) === key,
+      ),
+    ]),
+  )
+  if (
+    methodCounts.replace !== 2 ||
+    methodCounts.fromCharCode !== 1 ||
+    methodCounts.slice !== 1 ||
+    methodCounts.indexOf !== 2 ||
+    countNodes(body.node, (node) => t.isForStatement(node)) !== 3
+  ) {
+    return decline('semantic-tail')
+  }
+
+  const matched = singleDeclarator(payload[19])
+  const domainLoop = payload[20]
+  if (
+    !matched ||
+    !t.isBooleanLiteral(matched.node.init, { value: false }) ||
+    !domainLoop.get('init').isVariableDeclaration() ||
+    domainLoop.node.init.declarations.length !== 1 ||
+    !domainLoop.get('body').isBlockStatement() ||
+    domainLoop.node.body.body.length < 1
+  ) {
+    return decline('domain-loop-header')
+  }
+  const index = domainLoop.get('init.declarations.0')
+  if (!t.isIdentifier(index.node.id)) return decline('domain-loop-index')
+  const indexBinding = bindingFor(index, index.node.id)
+  const test = domainLoop.get('test')
+  const update = domainLoop.get('update')
+  if (
+    !indexBinding ||
+    !t.isNumericLiteral(index.node.init, { value: 0 }) ||
+    !test.isBinaryExpression({ operator: '<' }) ||
+    bindingFor(test, test.node.left) !== indexBinding ||
+    !t.isMemberExpression(test.node.right) ||
+    memberKey(test.node.right) !== 'length' ||
+    bindingFor(test, test.node.right.object) !== domainsBinding ||
+    !update.isUpdateExpression({ operator: '++' }) ||
+    bindingFor(update, update.node.argument) !== indexBinding
+  ) {
+    return decline('domain-loop-bindings')
+  }
+  const domainValue = singleDeclarator(domainLoop.get('body.body.0'))
+  if (
+    !domainValue ||
+    !t.isMemberExpression(domainValue.node.init) ||
+    bindingFor(domainValue, domainValue.node.init.object) !== domainsBinding ||
+    bindingFor(domainValue, domainValue.node.init.property) !== indexBinding
+  ) {
+    return decline('domain-loop-value')
+  }
+
+  const finalIf = payload[21]
+  const matchedBinding = callbackPath.scope.getBinding(matched.node.id.name)
+  if (
+    !matchedBinding ||
+    !finalIf.get('test').isUnaryExpression({ operator: '!' }) ||
+    bindingFor(finalIf.get('test'), finalIf.node.test.argument) !==
+      matchedBinding ||
+    !finalIf.get('consequent').isBlockStatement() ||
+    finalIf.node.consequent.body.length !== 3
+  ) {
+    return decline('redirect-guard')
+  }
+  const redirectRegex = singleDeclarator(finalIf.get('consequent.body.0'))
+  const redirect = singleDeclarator(finalIf.get('consequent.body.1'))
+  if (
+    !redirectRegex ||
+    !redirect ||
+    !t.isNewExpression(redirectRegex.node.init) ||
+    !t.isIdentifier(redirectRegex.node.init.callee, { name: 'RegExp' }) ||
+    !t.isCallExpression(redirect.node.init) ||
+    memberKey(redirect.node.init.callee) !== 'replace'
+  ) {
+    return decline('redirect-builder')
+  }
+  const redirectRegexBinding = callbackPath.scope.getBinding(
+    redirectRegex.node.id.name,
+  )
+  const redirectBinding = callbackPath.scope.getBinding(redirect.node.id.name)
+  if (
+    !redirectRegexBinding ||
+    !redirectBinding ||
+    bindingFor(redirect, redirect.node.init.arguments[0]) !==
+      redirectRegexBinding
+  ) {
+    return decline('redirect-builder-bindings')
+  }
+  const finalAssignments = []
+  finalIf.traverse({
+    AssignmentExpression(path) {
+      if (path.node.operator === '=') finalAssignments.push(path)
+    },
+  })
+  if (finalAssignments.length !== 1) return decline('redirect-assignment-count')
+  const target = finalAssignments[0].get('left')
+  if (
+    !target.isMemberExpression() ||
+    !target.node.computed ||
+    !target.get('object').isMemberExpression() ||
+    !target.get('object').node.computed ||
+    bindingFor(target, target.node.object.object) !== globalBinding ||
+    bindingFor(target, target.node.object.property) !== slotBindings[0] ||
+    bindingFor(target, target.node.property) !== slotBindings[2] ||
+    bindingFor(finalAssignments[0], finalAssignments[0].node.right) !==
+      redirectBinding
+  ) {
+    return decline('redirect-target-bindings')
+  }
+
+  return { candidate: true, matched: true }
+}
+
+/** Inline ordinary resolver: one holder declaration plus one exact try/catch assignment pair. */
+function isInlineDomainResolver(statements) {
+  const [holderPath, tryPath] = statements
+  const holder = singleDeclarator(holderPath)
+  if (
+    !holder ||
+    !t.isIdentifier(holder.node.id) ||
+    holder.node.init ||
+    !tryPath.isTryStatement() ||
+    tryPath.node.finalizer ||
+    !tryPath.node.handler
+  )
+    return false
+  const tryAssignments = countNodes(
+    tryPath.node.block,
+    (node) =>
+      t.isAssignmentExpression(node, { operator: '=' }) &&
+      t.isIdentifier(node.left, { name: holder.node.id.name }),
+  )
+  const catchAssignments = countNodes(
+    tryPath.node.handler.body,
+    (node) =>
+      t.isAssignmentExpression(node, { operator: '=' }) &&
+      t.isIdentifier(node.left, { name: holder.node.id.name }) &&
+      t.isIdentifier(node.right, { name: 'window' }),
+  )
+  return (
+    tryAssignments === 1 &&
+    catchAssignments === 1 &&
+    countNodes(
+      tryPath.node.block,
+      (node) =>
+        t.isCallExpression(node) &&
+        t.isIdentifier(node.callee, { name: 'Function' }),
+    ) === 1
   )
 }
 
@@ -127,24 +557,42 @@ function isCallsControllerInit(node) {
  * residue census still counts it. The alternative - treating "matched the wrapper" as enough -
  * would delete arbitrary code that happens to be called as `C(this, fn)`.
  */
-function classifyGuard(body) {
-  const searches = countNodes(body, (n) => t.isCallExpression(n) && memberKey(n.callee) === 'search')
+function classifyGuard(callbackPath) {
+  const body = callbackPath.node.body
+  const searches = countNodes(
+    body,
+    (n) => t.isCallExpression(n) && memberKey(n.callee) === 'search',
+  )
   if (searches >= 2) return 'self-defending'
 
-  const regexps = countNodes(body, (n) => t.isNewExpression(n) && t.isIdentifier(n.callee, { name: 'RegExp' }))
+  const domain = domainLockClassification(callbackPath)
+  if (domain.matched) return 'domain-lock'
+  if (domain.candidate) return null
+
+  const regexps = countNodes(
+    body,
+    (n) => t.isNewExpression(n) && t.isIdentifier(n.callee, { name: 'RegExp' }),
+  )
   if (regexps >= 2) return 'debug-protection-call'
 
   const methodList = countNodes(body, (n) => {
     if (!t.isArrayExpression(n) || n.elements.length < 5) return false
-    const strings = n.elements.filter((e) => t.isStringLiteral(e)).map((e) => e.value)
-    return strings.length >= 5 && strings.includes('log') && strings.includes('warn')
+    const strings = n.elements
+      .filter((e) => t.isStringLiteral(e))
+      .map((e) => e.value)
+    return (
+      strings.length >= 5 && strings.includes('log') && strings.includes('warn')
+    )
   })
   if (methodList > 0) return 'console-output'
 
   // The era below `E-selfdef-search` builds its regexp through `constructor` rather than `RegExp`,
   // and is recognised by the nested function it declares and immediately calls. Checked last
   // because it is the loosest of the four.
-  const nested = countNodes(body, (n) => isFnWithBlock(n) || t.isFunctionDeclaration(n))
+  const nested = countNodes(
+    body,
+    (n) => isFnWithBlock(n) || t.isFunctionDeclaration(n),
+  )
   if (nested > 0) return 'self-defending'
 
   return null
@@ -194,10 +642,18 @@ function outermostWrapperStatement(guardCall) {
     const fn = block.parentPath
     if (!fn || !isFnWithBlock(fn.node) || fn.node.params.length) break
     const call = fn.parentPath
-    if (!call || !call.isCallExpression() || call.node.callee !== fn.node || call.node.arguments.length) break
+    if (
+      !call ||
+      !call.isCallExpression() ||
+      call.node.callee !== fn.node ||
+      call.node.arguments.length
+    )
+      break
     const outer = call.getStatementParent()
     if (!outer || !outer.isExpressionStatement()) break
-    stmt = outer
+    // The wrapper call may share a sequence expression with program effects. Preserve the
+    // wrapper as one effect so removing it cannot erase its neighbours.
+    stmt = effectPath(call)
   }
   return stmt
 }
@@ -315,7 +771,69 @@ function inlineResolverEffectPath(effect, block, fn, iife, callPath) {
   // identity check here as part of the local proof so this helper cannot be reused for an interior
   // member call if that gate is loosened later.
   if (block.node.body[2] !== effect.node) return null
-  return iife.getStatementParent()
+  return effectPath(iife)
+}
+
+/**
+ * The browser-no-eval resolver is a fixed three-host fallback:
+ *
+ *     typeof window !== 'undefined'
+ *       ? window
+ *       : typeof process === 'object' && typeof require === 'function' && typeof global === 'object'
+ *         ? global
+ *         : this
+ *
+ * The encoder emits this expression only for the browser-no-eval target. Keep the proof exact so a
+ * similar-looking user resolver cannot be absorbed with the interval effect.
+ */
+function isBrowserNoEvalGlobalResolver(node) {
+  if (!t.isConditionalExpression(node)) return false
+
+  const { test, consequent, alternate } = node
+  if (
+    !t.isBinaryExpression(test, { operator: '!==' }) ||
+    !t.isUnaryExpression(test.left, { operator: 'typeof' }) ||
+    !t.isIdentifier(test.left.argument, { name: 'window' }) ||
+    !t.isStringLiteral(test.right, { value: 'undefined' }) ||
+    !t.isIdentifier(consequent, { name: 'window' }) ||
+    !t.isConditionalExpression(alternate)
+  ) {
+    return false
+  }
+
+  const terms = []
+  const collect = (expression) => {
+    if (t.isLogicalExpression(expression, { operator: '&&' })) {
+      collect(expression.left)
+      collect(expression.right)
+    } else {
+      terms.push(expression)
+    }
+  }
+  collect(alternate.test)
+
+  const expected = [
+    ['process', 'object'],
+    ['require', 'function'],
+    ['global', 'object'],
+  ]
+  if (
+    terms.length !== expected.length ||
+    !terms.every(
+      (term, index) =>
+        t.isBinaryExpression(term, { operator: '===' }) &&
+        t.isUnaryExpression(term.left, { operator: 'typeof' }) &&
+        t.isIdentifier(term.left.argument, { name: expected[index][0] }) &&
+        t.isStringLiteral(term.right, { value: expected[index][1] }),
+    )
+  ) {
+    return false
+  }
+
+  return (
+    t.isIdentifier(alternate.consequent, { name: 'global' }) &&
+    t.isThisExpression(alternate.alternate)
+  )
 }
 
 /**
@@ -353,19 +871,21 @@ function directResolverEffectPath(
     return null
 
   const { test, consequent, alternate } = holderDecl.init
-  if (
-    !t.isBinaryExpression(test, { operator: '===' }) ||
-    !t.isUnaryExpression(test.left, { operator: 'typeof' }) ||
-    !t.isIdentifier(test.left.argument, { name: 'global' }) ||
-    !t.isStringLiteral(test.right, { value: 'object' }) ||
-    !t.isIdentifier(consequent, { name: 'global' }) ||
-    !t.isThisExpression(alternate)
-  ) {
-    return null
-  }
+  const serviceWorkerResolver =
+    t.isBinaryExpression(test, { operator: '===' }) &&
+    t.isUnaryExpression(test.left, { operator: 'typeof' }) &&
+    t.isIdentifier(test.left.argument, { name: 'global' }) &&
+    t.isStringLiteral(test.right, { value: 'object' }) &&
+    t.isIdentifier(consequent, { name: 'global' }) &&
+    t.isThisExpression(alternate)
+  const browserNoEvalResolver = isBrowserNoEvalGlobalResolver(holderDecl.init)
+  if (!serviceWorkerResolver && !browserNoEvalResolver) return null
 
-  // `global` is the host global in the producer template, never a local shadow.
-  if (fn.scope.getBinding('global')) return null
+  // These names are host globals in their producer templates, never local shadows.
+  const hostNames = serviceWorkerResolver
+    ? ['global']
+    : ['window', 'process', 'require', 'global']
+  if (hostNames.some((name) => fn.scope.getBinding(name))) return null
 
   const callee = callPath.node.callee
   if (
@@ -405,7 +925,7 @@ function directResolverEffectPath(
     return null
   }
 
-  return iife.getStatementParent()
+  return effectPath(iife)
 }
 
 /**
@@ -500,7 +1020,7 @@ function intervalEffectPath(callPath, protectionBinding) {
   ) {
     return effect
   }
-  return iife.getStatementParent()
+  return effectPath(iife)
 }
 
 /**
@@ -521,9 +1041,12 @@ function stripGuard(controllerPath, removed) {
   for (const ref of binding.referencePaths) {
     const parent = ref.parentPath
     if (
-      parent && parent.isCallExpression() && parent.node.callee === ref.node &&
+      parent &&
+      parent.isCallExpression() &&
+      parent.node.callee === ref.node &&
       parent.node.arguments.length === 2 &&
-      t.isThisExpression(parent.node.arguments[0]) && isFnWithBlock(parent.node.arguments[1])
+      t.isThisExpression(parent.node.arguments[0]) &&
+      isFnWithBlock(parent.node.arguments[1])
     ) {
       guardCalls.push(parent)
     } else {
@@ -531,12 +1054,15 @@ function stripGuard(controllerPath, removed) {
     }
   }
   if (guardCalls.length !== 1) {
-    debugLog(`unlock-env: declining ${id.name}, ${guardCalls.length} guards on one controller`)
+    debugLog(
+      `unlock-env: declining ${id.name}, ${guardCalls.length} guards on one controller`,
+    )
     return null
   }
   const guardCall = guardCalls[0]
-  const callback = guardCall.node.arguments[1]
-  const kind = classifyGuard(callback.body)
+  const callbackPath = guardCall.get('arguments.1')
+  const callback = callbackPath.node
+  const kind = classifyGuard(callbackPath)
   if (!kind) {
     debugLog(`unlock-env: declining ${id.name}, unrecognised guard callback`)
     return null
@@ -544,13 +1070,17 @@ function stripGuard(controllerPath, removed) {
   // Every remaining reference must be inside the callback we are about to delete. One that is not
   // means something else uses this controller, and deleting it would break that caller.
   if (others.some((ref) => !isInside(ref, callback))) {
-    debugLog(`unlock-env: declining ${id.name}, controller referenced outside its guard`)
+    debugLog(
+      `unlock-env: declining ${id.name}, controller referenced outside its guard`,
+    )
     return null
   }
 
   // Two definition shapes. `var G = C(this, fn); G()` binds a name, and the trigger is a separate
   // statement; debug protection's call form invokes the guard where it is built and binds nothing.
-  const declarator = guardCall.parentPath.isVariableDeclarator() ? guardCall.parentPath : null
+  const declarator = guardCall.parentPath.isVariableDeclarator()
+    ? guardCall.parentPath
+    : null
   let triggers = []
   if (declarator) {
     if (!t.isIdentifier(declarator.node.id)) return null
@@ -558,10 +1088,19 @@ function stripGuard(controllerPath, removed) {
     if (!guardBinding) return null
     for (const ref of guardBinding.referencePaths) {
       const call = ref.parentPath
-      if (call && call.isCallExpression() && call.node.callee === ref.node && !call.node.arguments.length) {
-        triggers.push(call.parentPath.isExpressionStatement() ? call.parentPath : call)
+      if (
+        call &&
+        call.isCallExpression() &&
+        call.node.callee === ref.node &&
+        !call.node.arguments.length
+      ) {
+        triggers.push(
+          call.parentPath.isExpressionStatement() ? call.parentPath : call,
+        )
       } else if (!isInside(ref, callback)) {
-        debugLog(`unlock-env: declining ${id.name}, guard referenced outside its own trigger`)
+        debugLog(
+          `unlock-env: declining ${id.name}, guard referenced outside its own trigger`,
+        )
         return null
       }
     }
@@ -590,8 +1129,10 @@ function stripGuard(controllerPath, removed) {
  */
 function stripDebugProtectionFunction(path, removed) {
   const { id, params, body } = path.node
-  if (!t.isIdentifier(id) || params.length !== 1 || body.body.length !== 2) return
-  if (!t.isFunctionDeclaration(body.body[0]) || !t.isTryStatement(body.body[1])) return
+  if (!t.isIdentifier(id) || params.length !== 1 || body.body.length !== 2)
+    return
+  if (!t.isFunctionDeclaration(body.body[0]) || !t.isTryStatement(body.body[1]))
+    return
 
   const programScope = path.scope.getProgramParent()
   const binding = path.scope.getBinding(id.name)
@@ -611,7 +1152,9 @@ function stripDebugProtectionFunction(path, removed) {
       intervals.push(intervalEffectPath(ref.parentPath, binding))
       continue
     }
-    debugLog(`unlock-env: declining ${id.name}, debug-protection referenced outside an interval`)
+    debugLog(
+      `unlock-env: declining ${id.name}, debug-protection referenced outside an interval`,
+    )
     return
   }
 
