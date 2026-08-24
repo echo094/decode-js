@@ -20,7 +20,7 @@
     "@babel/parser": "^8.0.0",
     "@babel/traverse": "^8.0.0",
     "@babel/types": "^8.0.0",
-    "isolated-vm": "^7.0.0"
+    "isolated-vm": "^7.0.1"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
