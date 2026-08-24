@@ -6,9 +6,15 @@ function mergeObject(path) {
     // 判断是否是定义对象
     return
   }
+  if (!t.isIdentifier(id)) {
+    return
+  }
   let name = id.name
   let scope = path.scope
   let binding = scope.getBinding(name)
+  if (!binding) {
+    return
+  }
   const start = path.node.end
   let end = -1
   let violation = null
