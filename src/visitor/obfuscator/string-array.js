@@ -308,7 +308,6 @@ function pathsFor(ast, nodes) {
 function result(status, detected, extra = {}) {
   return {
     status,
-    signature: detected.signature,
     replaced: 0,
     removed: { holder: 0, wrappers: 0, rotators: 0, aliases: 0 },
     notes: detected.notes,
@@ -321,7 +320,6 @@ function result(status, detected, extra = {}) {
  * @param {{ timeout?: number }} [options]
  * @returns {{
  *   status: 'decoded' | 'absent' | 'unowned' | 'unreadable',
- *   signature: { holder: string, wrapper: string, rotate: string },
  *   replaced: number,
  *   removed: { holder: number, wrappers: number, rotators: number, aliases: number },
  *   notes: string[],
@@ -645,7 +643,6 @@ function decodeStringArray(ast, options = {}) {
 
   return {
     status: 'decoded',
-    signature: detected.signature,
     replaced: sites.length,
     removed: {
       holder: removedHolder,

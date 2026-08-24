@@ -12,23 +12,21 @@ import decodeStringArray from '../visitor/obfuscator/string-array.js'
 import normalizeConverting from '../visitor/obfuscator/normalize-converting.js'
 import { createUnflattenSwitchDispatch } from '../visitor/obfuscator/unflatten-switch-dispatch.js'
 import unlockEnv from '../visitor/obfuscator/unlock-env.js'
-import { reportEra } from '../visitor/obfuscator/report.js'
 
 /**
- * A version-aware entry for javascript-obfuscator output.
+ * A shape-driven, era-invariant entry for javascript-obfuscator output.
  *
  * **Additive, and the existing `obfuscator` entry is left untouched.** That one is widely depended
  * on, so changing it in place risks breaking people relying on its behaviour; this is a second
  * target rather than a replacement, and the two are expected to disagree.
  *
- * **No version in the name, deliberately.** Precedent puts the encoder's version in the suffix
- * (`sojson`/`sojsonv7`), but this entry's coverage is non-contiguous and growing - the phase-1 2.x
- * eras plus the 5.5.0 pin, with 3.0.0-4.2.2 unverified - so any single version in the name would
- * misdescribe it.
+ * **No version in the name, deliberately.** The same pass pipeline consumes supported shapes
+ * regardless of the encoder era. Version and era knowledge belongs in the encoder registry and
+ * development corpus, fixtures, and other development records, not in decoder runtime behavior.
  *
- * **The pipeline is era-invariant**: the same passes in the same order for every era. Era knowledge
- * lives in the detector, which matches shape-first and *outputs* an era rather than taking one as
- * input, so there are no per-era strategies here and nothing for a registry to key.
+ * **The pipeline is era-invariant**: the same passes in the same order for every era. Detection is
+ * shape-first and supplies resolved handles rather than an era to a per-era strategy, so there are
+ * no per-era strategies here and no runtime version reporting.
  */
 
 /**
@@ -114,10 +112,6 @@ export default function (code) {
   unlockEnv(ast)
 
   logger.debugLog(`[obfuscatorx] fixpoint settled in ${rounds} round(s)`)
-
-  // Reporting only. An unrecognised signature yields `unknown` and never blocks a decode whose
-  // entrypoint resolved, so this runs after the work rather than gating it.
-  reportEra(sa.signature)
 
   // `EscapeSequenceTransformer` rewrites only a literal's `raw` spelling, so the parsed VALUE is
   // already what we want and there is no shape to match - discarding `extra` is the whole reversal,

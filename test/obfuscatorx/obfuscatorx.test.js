@@ -5,7 +5,6 @@ import { parse } from '@babel/parser'
 import traverse from '@babel/traverse'
 import { getPluginResult } from '../helper.js'
 import PluginObfuscatorX from '#plugin/obfuscatorx.js'
-import { deriveEra } from '#visitor/obfuscator/report.js'
 
 const root = __dirname
 
@@ -144,76 +143,5 @@ describe('refuses rather than half-decoding', () => {
 
   test('no string array at all is NOT a refusal — every other transform still decodes', () => {
     expect(PluginObfuscatorX(guard('string-array-off'))).toBeTruthy()
-  })
-})
-
-/**
- * The report derives a *range*, never a version: emitted output cannot identify one. The axes that
- * carry no evidence take no part, which is why the verdict has to be able to be partial.
- */
-describe('era report', () => {
-  test('intersects the per-component ranges', () => {
-    const v = deriveEra({
-      holder: 'var-declaration',
-      wrapper: 'var-function-expression/plain/reads-identifier',
-      rotate: 'counter-loop/none',
-    })
-    expect(v.range).toEqual({ low: '2.9.0', high: '2.9.6' })
-    expect(v.conflict).toBe(false)
-  })
-
-  test('rotate=none contributes no evidence rather than an era', () => {
-    const v = deriveEra({
-      holder: 'var-declaration',
-      wrapper: 'function-declaration/plain/reads-identifier',
-      rotate: 'none',
-    })
-    expect(v.eras.rotate).toBe(null)
-    expect(v.range).toEqual({ low: '2.12.0', high: '2.15.3' })
-  })
-
-  test('a signature carrying no evidence yields no range, and is not an error', () => {
-    const v = deriveEra({ holder: 'none', wrapper: 'none', rotate: 'none' })
-    expect(v.range).toBe(null)
-    expect(v.conflict).toBe(false)
-  })
-
-  test('an unrecognised signature is unknown, and never a gate', () => {
-    const v = deriveEra({
-      holder: 'something-new',
-      wrapper: 'var-function-expression/plain/reads-identifier',
-      rotate: 'none',
-    })
-    expect(v.eras.holder).toBe('unknown')
-    expect(v.range).toEqual({ low: '2.9.0', high: '2.11.1' })
-  })
-
-  test('components that cannot co-occur report a conflict, not a wrong range', () => {
-    const v = deriveEra({
-      holder: 'fn-self-replacing',
-      wrapper: 'var-function-expression/plain/reads-identifier',
-      rotate: 'none',
-    })
-    expect(v.conflict).toBe(true)
-    expect(v.range).toBe(null)
-  })
-
-  test('the 4.2.0 flat wrapper reports its output-verified era', () => {
-    const v = deriveEra({
-      holder: 'fn-self-replacing',
-      wrapper: 'function-declaration/plain/reads-call-hoisted',
-      rotate: 'compare-loop/parseint-div',
-    })
-    expect(v.eras.wrapper).toBe('E-sa-wrapper-flat')
-    expect(v.range).toEqual({ low: '4.2.0', high: '5.5.0' })
-  })
-
-  test('a range overlapping the remaining unverified 4.2.1–5.4.7 gap is flagged', () => {
-    const v = deriveEra({
-      holder: 'fn-self-replacing',
-      wrapper: 'function-declaration/plain/reads-call-hoisted',
-      rotate: 'compare-loop/parseint-div',
-    })
-    expect(v.inCoverageHole).toBe(true)
   })
 })

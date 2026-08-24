@@ -11,9 +11,9 @@ const debugLog = logger.debugLog
  * **Detection is separated from decoding, and it is shape-first.** This file matches a union of
  * emitted shapes and hands back handles - the holder, every root calls wrapper, the rotator if
  * one is present, and the variable-form aliases. It does not decide, or even ask, which encoder
- * version produced the sample. The version report derives that afterwards by looking the returned
- * `signature` up in a table; keeping the lookup out of here is what lets a new era become a
- * documentation row rather than an edit to this matcher.
+ * version produced the sample. The returned `signature` describes the shapes that matched for
+ * diagnostics and development evidence; its correspondence with encoder eras stays in the
+ * documentation rather than becoming runtime version logic.
  *
  * **Why the two are separated at all.** Fusing them makes a fingerprint miss indistinguishable
  * from "no string array present" - the two collapse into one falsy return, and the diagnostic a
