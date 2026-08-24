@@ -1,6 +1,8 @@
 import fs from 'fs'
 import { join } from 'path'
 import { describe, expect, test } from 'vitest'
+import { parse } from '@babel/parser'
+import traverse from '@babel/traverse'
 import { getPluginResult } from '../helper.js'
 import PluginObfuscatorX from '#plugin/obfuscatorx.js'
 import { deriveEra } from '#visitor/obfuscator/report.js'
@@ -36,6 +38,40 @@ describe('decodes', () => {
       true,
       join(root, '2.19.0-all-on-objects'),
     )
+  })
+
+  test('2.19.0-class-logical — real class key and statement-level &&', () => {
+    const fixture = join(root, '2.19.0-class-logical')
+    const input = fs.readFileSync(`${fixture}.js`, 'utf-8')
+    const expected = fs.readFileSync(`${fixture}.fix.js`, 'utf-8').trimEnd()
+    const ast = parse(input)
+    let computedClassKey = 0
+    let statementLogicalAnd = 0
+
+    traverse(ast, {
+      ClassMethod(path) {
+        if (
+          path.node.computed &&
+          path.get('key').isStringLiteral({ value: 'quoted' })
+        ) {
+          computedClassKey += 1
+        }
+      },
+      ExpressionStatement(path) {
+        if (
+          path.parentPath.isProgram() &&
+          path.get('expression').isLogicalExpression({ operator: '&&' })
+        ) {
+          statementLogicalAnd += 1
+        }
+      },
+    })
+
+    expect({ computedClassKey, statementLogicalAnd }).toEqual({
+      computedClassKey: 1,
+      statementLogicalAnd: 1,
+    })
+    expect(PluginObfuscatorX(input)).toBe(expected)
   })
 
   // Migrated from `test/obfuscator/` when that entry was frozen, and it earns its place here for
