@@ -77,6 +77,15 @@ test('self-defending, the regexp era', () => {
   expectFixed('self-defending-regexp-era')
 })
 
+/**
+ * Exact 5.4.5 output adds the newline bail before the existing search chain. The compact raw
+ * fixture is kept because this boundary is an encoder spelling, not a hand-built approximation;
+ * the `.src.js` sibling records the source used by the focused encoder run.
+ */
+test('self-defending, 5.4.5 newline bail', () => {
+  expectFixedTrimmed('self-defending-newline-bail')
+})
+
 test('console output disabler', () => {
   expectFixed('console-output')
 })

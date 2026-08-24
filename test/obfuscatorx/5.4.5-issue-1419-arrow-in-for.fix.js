@@ -1,0 +1,4 @@
+for (a = (_0x11a332, _0x5a8f5d) => (_0x11a332 in _0x5a8f5d) ? 0 : 1;;) {
+  break;
+}
+console.log("ok");
