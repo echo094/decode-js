@@ -116,5 +116,5 @@ export function expandObservedWordStream(
       'Expanded stream did not consume its PC map',
     )
   }
-  return includePcMap ? { words, pcMap } : words
+  return includePcMap ? { words, pcMap, parts } : words
 }

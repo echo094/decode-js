@@ -146,6 +146,21 @@ function reconstruct(source) {
   let wordcode = readWordcode(container)
   if (
     !wordcode &&
+    ['unknown-opcode', 'unsupported-hardening-opcode'].includes(
+      diagnoseWordcode(container).diagnostic?.code,
+    )
+  ) {
+    const patched = diagnoseNormalizeSelfModifyingWordcode(container, {
+      source,
+    })
+    if (patched.ok) {
+      records = patched.result
+      container = records.container
+      wordcode = records.wordcode
+    }
+  }
+  if (
+    !wordcode &&
     diagnoseWordcode(container).diagnostic?.code === 'unknown-opcode'
   ) {
     let normalized = diagnoseNormalizeAliasedWordcode(source, container)
@@ -166,18 +181,6 @@ function reconstruct(source) {
     if (!normalized.ok) {
       normalized = diagnoseNormalizeAntiWordcode(source, container)
     }
-    if (normalized.ok) {
-      records = normalized.result
-      container = records.container
-      wordcode = records.wordcode
-    }
-  }
-  if (
-    !wordcode &&
-    diagnoseWordcode(container).diagnostic?.code ===
-      'unsupported-hardening-opcode'
-  ) {
-    const normalized = diagnoseNormalizeSelfModifyingWordcode(container)
     if (normalized.ok) {
       records = normalized.result
       container = records.container

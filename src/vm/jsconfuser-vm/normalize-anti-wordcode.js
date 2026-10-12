@@ -54,7 +54,7 @@ function requireObservation(diagnosis) {
   return diagnosis.result
 }
 
-function canonicalWords(instruction, realStep, opcodes) {
+export function padAntiInstruction(instruction, realStep, opcodes) {
   const step = instruction.steps[realStep.index]
   const opcode = opcodes[step.name]
   const words = [opcode, ...step.words]
@@ -311,7 +311,7 @@ function recognize(
   const opcodes = container.roles.op.values
   const normalizedWords = stream.instructions.flatMap((instruction) =>
     instruction.name === 'SYNTHETIC'
-      ? canonicalWords(
+      ? padAntiInstruction(
           instruction,
           byOpcode.get(instruction.opcode.value),
           opcodes,

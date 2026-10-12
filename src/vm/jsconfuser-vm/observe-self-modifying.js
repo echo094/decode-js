@@ -1,10 +1,13 @@
 import {
   diagnoseWordcode,
-  diagnoseWordcodeInstruction,
+  diagnoseObservedWordcodeInstruction,
 } from './read-wordcode.js'
 import { diagnoseReferences } from './validate-references.js'
 import { diagnoseFunctionPartition } from './partition-functions.js'
 import { diagnoseControlFlow } from './build-cfg.js'
+import { expandObservedWordStream } from './expand-observed-word-stream.js'
+import { diagnoseAntiRegisterFlow } from './analyze-anti-register-flow.js'
+import { padAntiInstruction } from './normalize-anti-wordcode.js'
 
 const SCHEMA = 'jsconfuser-vm-self-modifying-observation.v1'
 
@@ -52,23 +55,80 @@ function requireParsed(diagnosis, code) {
   return diagnosis.result
 }
 
-function proveIndirectTargets(container, words, seen, indirect) {
+function proveIndirectTargets(container, words, seen, indirect, families) {
   const opcodes = container.roles.op.values
-  const masked = Array(words.length).fill(opcodes.DEBUGGER)
-  for (const instruction of seen.values()) {
-    const raw =
-      instruction.name === 'PATCH'
-        ? [
-            opcodes.JUMP,
-            instruction.nextPc,
-            opcodes.DEBUGGER,
-            opcodes.DEBUGGER,
-            opcodes.DEBUGGER,
-          ]
-        : instruction.words
-    masked.splice(instruction.pc, raw.length, ...raw)
+  const projection = []
+  for (let pc = 0; pc < words.length;) {
+    const instruction = seen.get(pc)
+    if (!instruction) {
+      projection.push({
+        pc,
+        name: 'DEBUGGER',
+        words: [opcodes.DEBUGGER],
+        width: 1,
+      })
+      pc++
+    } else if (instruction.name === 'PATCH') {
+      projection.push({ pc, name: 'MACRO', steps: [], width: 5 })
+      pc += 5
+    } else {
+      projection.push(
+        instruction.name === 'ALIAS'
+          ? {
+              ...instruction,
+              name: instruction.steps[0].name,
+              words: instruction.steps[0].words,
+            }
+          : instruction,
+      )
+      pc = instruction.nextPc
+    }
   }
-  const padded = withWords(container, masked)
+  const expanded = expandObservedWordStream(
+    { instructions: projection, wordCount: words.length },
+    families.anti,
+    {
+      includePcMap: true,
+      ownerWideContinuations: true,
+    },
+  )
+  const originalPc = new Map(
+    expanded.parts.map((part) => [part.pc, part.originPc]),
+  )
+  const targetOriginalPc = new Map()
+  for (const [oldPc, newPc] of expanded.pcMap) {
+    if (!targetOriginalPc.has(newPc)) targetOriginalPc.set(newPc, oldPc)
+  }
+  let padded = withWords(container, expanded.words)
+  if (families.anti) {
+    const flow = requireParsed(
+      diagnoseAntiRegisterFlow(padded, families.anti),
+      'indirect-proof',
+    )
+    const realSteps = new Map(flow.realSteps.map((step) => [step.opcode, step]))
+    // The flow proof has established which synthetic step is real before fake
+    // effects are replaced; padding keeps the expanded address domain intact.
+    const parts = []
+    for (let pc = 0; pc < expanded.words.length;) {
+      const instruction = requireParsed(
+        diagnoseObservedWordcodeInstruction(padded, pc, {
+          anti: families.anti,
+        }),
+        'indirect-proof',
+      )
+      parts.push(
+        ...(instruction.name === 'SYNTHETIC'
+          ? padAntiInstruction(
+              instruction,
+              realSteps.get(instruction.opcode.value),
+              opcodes,
+            )
+          : instruction.words),
+      )
+      pc = instruction.nextPc
+    }
+    padded = withWords(container, parts)
+  }
   const wordcode = requireParsed(diagnoseWordcode(padded), 'indirect-proof')
   const references = requireParsed(
     diagnoseReferences(padded, wordcode),
@@ -82,7 +142,13 @@ function proveIndirectTargets(container, words, seen, indirect) {
     diagnoseControlFlow(wordcode, references, functions),
     'indirect-proof',
   )
-  const jumpPcs = new Set(indirect)
+  const jumpPcs = new Set(
+    expanded.parts
+      .filter(
+        (part) => indirect.includes(part.originPc) && part.name === 'JUMP_REG',
+      )
+      .map((part) => part.pc),
+  )
   if (
     cfg.indirectTargets.length !== jumpPcs.size ||
     cfg.indirectTargets.some(
@@ -91,8 +157,11 @@ function proveIndirectTargets(container, words, seen, indirect) {
   ) {
     decline('indirect-proof', 'Reachable indirect jumps have no finite proof')
   }
-  const setups = [...seen.values()].filter(
+  const setups = wordcode.instructions.filter(
     (instruction) => instruction.name === 'FINALLY_SETUP',
+  )
+  const byPc = new Map(
+    wordcode.instructions.map((instruction) => [instruction.pc, instruction]),
   )
   const ownerByPc = new Map(
     functions.ownership.map(({ pc, functionId }) => [pc, functionId]),
@@ -117,7 +186,7 @@ function proveIndirectTargets(container, words, seen, indirect) {
         if (origin.startsWith('exception@')) {
           const sourcePc = Number(origin.slice('exception@'.length))
           if (
-            !seen.has(sourcePc) ||
+            !originalPc.has(sourcePc) ||
             !matching.some((setup) => setup.words[4] === target)
           ) {
             decline('indirect-proof', `JUMP_REG@${jump.pc} has no throw pad`)
@@ -125,7 +194,7 @@ function proveIndirectTargets(container, words, seen, indirect) {
           continue
         }
         const sourcePc = Number(origin)
-        const load = seen.get(sourcePc)
+        const load = byPc.get(sourcePc)
         if (
           !load ||
           load.name !== 'LOAD_INT' ||
@@ -140,12 +209,30 @@ function proveIndirectTargets(container, words, seen, indirect) {
       }
     }
   }
-  return cfg.indirectTargets
+  return cfg.indirectTargets.map((jump) => ({
+    ...jump,
+    pc: originalPc.get(jump.pc),
+    targets: jump.targets.map((target) => targetOriginalPc.get(target)),
+    origins: Object.fromEntries(
+      Object.entries(jump.origins).map(([target, origins]) => [
+        targetOriginalPc.get(Number(target)),
+        origins.map((origin) =>
+          origin.startsWith('exception@')
+            ? `exception@${originalPc.get(Number(origin.slice(10)))}`
+            : String(originalPc.get(Number(origin))),
+        ),
+      ]),
+    ),
+  }))
 }
 
 // This observes the statically reachable portion of the original word stream.
 // It never invokes the encoded program or parses encrypted trailing slices.
-export function diagnoseSelfModifyingRegions(container) {
+export function diagnoseSelfModifyingRegions(
+  container,
+  families = {},
+  { requirePatch = true } = {},
+) {
   try {
     const original = container?.roles?.words?.values
     if (!Array.isArray(original) || original.length === 0) {
@@ -164,7 +251,13 @@ export function diagnoseSelfModifyingRegions(container) {
     while (true) {
       if (pending.length === 0) {
         if (indirect.length === 0) break
-        indirectTargets = proveIndirectTargets(container, words, seen, indirect)
+        indirectTargets = proveIndirectTargets(
+          container,
+          words,
+          seen,
+          indirect,
+          families,
+        )
         const missing = indirectTargets
           .flatMap((jump) => jump.targets)
           .filter((target) => !seen.has(target))
@@ -229,12 +322,19 @@ export function diagnoseSelfModifyingRegions(container) {
         }
 
         const clear = decrypt(original, destPc, sourceStart, sourceEnd, key)
-        const parsed = requireParsed(
-          diagnoseWordcode(withWords(container, clear)),
-          'patch-ciphertext',
-        )
-        if (parsed.wordCount !== width) {
-          decline('patch-width', `PATCH at ${pc} changed region width`)
+        const clearContainer = withWords(container, clear)
+        const parsed = []
+        for (let offset = 0; offset < width;) {
+          const instruction = requireParsed(
+            diagnoseObservedWordcodeInstruction(
+              clearContainer,
+              offset,
+              families,
+            ),
+            'patch-ciphertext',
+          )
+          parsed.push(instruction)
+          offset = instruction.nextPc
         }
         words.splice(destPc, width, ...clear)
         sources.push(source)
@@ -245,7 +345,7 @@ export function diagnoseSelfModifyingRegions(container) {
           sourceStart,
           sourceEnd,
           width,
-          instructions: parsed.instructions.map(({ name, pc: offset }) => ({
+          instructions: parsed.map(({ name, pc: offset }) => ({
             pc: destPc + offset,
             name,
           })),
@@ -257,7 +357,11 @@ export function diagnoseSelfModifyingRegions(container) {
       }
 
       const instruction = requireParsed(
-        diagnoseWordcodeInstruction(withWords(container, words), pc),
+        diagnoseObservedWordcodeInstruction(
+          withWords(container, words),
+          pc,
+          families,
+        ),
         'reachable-wordcode',
       )
       const interval = { start: pc, end: instruction.nextPc }
@@ -273,45 +377,68 @@ export function diagnoseSelfModifyingRegions(container) {
       occupied.push(interval)
       seen.set(pc, instruction)
 
-      const target = (offset) => pending.push(instruction.words[offset])
-      switch (instruction.name) {
-        case 'JUMP':
-          target(1)
-          break
-        case 'RETURN':
-        case 'THROW':
-          break
-        case 'JUMP_REG':
-          indirect.push(pc)
-          break
-        case 'JUMP_IF_FALSE':
-        case 'JUMP_IF_TRUE':
-          target(2)
-          pending.push(instruction.nextPc)
-          break
-        case 'FOR_IN_NEXT':
-          target(3)
-          pending.push(instruction.nextPc)
-          break
-        case 'TRY_SETUP':
-          target(1)
-          pending.push(instruction.nextPc)
-          break
-        case 'FINALLY_SETUP':
-          target(1)
-          target(4)
-          pending.push(instruction.nextPc)
-          break
-        case 'MAKE_CLOSURE':
-          target(2)
-          pending.push(instruction.nextPc)
-          break
-        default:
-          pending.push(instruction.nextPc)
+      const steps =
+        instruction.name === 'SYNTHETIC'
+          ? instruction.steps.map((step) => ({
+              name: step.name,
+              words: [container.roles.op.values[step.name], ...step.words],
+            }))
+          : (instruction.steps ?? [instruction])
+      const transfers = new Set([
+        'JUMP',
+        'RETURN',
+        'THROW',
+        'JUMP_REG',
+        'JUMP_IF_FALSE',
+        'JUMP_IF_TRUE',
+        'FOR_IN_NEXT',
+      ])
+      for (let index = 0; index < steps.length; index++) {
+        const step = steps[index]
+        if (
+          index < steps.length - 1 &&
+          transfers.has(step.name) &&
+          instruction.name !== 'SYNTHETIC'
+        )
+          decline(
+            'patch-family-control',
+            'A nonterminal family step transfers control',
+          )
+        const target = (offset) => pending.push(step.words[offset])
+        switch (step.name) {
+          case 'JUMP':
+            target(1)
+            break
+          case 'RETURN':
+          case 'THROW':
+            break
+          case 'JUMP_REG':
+            indirect.push(pc)
+            break
+          case 'JUMP_IF_FALSE':
+          case 'JUMP_IF_TRUE':
+            target(2)
+            break
+          case 'FOR_IN_NEXT':
+            target(3)
+            break
+          case 'TRY_SETUP':
+            target(1)
+            break
+          case 'FINALLY_SETUP':
+            target(1)
+            target(4)
+            break
+          case 'MAKE_CLOSURE':
+            target(2)
+            break
+        }
       }
+      if (!['JUMP', 'RETURN', 'THROW', 'JUMP_REG'].includes(steps.at(-1).name))
+        pending.push(instruction.nextPc)
     }
 
-    if (patches.length === 0) {
+    if (requirePatch && patches.length === 0) {
       decline('no-reachable-patch', 'No reachable PATCH was observed')
     }
     return {

@@ -864,6 +864,61 @@ export function diagnoseWordcodeInstruction(container, pc) {
   }
 }
 
+// PATCH traversal reads only reached words, using the same source-proved family
+// definitions as the complete stream readers. Original widths remain intact.
+export function diagnoseObservedWordcodeInstruction(
+  container,
+  pc,
+  families = {},
+) {
+  try {
+    const words = numericWords(container)
+    const antiCases = opcodeMap(families.anti?.syntheticCases ?? [])
+    const aliasCases = opcodeMap(families.alias?.aliases ?? [])
+    const cases = new Map(antiCases)
+    for (const entry of aliasCases.values()) {
+      cases.set(entry.opcode, {
+        ...entry,
+        steps: [
+          {
+            name: entry.originalName,
+            operandStart: 0,
+            operandCount: entry.arity,
+          },
+        ],
+      })
+    }
+    const instruction = parseInstruction(
+      makeCursor(words, pc),
+      words,
+      cases,
+      opcodeMap(families.macro?.macros ?? []),
+      opcodeMap(families.specialized?.specialized ?? []),
+    )
+    const alias = aliasCases.get(instruction.opcode.value)
+    if (alias) {
+      instruction.name = 'ALIAS'
+      instruction.steps = [
+        {
+          name: alias.originalName,
+          words: [alias.originalOpcode, ...instruction.canonicalOperands],
+        },
+      ]
+    }
+    return deepFreeze({ ok: true, result: instruction, diagnostic: null })
+  } catch (error) {
+    return deepFreeze({
+      ok: false,
+      result: null,
+      diagnostic: {
+        code:
+          error instanceof WordcodeDecline ? error.code : 'word-reader-error',
+        message: error instanceof Error ? error.message : String(error),
+      },
+    })
+  }
+}
+
 // Runtime observers establish these definitions from source before stream parsing.
 function opcodeMap(entries) {
   return new Map(entries.map((entry) => [entry.opcode, entry]))
