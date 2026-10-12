@@ -1,0 +1,80 @@
+{
+  "schemaVersion": "oracle.v1",
+  "cellId": "f-literals-order",
+  "hostProfile": "minimal-window-v1",
+  "globals": {},
+  "setup": {
+    "state": {},
+    "aliases": []
+  },
+  "actions": [],
+  "timeoutMs": 2000,
+  "expected": {
+    "bool": [
+      true,
+      0
+    ],
+    "number": [
+      42,
+      1
+    ],
+    "nan": [
+      {
+        "type": "nan"
+      },
+      2
+    ],
+    "infinity": [
+      {
+        "type": "infinity"
+      },
+      3
+    ],
+    "undef": [
+      {
+        "type": "undefined"
+      },
+      4
+    ],
+    "array": [
+      [
+        "a",
+        5
+      ],
+      [
+        null,
+        6
+      ]
+    ],
+    "object": {
+      "x": [
+        {
+          "type": "-0"
+        },
+        7
+      ],
+      "y": [
+        "z",
+        8
+      ]
+    }
+  },
+  "expectedThrow": null,
+  "semanticTags": [
+    "literals",
+    "nested-values",
+    "special-numbers",
+    "evaluation-order"
+  ],
+  "hazards": [
+    "Finite synchronous child-process oracle with SIGKILL timeout; no time, random, network, locale, async, or stack observables.",
+    "Tagged projection compares declared values only; function identity, object identity, and host-dependent stack data are excluded."
+  ],
+  "exclusions": [
+    "Compiler/runtime internals, debug comments, and opcode/IR coverage remain excluded until step 2."
+  ],
+  "comparison": {
+    "sourceRawStripped": "exact-normalized-observable",
+    "expectedKind": "normalized-value"
+  }
+}

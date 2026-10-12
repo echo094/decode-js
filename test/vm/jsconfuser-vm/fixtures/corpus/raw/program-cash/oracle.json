@@ -1,0 +1,67 @@
+{
+  "schemaVersion": "oracle.v1",
+  "cellId": "program-cash",
+  "hostProfile": "cash-dom-test-v1",
+  "globals": {},
+  "setup": {
+    "state": {},
+    "aliases": []
+  },
+  "actions": [
+    {
+      "op": "typeOf",
+      "root": "window",
+      "path": [
+        "cash"
+      ],
+      "as": "cashType"
+    },
+    {
+      "op": "keys",
+      "root": "window",
+      "path": [
+        "cash"
+      ],
+      "as": "cashKeys"
+    }
+  ],
+  "timeoutMs": 10000,
+  "expected": {
+    "cashType": "function",
+    "cashKeys": [
+      "fn",
+      "isWindow",
+      "isFunction",
+      "isArray",
+      "isNumeric",
+      "isPlainObject",
+      "each",
+      "extend",
+      "parseHTML",
+      "guid",
+      "unique"
+    ]
+  },
+  "expectedThrow": null,
+  "semanticTags": [
+    "whole-program",
+    "host-profile",
+    "iife",
+    "object-methods",
+    "regex",
+    "mutation"
+  ],
+  "hazards": [
+    "Finite synchronous child-process oracle with SIGKILL timeout; no time, random, network, locale, async, or stack observables.",
+    "Tagged projection compares declared values only; function identity, object identity, and host-dependent stack data are excluded.",
+    "cash-dom-test-v1 copies globalThis names into a fixed DOM/module stub; real DOM and ambient host state are excluded.",
+    "Post-evaluation observations use only the finite declarative actions recorded in the oracle; function values are never serialized."
+  ],
+  "exclusions": [
+    "Compiler/runtime internals, debug comments, and opcode/IR coverage remain excluded until step 2."
+  ],
+  "comparison": {
+    "sourceRawStripped": "exact-normalized-observable",
+    "expectedKind": "normalized-value"
+  }
+}

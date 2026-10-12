@@ -1,0 +1,28 @@
+{
+  "schemaVersion": "negative-oracle.v1",
+  "cellId": "hardened-self-modifying",
+  "expectedStatus": "declined",
+  "expectedDiagnostic": "wordcode-declined",
+  "outputMustEqualInput": true,
+  "targetExecution": false,
+  "vmExecuted": false,
+  "behavioralOracleInvoked": false,
+  "reason": "The real selfModifying option emits PATCH opcodes that the registered standalone decoder declines.",
+  "sourceEvidence": [
+    "encoder/js-confuser-vm/test/options/selfModyfing.test.js:1-32"
+  ],
+  "semanticTags": [
+    "real-encoder-output",
+    "phase-2",
+    "self-modifying",
+    "patch-opcode"
+  ],
+  "comparison": {
+    "sourceExpected": "static-decline-contract",
+    "recoveredExpected": "not-applicable"
+  },
+  "exclusions": [
+    "This negative oracle is never evaled or executed; it records only the registered decline contract.",
+    "No behavioral source oracle is used to make a decline look like successful decompilation."
+  ]
+}

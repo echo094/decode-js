@@ -1,0 +1,62 @@
+{
+  "schemaVersion": "oracle.v1",
+  "cellId": "caught-return-through-finally",
+  "hostProfile": "minimal-window-v1",
+  "globals": {},
+  "setup": {
+    "state": {},
+    "aliases": []
+  },
+  "actions": [],
+  "timeoutMs": 2000,
+  "expected": [
+    "negative",
+    5,
+    true
+  ],
+  "expectedThrow": null,
+  "semanticTags": [
+    "conditional",
+    "catch",
+    "finally",
+    "return"
+  ],
+  "provenance": {
+    "encoderCommit": "20c5b96bf57337c568579352758d7685358650de",
+    "seed": 1,
+    "rng": "mulberry32",
+    "options": {
+      "target": "browser",
+      "randomizeOpcodes": false,
+      "shuffleOpcodes": false,
+      "encodeBytecode": false,
+      "concealConstants": false,
+      "controlFlowFlattening": false,
+      "dispatcher": false,
+      "stringConcealing": false,
+      "macroOpcodes": false,
+      "specializedOpcodes": false,
+      "aliasedOpcodes": false,
+      "antiInstrumentation": false,
+      "selfModifying": false,
+      "timingChecks": false,
+      "classObfuscation": false,
+      "handlerTable": false,
+      "minify": false
+    },
+    "generatedAt": null,
+    "nodeVersion": null,
+    "toolSha256": null,
+    "executionProvenance": null
+  },
+  "hazards": [
+    "Finite synchronous VM execution with timeout; the fixture compares declared TEST_OUTPUT only."
+  ],
+  "exclusions": [
+    "This fixture proves one conditional catch with two return continuations through a straight finalizer, not arbitrary nested handlers."
+  ],
+  "comparison": {
+    "sourceRawStripped": "exact-normalized-observable",
+    "expectedKind": "normalized-value"
+  }
+}

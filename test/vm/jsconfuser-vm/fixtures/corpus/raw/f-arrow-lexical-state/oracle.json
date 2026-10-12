@@ -1,0 +1,35 @@
+{
+  "schemaVersion": "oracle.v1",
+  "cellId": "f-arrow-lexical-state",
+  "hostProfile": "minimal-window-v1",
+  "globals": {},
+  "setup": {
+    "state": {},
+    "aliases": []
+  },
+  "actions": [],
+  "timeoutMs": 2000,
+  "expected": [
+    18,
+    15
+  ],
+  "expectedThrow": null,
+  "semanticTags": [
+    "arrow",
+    "lexical-this",
+    "lexical-arguments",
+    "closure",
+    "receiver"
+  ],
+  "hazards": [
+    "The arrow must retain both the method receiver and enclosing arguments despite explicit call/apply receivers; only numeric results are compared.",
+    "Missing arguments[1] is deliberately normalized through the source's own fallback, not by the oracle."
+  ],
+  "exclusions": [
+    "Compiler/runtime internals, debug comments, and opcode/IR coverage remain excluded until step 2."
+  ],
+  "comparison": {
+    "sourceRawStripped": "exact-normalized-observable",
+    "expectedKind": "normalized-value"
+  }
+}
