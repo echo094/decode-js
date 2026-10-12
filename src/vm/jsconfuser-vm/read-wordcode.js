@@ -1,4 +1,3 @@
-const CONTAINER_SCHEMA = 'jsconfuser-vm-container.v1'
 const WORDCODE_SCHEMA = 'jsconfuser-vm-wordcode.v1'
 const UINT32_MAX = 0xffffffff
 
@@ -110,7 +109,7 @@ const THREE_REGISTER_OPCODES = new Set([
   'DEFINE_SETTER',
 ])
 
-const FIXED_WORD_WIDTHS = Object.freeze({
+export const FIXED_WORD_WIDTHS = Object.freeze({
   LOAD_CONST: 4,
   LOAD_INT: 3,
   LOAD_GLOBAL: 4,
@@ -192,67 +191,8 @@ function deepFreeze(value) {
   return value
 }
 
-function sameObjectValues(actual, expected) {
-  if (!actual || typeof actual !== 'object' || Array.isArray(actual)) {
-    return false
-  }
-  const actualKeys = Object.keys(actual)
-  const expectedKeys = Object.keys(expected)
-  return (
-    actualKeys.length === expectedKeys.length &&
-    expectedKeys.every(
-      (key) =>
-        Object.prototype.hasOwnProperty.call(actual, key) &&
-        actual[key] === expected[key],
-    )
-  )
-}
-
-function validateContainer(container) {
-  if (!container || typeof container !== 'object') {
-    decline('invalid-input', 'Word reader expects a Packet A result')
-  }
-
-  if (container.roles?.scalars?.ENCODE_BYTECODE?.value === true) {
-    decline(
-      'unsupported-encoded-bytecode',
-      'ENCODE_BYTECODE=true is outside the numeric-wordcode boundary',
-    )
-  }
-
-  if (
-    container.schemaVersion !== CONTAINER_SCHEMA ||
-    container.encoding !== 'numeric-u32'
-  ) {
-    decline('invalid-container', 'Input is not a Packet A numeric container')
-  }
-
-  const words = container.roles?.words?.values
-  if (!Array.isArray(words)) {
-    decline('invalid-container', 'Packet A result has no numeric word stream')
-  }
-  if (words.length === 0) {
-    decline('empty-word-stream', 'BYTECODE must contain at least one word')
-  }
-
-  if (!sameObjectValues(container.roles?.op?.values, CANONICAL_OPCODES)) {
-    decline('invalid-container', 'Packet A opcode map is not canonical')
-  }
-  if (
-    !sameObjectValues(container.roles?.sentinels?.values, {
-      CALL_SPREAD: CANONICAL_SENTINEL,
-    })
-  ) {
-    decline('invalid-container', 'Packet A sentinel map is not canonical')
-  }
-  if (container.roles?.scalars?.ENCODE_BYTECODE?.value !== false) {
-    decline('invalid-container', 'Packet A numeric mode is not explicit')
-  }
-  if (container.roles?.scalars?.MAIN_START_PC?.value !== 0) {
-    decline('invalid-container', 'Packet A main start PC is not zero')
-  }
-
-  return words
+function numericWords(container) {
+  return container.roles.words.values
 }
 
 function isWord(value) {
@@ -469,8 +409,8 @@ function checkPairCount(count, remaining, name, field, pc) {
   }
 }
 
-function makeCursor(words) {
-  let pc = 0
+function makeCursor(words, startPc = 0) {
+  let pc = startPc
   let current = []
   return {
     get pc() {
@@ -727,43 +667,165 @@ function readObject(cursor, pc, name, value) {
   )
 }
 
-function parseWords(words) {
+function syntheticInstruction(cursor, pc, opcode, definition) {
+  const raw = [cursor.read('SYNTHETIC', 'opcode')]
+  for (let index = 0; index < definition.arity; index += 1) {
+    raw.push(cursor.read('SYNTHETIC'))
+  }
+  const stored = raw.slice(1)
+  const canonical = definition.canonicalToStored.map((index) => stored[index])
+  return {
+    pc,
+    name: 'SYNTHETIC',
+    opcode: { name: 'SYNTHETIC', value: opcode },
+    words: raw,
+    width: raw.length,
+    nextPc: pc + raw.length,
+    canonicalOperands: canonical,
+    steps: definition.steps.map((step) => ({
+      ...step,
+      words: canonical.slice(
+        step.operandStart,
+        step.operandStart + step.operandCount,
+      ),
+    })),
+  }
+}
+
+function macroInstruction(cursor, words, pc, opcode, definition) {
+  const raw = [cursor.read('MACRO', 'opcode')]
+  const steps = []
+  for (const step of definition.steps) {
+    const virtual = [step.opcode, ...words.slice(cursor.pc)]
+    const parsed = parseInstruction(makeCursor(virtual), virtual, new Map())
+    for (const expected of parsed.words.slice(1)) {
+      const actual = cursor.read('MACRO')
+      if (actual !== expected) {
+        decline('macro-step-mismatch', 'Macro operand read changed')
+      }
+      raw.push(actual)
+    }
+    steps.push({ name: step.name, opcode: step.opcode, words: parsed.words })
+  }
+  return {
+    pc,
+    name: 'MACRO',
+    opcode: { name: 'MACRO', value: opcode },
+    words: raw,
+    width: raw.length,
+    nextPc: pc + raw.length,
+    steps,
+  }
+}
+
+function specializedInstruction(cursor, pc, opcode, definition) {
+  const raw = [cursor.read('SPECIALIZED', 'opcode')]
+  return {
+    pc,
+    name: 'SPECIALIZED',
+    opcode: { name: 'SPECIALIZED', value: opcode },
+    words: raw,
+    width: 1,
+    nextPc: pc + 1,
+    steps: [
+      {
+        name: definition.originalName,
+        opcode: definition.originalOpcode,
+        words: [definition.originalOpcode, ...definition.operands],
+      },
+    ],
+  }
+}
+
+function parseInstruction(
+  cursor,
+  words,
+  syntheticCases,
+  macroCases = new Map(),
+  specializedCases = new Map(),
+) {
+  const pc = cursor.pc
+  cursor.begin()
+  const opcode = words[pc]
+  if (!isWord(opcode)) {
+    decline('invalid-word', `Word at ${pc} is not an unsigned 32-bit integer`)
+  }
+  const name = NAME_BY_OPCODE.get(opcode)
+  if (
+    !name &&
+    !syntheticCases.has(opcode) &&
+    !macroCases.has(opcode) &&
+    !specializedCases.has(opcode)
+  ) {
+    decline('unknown-opcode', `Unknown opcode ${opcode} at pc ${pc}`)
+  }
+  if (name === 'PATCH') {
+    decline(
+      'unsupported-hardening-opcode',
+      `PATCH at pc ${pc} is hardening-only and outside Phase 1`,
+    )
+  }
+  let instruction
+  if (specializedCases.has(opcode)) {
+    instruction = specializedInstruction(
+      cursor,
+      pc,
+      opcode,
+      specializedCases.get(opcode),
+    )
+  } else if (macroCases.has(opcode)) {
+    instruction = macroInstruction(
+      cursor,
+      words,
+      pc,
+      opcode,
+      macroCases.get(opcode),
+    )
+  } else if (!name) {
+    instruction = syntheticInstruction(
+      cursor,
+      pc,
+      opcode,
+      syntheticCases.get(opcode),
+    )
+  } else if (name === 'CALL' || name === 'CALL_METHOD' || name === 'NEW') {
+    instruction = readCall(cursor, pc, name, opcode)
+  } else if (name === 'MAKE_CLOSURE') {
+    instruction = readClosure(cursor, pc, name, opcode)
+  } else if (name === 'BUILD_ARRAY') {
+    instruction = readArray(cursor, pc, name, opcode)
+  } else if (name === 'BUILD_OBJECT') {
+    instruction = readObject(cursor, pc, name, opcode)
+  } else {
+    instruction = fixedInstruction(cursor, pc, name, opcode)
+  }
+  if (instruction.nextPc !== cursor.pc) {
+    decline(
+      'reader-internal-error',
+      `${name ?? 'SYNTHETIC'} at ${pc} did not consume its declared width`,
+    )
+  }
+  return instruction
+}
+
+function parseWords(
+  words,
+  syntheticCases = new Map(),
+  macroCases = new Map(),
+  specializedCases = new Map(),
+) {
   const cursor = makeCursor(words)
   const instructions = []
   while (cursor.remaining > 0) {
-    const pc = cursor.pc
-    cursor.begin()
-    const opcode = words[pc]
-    if (!isWord(opcode)) {
-      decline('invalid-word', `Word at ${pc} is not an unsigned 32-bit integer`)
-    }
-    const name = NAME_BY_OPCODE.get(opcode)
-    if (!name) decline('unknown-opcode', `Unknown opcode ${opcode} at pc ${pc}`)
-    if (name === 'PATCH') {
-      decline(
-        'unsupported-hardening-opcode',
-        `PATCH at pc ${pc} is hardening-only and outside Phase 1`,
-      )
-    }
-    let instruction
-    if (name === 'CALL' || name === 'CALL_METHOD' || name === 'NEW') {
-      instruction = readCall(cursor, pc, name, opcode)
-    } else if (name === 'MAKE_CLOSURE') {
-      instruction = readClosure(cursor, pc, name, opcode)
-    } else if (name === 'BUILD_ARRAY') {
-      instruction = readArray(cursor, pc, name, opcode)
-    } else if (name === 'BUILD_OBJECT') {
-      instruction = readObject(cursor, pc, name, opcode)
-    } else {
-      instruction = fixedInstruction(cursor, pc, name, opcode)
-    }
-    if (instruction.nextPc !== cursor.pc) {
-      decline(
-        'reader-internal-error',
-        `${name} at ${pc} did not consume its declared width`,
-      )
-    }
-    instructions.push(instruction)
+    instructions.push(
+      parseInstruction(
+        cursor,
+        words,
+        syntheticCases,
+        macroCases,
+        specializedCases,
+      ),
+    )
   }
   if (cursor.pc !== words.length) {
     decline('trailing-word', 'Word stream was not consumed completely')
@@ -771,8 +833,246 @@ function parseWords(words) {
   return instructions
 }
 
+export function diagnoseWordcodeInstruction(container, pc) {
+  try {
+    const words = numericWords(container)
+    if (!Number.isSafeInteger(pc) || pc < 0 || pc >= words.length) {
+      decline('invalid-pc', 'Instruction PC is outside the word stream')
+    }
+    const cursor = makeCursor(words, pc)
+    return deepFreeze({
+      ok: true,
+      result: parseInstruction(cursor, words, new Map()),
+      diagnostic: null,
+    })
+  } catch (error) {
+    if (error instanceof WordcodeDecline) {
+      return deepFreeze({
+        ok: false,
+        result: null,
+        diagnostic: { code: error.code, message: error.message },
+      })
+    }
+    return deepFreeze({
+      ok: false,
+      result: null,
+      diagnostic: {
+        code: 'word-reader-error',
+        message: error instanceof Error ? error.message : String(error),
+      },
+    })
+  }
+}
+
+// Runtime observers establish these definitions from source before stream parsing.
+function opcodeMap(entries) {
+  return new Map(entries.map((entry) => [entry.opcode, entry]))
+}
+
+export function diagnoseAntiWordStream(container, observation) {
+  try {
+    const words = numericWords(container)
+    const cases = opcodeMap(observation.syntheticCases)
+    const instructions = parseWords(words, cases)
+    if (!instructions.some(({ name }) => name === 'SYNTHETIC')) {
+      decline(
+        'no-synthetic-instructions',
+        'The word stream has no synthetic opcode',
+      )
+    }
+    return deepFreeze({
+      ok: true,
+      result: {
+        schemaVersion: 'jsconfuser-vm-anti-word-stream-observation.v1',
+        wordCount: words.length,
+        instructions,
+      },
+      diagnostic: null,
+    })
+  } catch (error) {
+    if (error instanceof WordcodeDecline) {
+      return deepFreeze({
+        ok: false,
+        result: null,
+        diagnostic: { code: error.code, message: error.message },
+      })
+    }
+    return deepFreeze({
+      ok: false,
+      result: null,
+      diagnostic: {
+        code: 'anti-word-stream-error',
+        message: error instanceof Error ? error.message : String(error),
+      },
+    })
+  }
+}
+
+export function diagnoseAliasedWordStream(
+  container,
+  observation,
+  {
+    antiObservation = null,
+    specializedObservation = null,
+    macroObservation = null,
+  } = {},
+) {
+  try {
+    const words = numericWords(container)
+    const antiCases = antiObservation
+      ? opcodeMap(antiObservation.syntheticCases)
+      : new Map()
+    const specializedCases = specializedObservation
+      ? opcodeMap(specializedObservation.specialized)
+      : new Map()
+    const macroCases = macroObservation
+      ? opcodeMap(macroObservation.macros)
+      : new Map()
+    const cases = new Map(antiCases)
+    for (const entry of observation.aliases) {
+      cases.set(entry.opcode, {
+        ...entry,
+        steps: [
+          {
+            name: entry.originalName,
+            operandStart: 0,
+            operandCount: entry.arity,
+          },
+        ],
+      })
+    }
+    const instructions = parseWords(words, cases, macroCases, specializedCases)
+    if (
+      !instructions.some(
+        ({ name, opcode }) =>
+          name === 'SYNTHETIC' && !antiCases.has(opcode.value),
+      )
+    ) {
+      decline('no-alias-instructions', 'The word stream has no alias opcode')
+    }
+    return deepFreeze({
+      ok: true,
+      result: {
+        schemaVersion: 'jsconfuser-vm-aliased-word-stream-observation.v1',
+        wordCount: words.length,
+        instructions,
+      },
+      diagnostic: null,
+    })
+  } catch (error) {
+    if (error instanceof WordcodeDecline) {
+      return deepFreeze({
+        ok: false,
+        result: null,
+        diagnostic: { code: error.code, message: error.message },
+      })
+    }
+    return deepFreeze({
+      ok: false,
+      result: null,
+      diagnostic: {
+        code: 'aliased-word-stream-error',
+        message: error instanceof Error ? error.message : String(error),
+      },
+    })
+  }
+}
+
+export function diagnoseMacroWordStream(
+  container,
+  observation,
+  specializedObservation,
+  antiObservation,
+) {
+  try {
+    const words = numericWords(container)
+    const antiCases = antiObservation
+      ? opcodeMap(antiObservation.syntheticCases)
+      : new Map()
+    const specializedCases = specializedObservation
+      ? opcodeMap(specializedObservation.specialized)
+      : new Map()
+    const cases = opcodeMap(observation.macros)
+    const instructions = parseWords(words, antiCases, cases, specializedCases)
+    if (!instructions.some(({ name }) => name === 'MACRO')) {
+      decline('no-macro-instructions', 'The word stream has no macro opcode')
+    }
+    return deepFreeze({
+      ok: true,
+      result: {
+        schemaVersion: 'jsconfuser-vm-macro-word-stream-observation.v1',
+        wordCount: words.length,
+        instructions,
+      },
+      diagnostic: null,
+    })
+  } catch (error) {
+    if (error instanceof WordcodeDecline) {
+      return deepFreeze({
+        ok: false,
+        result: null,
+        diagnostic: { code: error.code, message: error.message },
+      })
+    }
+    return deepFreeze({
+      ok: false,
+      result: null,
+      diagnostic: {
+        code: 'macro-word-stream-error',
+        message: error instanceof Error ? error.message : String(error),
+      },
+    })
+  }
+}
+
+export function diagnoseSpecializedWordStream(
+  container,
+  observation,
+  antiObservation,
+) {
+  try {
+    const words = numericWords(container)
+    const antiCases = antiObservation
+      ? opcodeMap(antiObservation.syntheticCases)
+      : new Map()
+    const cases = opcodeMap(observation.specialized)
+    const instructions = parseWords(words, antiCases, new Map(), cases)
+    if (!instructions.some(({ name }) => name === 'SPECIALIZED')) {
+      decline(
+        'no-specialized-instructions',
+        'The word stream has no specialized opcode',
+      )
+    }
+    return deepFreeze({
+      ok: true,
+      result: {
+        schemaVersion: 'jsconfuser-vm-specialized-word-stream-observation.v1',
+        wordCount: words.length,
+        instructions,
+      },
+      diagnostic: null,
+    })
+  } catch (error) {
+    if (error instanceof WordcodeDecline) {
+      return deepFreeze({
+        ok: false,
+        result: null,
+        diagnostic: { code: error.code, message: error.message },
+      })
+    }
+    return deepFreeze({
+      ok: false,
+      result: null,
+      diagnostic: {
+        code: 'specialized-word-stream-error',
+        message: error instanceof Error ? error.message : String(error),
+      },
+    })
+  }
+}
+
 function recognize(container) {
-  const words = validateContainer(container)
+  const words = numericWords(container)
   const instructions = parseWords(words)
   return deepFreeze({
     schemaVersion: WORDCODE_SCHEMA,

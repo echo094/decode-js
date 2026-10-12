@@ -129,6 +129,17 @@ export function scalarValue(node) {
 
 function isLiteralPoolValue(node, context) {
   if (
+    node?.type === 'UnaryExpression' &&
+    node.operator === '-' &&
+    node.prefix &&
+    node.argument?.type === 'NumericLiteral' &&
+    Number.isInteger(node.argument.value) &&
+    node.argument.value > 0 &&
+    node.argument.value <= 0x80000000
+  ) {
+    return true
+  }
+  if (
     node?.type === 'StringLiteral' ||
     node?.type === 'NumericLiteral' ||
     node?.type === 'BooleanLiteral' ||
@@ -195,6 +206,26 @@ export function isWordArray(node) {
 function isWithin(path, rootNode) {
   for (let current = path; current; current = current.parentPath) {
     if (current.node === rootNode) return true
+  }
+  return false
+}
+
+export function precedes(left, right) {
+  const ancestors = new Map()
+  for (let path = left; path?.parentPath; path = path.parentPath)
+    ancestors.set(path.parentPath, path)
+  for (let path = right; path?.parentPath; path = path.parentPath) {
+    const sibling = ancestors.get(path.parentPath)
+    if (sibling)
+      return (
+        (sibling.listKey === path.listKey &&
+          typeof sibling.key === 'number' &&
+          typeof path.key === 'number' &&
+          sibling.key < path.key) ||
+        (path.parentPath.isForStatement() &&
+          sibling.key === 'init' &&
+          path.key === 'body')
+      )
   }
   return false
 }

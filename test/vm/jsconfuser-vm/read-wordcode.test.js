@@ -279,7 +279,7 @@ test.each([
   },
 )
 
-test('declines unknown, extra/trailing, hardening, encoded, and non-parser input', () => {
+test('declines unknown, extra/trailing, and hardening words', () => {
   const container = containerAt(
     'test/vm/jsconfuser-vm/fixtures/reference/encoded.js',
   )
@@ -294,16 +294,6 @@ test('declines unknown, extra/trailing, hardening, encoded, and non-parser input
   expect(diagnoseWordcode(withWords(container, [56])).diagnostic.code).toBe(
     'unsupported-hardening-opcode',
   )
-
-  const encoded = structuredClone(container)
-  encoded.roles.scalars.ENCODE_BYTECODE.value = true
-  expect(diagnoseWordcode(encoded).diagnostic.code).toBe(
-    'unsupported-encoded-bytecode',
-  )
-  expect(diagnoseWordcode('var BYTECODE = [];').diagnostic.code).toBe(
-    'invalid-input',
-  )
-  expect(diagnoseWordcode(null).diagnostic.code).toBe('invalid-input')
 })
 
 test('preserves the container input and freezes the parsed wordcode', () => {
@@ -343,5 +333,5 @@ test('parses the stripped numeric raw and focused corpus without comments or tar
       cellCount += 1
     }
   }
-  expect(cellCount).toBe(33)
+  expect(cellCount).toBe(37)
 })
