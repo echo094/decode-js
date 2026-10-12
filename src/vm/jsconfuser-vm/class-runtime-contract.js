@@ -1,5 +1,9 @@
 import * as t from '@babel/types'
 import {
+  isControlBodyKey,
+  simpleControlBody,
+} from '../../visitor/jsconfuser-vm/normalize-source.js'
+import {
   classTemplate as template,
   layoutRoles,
 } from './class-runtime-layout-template.js'
@@ -531,6 +535,16 @@ export function verifyClassRuntimeContract(
         const name = propertyName(expected[key])
         if (properties.has(name)) member(name, propertyName(actual[key]))
         else compare(expected[key], actual[key], map, reverse)
+      } else if (isControlBodyKey(expected.type, key)) {
+        // VM preparation emits bare simple control bodies. Compare the
+        // retained reference through the same view, without changing either
+        // tree or weakening its operation/binding/effect checks.
+        compare(
+          simpleControlBody(expected[key]),
+          simpleControlBody(actual[key]),
+          map,
+          reverse,
+        )
       } else if (key !== 'shorthand')
         compare(
           expected[key],

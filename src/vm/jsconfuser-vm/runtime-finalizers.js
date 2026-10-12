@@ -1,6 +1,10 @@
 import { parse } from '@babel/parser'
 import { CLASS_RUNTIME_SOURCE } from './class-runtime-source.js'
 import {
+  isControlBodyKey,
+  simpleControlBody,
+} from '../../visitor/jsconfuser-vm/normalize-source.js'
+import {
   PARSER_OPTIONS,
   decline,
   makeContext,
@@ -69,7 +73,11 @@ export function verifyRuntimeFinalizers(context, roles, scalars) {
   ])
     if (method[0].node.expression.operator !== '=')
       fail('method installation operator')
-  const compare = (expected, actual) => {
+  const compare = (expected, actual, controlBody = false) => {
+    if (controlBody) {
+      expected = simpleControlBody(expected)
+      actual = simpleControlBody(actual)
+    }
     if (Array.isArray(expected)) {
       if (!Array.isArray(actual) || expected.length !== actual.length)
         fail('statement count')
@@ -119,7 +127,12 @@ export function verifyRuntimeFinalizers(context, roles, scalars) {
       return
     }
     for (const key of Object.keys(expected))
-      if (!ignored.has(key)) compare(expected[key], actual[key])
+      if (!ignored.has(key))
+        compare(
+          expected[key],
+          actual[key],
+          isControlBodyKey(expected.type, key),
+        )
   }
   compare(expectedRun, actualRun)
   code = 'runtime-return-finalizer'

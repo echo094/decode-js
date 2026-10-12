@@ -1,9 +1,12 @@
 import { spawnSync } from 'node:child_process'
 import fs from 'node:fs'
+import vm from 'node:vm'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { expect, test } from 'vitest'
+import { parse } from '@babel/parser'
+import traverse from '@babel/traverse'
 
 import { decodeJsconfuserVmSequential } from '../../../../src/plugin/jsconfuser-vm-sequential.js'
 
@@ -82,6 +85,73 @@ test('invalid source declines at the outer decoder', () => {
     stages: { vm: { status: 'pending' } },
   })
 })
+
+const layerPair = (name) =>
+  fs.readFileSync(
+    path.join(
+      packageRoot,
+      'test/vm/jsconfuser-vm/fixtures/layer-pair-arithmetic',
+      `${name}.js`,
+    ),
+    'utf8',
+  )
+
+function switchCount(source) {
+  let count = 0
+  traverse(parse(source), {
+    SwitchStatement() {
+      count++
+    },
+  })
+  return count
+}
+
+test('the layer-pair VM layer decodes on its own', () => {
+  const input = layerPair('vm-only')
+  const record = decodeJsconfuserVmSequential(input)
+  expect(record.ok).toBe(true)
+  expect(record.output).not.toBe(input)
+})
+
+test.each(['outer-complete', 'outer-without-string-concealing'])(
+  '%s: VM preparation recovers the wrapped program without runtime residue',
+  (name) => {
+    const input = layerPair(name)
+    const record = decodeJsconfuserVmSequential(input)
+    expect(record).toMatchObject({
+      ok: true,
+      failedStage: null,
+      stages: { outer: { ok: true }, vm: { ok: true } },
+    })
+    expect(record.output).not.toBe(input)
+    expect(switchCount(record.stages.outer.output)).toBe(1)
+    expect(switchCount(record.output)).toBe(0)
+    let payloads = 0
+    let installations = 0
+    traverse(parse(record.output), {
+      ArrayExpression(path) {
+        if (path.node.elements.length) payloads++
+      },
+      AssignmentExpression(path) {
+        if (
+          path.node.left.type === 'MemberExpression' &&
+          path.node.right.type === 'FunctionExpression'
+        )
+          installations++
+      },
+    })
+    expect(payloads).toBe(0)
+    expect(installations).toBe(0)
+    const observe = (source) => {
+      const context = { Buffer, performance: { now: () => 0 } }
+      context.window = context
+      vm.runInNewContext(source, context, { timeout: 1000 })
+      return context.TEST_OUTPUT
+    }
+    expect(observe(record.output)).toBe(observe(layerPair('source')))
+    expect(observe(input)).toBe(observe(layerPair('source')))
+  },
+)
 
 test('sequential CLI writes the original source and diagnosis on VM decline', () => {
   const directory = fs.mkdtempSync(

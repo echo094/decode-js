@@ -1,4 +1,5 @@
 import { decline, numberValue, propertyName } from './container-role-helpers.js'
+import { simpleControlBody } from '../../visitor/jsconfuser-vm/normalize-source.js'
 
 function caseNodes(context, dispatch, opcode) {
   const entry = dispatch.cases.find(
@@ -182,16 +183,17 @@ export function verifyCollectionCases(context, dispatch) {
     'iterator key result',
   )
   unique(
-    advanceNodes.filter(
-      (node) =>
-        node.type === 'IfStatement' &&
-        node.test?.operator === '>=' &&
-        node.consequent?.body?.some(
-          (statement) =>
-            statement.type === 'ExpressionStatement' &&
-            statement.expression?.type === 'AssignmentExpression',
-        ),
-    ),
+    advanceNodes.filter((node) => {
+      if (node.type !== 'IfStatement' || node.test?.operator !== '>=')
+        return false
+      const body = simpleControlBody(node.consequent)
+      const statements = body?.type === 'BlockStatement' ? body.body : [body]
+      return statements.some(
+        (statement) =>
+          statement?.type === 'ExpressionStatement' &&
+          statement.expression?.type === 'AssignmentExpression',
+      )
+    }),
     53,
     'iterator exit jump',
   )

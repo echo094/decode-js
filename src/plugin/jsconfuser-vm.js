@@ -1,4 +1,5 @@
 import { diagnoseStandalone } from '../vm/jsconfuser-vm/decode-standalone.js'
+import normalizeVmInput from '../visitor/jsconfuser-vm/normalize-source.js'
 
 const ADAPTER_SCHEMA = 'jsconfuser-vm-adapter.v1'
 
@@ -11,7 +12,7 @@ const ADAPTER_SCHEMA = 'jsconfuser-vm-adapter.v1'
  * output is the exact input source, not a partially emitted program.
  */
 export function decodeJsconfuserVm(source) {
-  const diagnosis = diagnoseStandalone(source)
+  const diagnosis = diagnoseStandalone(normalizeVmInput(source))
   const success = diagnosis.ok
   return Object.freeze({
     schemaVersion: ADAPTER_SCHEMA,

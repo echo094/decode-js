@@ -10,6 +10,10 @@ import { diagnoseContainer } from '../../../src/vm/jsconfuser-vm/extract-contain
 import { diagnoseStandalone } from '../../../src/vm/jsconfuser-vm/decode-standalone.js'
 import { materializeHandlerTable } from '../../../src/vm/jsconfuser-vm/materialize-handler-table.js'
 import { EXPECTED_OPCODES } from '../../../src/vm/jsconfuser-vm/container-role-helpers.js'
+import normalizeVmInput, {
+  normalizeVmAst,
+} from '../../../src/visitor/jsconfuser-vm/normalize-source.js'
+import { expectConsistentState } from '../../helper.js'
 
 const fixture = fs.readFileSync(
   new URL('fixtures/class-runtime-boot/encoded.js', import.meta.url),
@@ -63,6 +67,40 @@ function replaceOne(path, predicate) {
   expect(changed).toBe(true)
 }
 
+test.each([
+  ['class-runtime-boot/encoded.js', false],
+  ['randomized-class/arithmetic-181.js', true],
+])(
+  'complete recognition consumes the normalization output: %s',
+  (name, randomized) => {
+    const source = fs.readFileSync(
+      new URL(`fixtures/${name}`, import.meta.url),
+      'utf8',
+    )
+    const ast = parse(source)
+    expect(normalizeVmAst(ast)).toBe(true)
+    expectConsistentState(ast)
+    const prepared = generate(ast).code
+    expect(prepared).not.toBe(source)
+    const originalGraph = diagnoseClassRuntime(source, { randomized })
+    const preparedGraph = diagnoseClassRuntime(ast, { randomized })
+    expect(originalGraph.ok).toBe(true)
+    expect(preparedGraph.ok, JSON.stringify(preparedGraph.diagnostic)).toBe(
+      true,
+    )
+    expect(preparedGraph.result).toEqual(originalGraph.result)
+    const snapshot = JSON.stringify(ast)
+    expect(diagnoseContainer(ast)).toEqual(diagnoseContainer(source))
+    expect(JSON.stringify(ast)).toBe(snapshot)
+    const original = diagnoseStandalone(source)
+    const normalized = diagnoseStandalone(prepared)
+    expect(original.ok).toBe(true)
+    expect(normalized.ok, JSON.stringify(normalized.diagnostic)).toBe(true)
+    expect(normalized.result.output).toBe(original.result.output)
+    expect(normalized.result.output).not.toBe(prepared)
+  },
+)
+
 test('rejects the ADD operand substitution that changes the published value', () => {
   const damaged = fixture.replace(
     '= a + regs[base + this.Q({}, 90)]',
@@ -78,6 +116,11 @@ test('rejects the ADD operand substitution that changes the published value', ()
   expect(window.TEST_OUTPUT).toBe(3)
   assertDecline(
     damaged,
+    'class-runtime-opcodes',
+    'Opcode 11: complete semantic contract',
+  )
+  assertDecline(
+    normalizeVmInput(damaged),
     'class-runtime-opcodes',
     'Opcode 11: complete semantic contract',
   )

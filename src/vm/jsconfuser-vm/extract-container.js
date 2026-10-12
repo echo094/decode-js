@@ -98,7 +98,6 @@ function assertMapReferences(context, runtime, roles) {
     ),
   )
   if (
-    sentinelUses.length < 3 ||
     sentinelUses.some(
       (path) =>
         path.parentPath?.node?.type !== 'MemberExpression' ||
@@ -107,13 +106,29 @@ function assertMapReferences(context, runtime, roles) {
           (parent) => parent.node === runtime.vmMethods.run[0].fn,
         ),
     ) ||
-    callCases.some(
-      (entry) =>
-        !entry ||
+    callCases.some((entry) => {
+      if (!entry) return true
+      const tests = context.nodes(entry).filter(({ node }) => {
+        const test = node.type === 'IfStatement' ? node.test : null
+        if (test?.type !== 'BinaryExpression' || test.operator !== '===')
+          return false
+        const mapRead =
+          test.right?.type === 'MemberExpression' &&
+          context.sameRef(test.right.object, roles.sentinels.binding) &&
+          propertyName(test.right.property) === 'CALL_SPREAD'
+        const literal =
+          test.right?.type === 'NumericLiteral' &&
+          test.right.value === EXPECTED_SENTINELS.CALL_SPREAD
+        return mapRead || literal
+      })
+      if (tests.length !== 1) return true
+      const mapRead = tests[0].node.test.right.type === 'MemberExpression'
+      return (
         sentinelUses.filter((path) =>
           path.findParent((parent) => parent.node === entry),
-        ).length !== 1,
-    )
+        ).length !== (mapRead ? 1 : 0)
+      )
+    })
   ) {
     decline('incomplete-role', 'CALL_SPREAD is not connected to all call paths')
   }

@@ -14,6 +14,7 @@ vi.mock('../../../../src/vm/jsconfuser-vm/decode-standalone.js', async () => {
 })
 
 import decodeJsconfuserVm from '../../../../src/plugin/jsconfuser-vm.js'
+import normalizeVmInput from '../../../../src/visitor/jsconfuser-vm/normalize-source.js'
 import {
   assertDerivedStateConsistency,
   assertNoVmResidue,
@@ -32,7 +33,7 @@ function sha256(source) {
 
 function expectSingleDiagnosis(input) {
   expect(diagnoseStandaloneSpy).toHaveBeenCalledTimes(1)
-  expect(diagnoseStandaloneSpy).toHaveBeenCalledWith(input)
+  expect(diagnoseStandaloneSpy).toHaveBeenCalledWith(normalizeVmInput(input))
 }
 
 beforeEach(() => {

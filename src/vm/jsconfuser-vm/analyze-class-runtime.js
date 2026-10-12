@@ -1,4 +1,5 @@
 import { parse } from '@babel/parser'
+import { simpleControlBody } from '../../visitor/jsconfuser-vm/normalize-source.js'
 import { verifyClassRuntimeContract } from './class-runtime-contract.js'
 import { identifyClassRuntimeMethods } from './class-runtime-method-roles.js'
 import { verifyCollectionCases } from './class-runtime-collection-cases.js'
@@ -54,6 +55,7 @@ function decoderBridge(context, declaration, words, pool) {
   if (poolArguments.length !== 1 || decoded.length !== 1) return null
   const decoder = stableFunction(context, decoded[0].callee)
   const first = decoder.path.node.body.body[0]
+  const consequent = simpleControlBody(first?.consequent)
   const parameter = decoder.path.node.params[0]
   if (
     decoder.path.node.params.length !== 1 ||
@@ -62,8 +64,8 @@ function decoderBridge(context, declaration, words, pool) {
     first.test.operator !== '!' ||
     first.test.argument?.type !== 'BooleanLiteral' ||
     first.test.argument.value !== false ||
-    first.consequent?.type !== 'ReturnStatement' ||
-    !context.sameRef(first.consequent.argument, context.bindingFor(parameter))
+    consequent?.type !== 'ReturnStatement' ||
+    !context.sameRef(consequent.argument, context.bindingFor(parameter))
   ) {
     return null
   }

@@ -1,4 +1,5 @@
 import { decline, numberValue, propertyName } from './container-role-helpers.js'
+import { simpleControlBody } from '../../visitor/jsconfuser-vm/normalize-source.js'
 
 const ORDER = Object.freeze([
   ...Array.from({ length: 16 }, (_, value) => value),
@@ -262,16 +263,18 @@ function verifyLoadsStoresAndJumps(context, dispatch, methods, vmFields) {
     const opcode = Number(opcodeText)
     const matches = context
       .nodes(caseByOpcode(dispatch, opcode))
-      .filter(
-        ({ node }) =>
+      .filter(({ node }) => {
+        const body = simpleControlBody(node.consequent)
+        return (
           node.type === 'IfStatement' &&
           node.test?.type ===
             (negated ? 'UnaryExpression' : 'MemberExpression') &&
           (!negated || node.test.operator === '!') &&
-          node.consequent?.type === 'ExpressionStatement' &&
-          node.consequent.expression?.type === 'AssignmentExpression' &&
-          frameRead(node.consequent.expression.left, 0),
-      )
+          body?.type === 'ExpressionStatement' &&
+          body.expression?.type === 'AssignmentExpression' &&
+          frameRead(body.expression.left, 0)
+        )
+      })
     if (matches.length !== 1) {
       decline(
         'class-runtime-opcodes',

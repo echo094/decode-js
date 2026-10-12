@@ -3,6 +3,8 @@ import { expect, test } from 'vitest'
 import { parse } from '@babel/parser'
 import generate from '@babel/generator'
 import traverse from '@babel/traverse'
+import { expectConsistentState } from '../../helper.js'
+import decodeVm from '../../../src/plugin/jsconfuser-vm.js'
 import {
   diagnoseContainer,
   extractContainer,
@@ -158,6 +160,65 @@ function replaceOnce(source, from, to) {
   expect(index, `fixture text not found: ${from}`).toBeGreaterThanOrEqual(0)
   return `${source.slice(0, index)}${to}${source.slice(index + from.length)}`
 }
+
+function simplifiedSentinels(mask) {
+  let index = 0
+  const source = reference.replace(
+    /argc === SENTINELS\.CALL_SPREAD/g,
+    (test) => (mask & (1 << index++) ? 'argc === 65535' : test),
+  )
+  expect(index).toBe(3)
+  return source
+}
+
+test.each([0, 1, 2, 3, 4, 5, 6, 7])(
+  'sentinel mask %s: map reads and literals yield the same recovered program',
+  (mask) => {
+    const source = simplifiedSentinels(mask)
+    const ast = parse(source)
+    traverse(ast, {})
+    const before = JSON.stringify(ast)
+    const diagnosis = diagnoseContainer(ast)
+    expect(diagnosis.ok, JSON.stringify(diagnosis.diagnostic)).toBe(true)
+    expect(diagnosis.result).toEqual(extractContainer(reference))
+    expect(JSON.stringify(ast)).toBe(before)
+    expectConsistentState(ast, source, { sourceType: 'script' })
+    const recovered = decodeVm(source)
+    expect(recovered.ok, JSON.stringify(recovered.diagnostic)).toBe(true)
+    expect(recovered.output).not.toBe(source)
+    expect(recovered.output).toBe(decodeVm(reference).output)
+  },
+)
+
+test('literal sentinel recognition survives binding and method renaming', () => {
+  const source = renameBindings(simplifiedSentinels(7))
+  expect(diagnoseContainer(source).ok).toBe(true)
+  expect(decodeVm(source).ok).toBe(true)
+})
+
+test.each([
+  ['wrong literal value', 'argc === 65535', 'argc === 65534'],
+  ['wrong captured map', 'argc === 65535', 'argc === SLOTS.PC'],
+  ['wrong comparison operator', 'argc === 65535', 'argc !== 65535'],
+])(
+  '%s: simplified sentinels retain named refusal and exact rollback',
+  (_label, from, to) => {
+    const source = replaceOnce(simplifiedSentinels(7), from, to)
+    expect(diagnoseContainer(source)).toMatchObject({
+      ok: false,
+      result: null,
+      diagnostic: {
+        code: 'incomplete-role',
+        message: 'CALL_SPREAD is not connected to all call paths',
+      },
+    })
+    expect(decodeVm(source)).toMatchObject({
+      ok: false,
+      output: source,
+      result: null,
+    })
+  },
+)
 
 test('extracts the complete pinned reference graph and preserves the known scalar values', () => {
   const result = extractContainerFromSource(reference)
