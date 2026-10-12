@@ -15,6 +15,17 @@ test('dead-code-opaque-predicates', () => {
   getPluginResult(PluginJsconfuser, true, join(root, tc))
 })
 
+// A frozen real `{ target: 'node', deadCode: true }` encode (js-confuser 2.1.3, harness
+// mulberry32 seed 87). DeadCode prepends a dummy function holding a template that calls
+// `charCodeAt` into the source's `for` body. The legacy StringCompression matcher climbed from
+// that call out of three functions to the source loop, accepted the anonymous enclosing
+// function by its character-subsequence template and threw reading its null `id.name`, so the
+// whole plugin crashed before DeadCode's own pass could run.
+test('dead-code-string-compression', () => {
+  const tc = 'dead-code-string-compression'
+  getPluginResult(PluginJsconfuser, true, join(root, tc))
+})
+
 // A `high`-preset encode, and the first fixture that pins StringConcealing's dependency
 // cleanup across stage boundaries. Its sweeps are reference-count-gated and both ran while
 // the base91 decode function's `return bufferToString(...)` still referenced the whole

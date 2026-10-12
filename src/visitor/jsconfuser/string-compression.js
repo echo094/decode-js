@@ -1,8 +1,10 @@
 /**
  * Unverified: not active in js-confuser 2.1.3. `stringCompression` was a 1.1.2
- * option (LZW-compressed string blobs) and did not survive the 2.0.0 Babel
- * rewrite - neither the transform nor the option exists anywhere in the pinned
- * encoder's source. This pass targets 1.x output only, and carries no fixtures.
+ * option (LZW-compressed string blobs). The 2.0.0 Babel rewrite kept the option
+ * but re-implemented it on an embedded LZString library, whose decoder this
+ * matcher does not target; the option was then removed before 2.1.2, and neither
+ * the transform nor the option exists anywhere in the pinned encoder's source.
+ * This pass targets 1.x output only, and carries no 1.x fixtures.
  */
 import generator from '@babel/generator'
 
@@ -20,8 +22,14 @@ function findStringDecoder(path) {
   if (path.node?.name !== 'charCodeAt' || path.key !== 'property') {
     return null
   }
+  // The template's charCodeAt sits directly in the decode loop of a named decoder, so the
+  // loop must be found without leaving the call's own function: crossing a boundary lands on
+  // an unrelated outer loop, e.g. around a DeadCode template that calls charCodeAt.
   let loop = path
   while (loop && !loop.isForStatement()) {
+    if (loop.isFunction()) {
+      return null
+    }
     loop = loop.parentPath
   }
   const i = loop?.node?.update?.argument?.name
@@ -29,6 +37,9 @@ function findStringDecoder(path) {
     return null
   }
   const func = loop.getFunctionParent()
+  if (!func?.node.id) {
+    return null
+  }
   const param = func.node.params?.[0]?.name
   if (!param) {
     return null
@@ -62,6 +73,9 @@ function findStringGet(path) {
     return null
   }
   binding = get_ref_path.scope.getBinding(get_name)
+  if (!binding) {
+    return null
+  }
   return {
     name: get_name,
     path: binding.path,
@@ -78,6 +92,9 @@ function findStringSplit(path) {
     return null
   }
   const binding = path.scope.getBinding(split_name)
+  if (!binding) {
+    return null
+  }
   return {
     name: split_name,
     path: path,
@@ -87,12 +104,15 @@ function findStringSplit(path) {
 
 function findStringFn(path, name) {
   const binding = path.scope.getBinding(name)
-  const ref = binding.referencePaths?.[0]
+  const ref = binding?.referencePaths?.[0]
   if (!ref) {
     return null
   }
-  const fn_path = ref.getFunctionParent(name)
-  const fn_name = fn_path.node.id.name
+  const fn_path = ref.getFunctionParent()
+  const fn_name = fn_path?.node.id?.name
+  if (!fn_name) {
+    return null
+  }
   return {
     name: fn_name,
     path: fn_path,
@@ -132,11 +152,11 @@ const deStringCompression = {
       return
     }
     const split_obj = findStringSplit(get_obj.ref)
-    if (!get_obj) {
+    if (!split_obj) {
       return
     }
     const fn_obj = findStringFn(split_obj.path, split_obj.name)
-    if (!get_obj) {
+    if (!fn_obj) {
       return
     }
     debugLog(`[StringCompression] Find stringCompression Fn: ${fn_obj.name}`)
