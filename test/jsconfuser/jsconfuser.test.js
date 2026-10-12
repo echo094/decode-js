@@ -1,9 +1,29 @@
 import { join } from 'path'
-import { test } from 'vitest'
+import fs from 'node:fs'
+import vm from 'node:vm'
+import { expect, test } from 'vitest'
 import { getPluginResult } from '../helper.js'
 import PluginJsconfuser from '#plugin/jsconfuser.js'
 
 const root = __dirname
+
+test('control-flow flattening preserves lexical bindings when restoring scope members', () => {
+  const input = fs.readFileSync(
+    join(root, 'control-flow-flattening-scope-capture.js'),
+    'utf8',
+  )
+  const output = PluginJsconfuser(input)
+  const run = (code) => {
+    const context = {}
+    context.window = context
+    vm.runInNewContext(code, context, { timeout: 5000 })
+    return context.TEST_OUTPUT
+  }
+
+  expect(run(input)).toBe(7)
+  expect(output).not.toBe(input)
+  expect(run(output)).toBe(7)
+})
 
 test('rgf-flatten', () => {
   const tc = 'rgf-flatten'
