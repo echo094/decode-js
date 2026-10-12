@@ -296,7 +296,7 @@ test('rejects handler operand damage after class/table/alias materialization and
     'class-runtime-opcodes',
     'Opcode 11: complete semantic contract',
   )
-}, 30000)
+})
 
 test('rejects a fake stash with prototype semantics', () => {
   const damaged = fixture.replace(

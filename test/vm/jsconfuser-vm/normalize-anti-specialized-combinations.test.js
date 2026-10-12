@@ -86,7 +86,6 @@ test.each(profiles)(
     for (const option of options)
       expect(record.effectObservation.components[option]).toBe(true)
   },
-  60000,
 )
 
 test('maps old dispatcher PCs after specialized expansion without anti', () => {
@@ -116,7 +115,7 @@ test('maps old dispatcher PCs after specialized expansion without anti', () => {
   expect(sourceValue).toEqual(observe(encoded))
   expect(sourceValue).toEqual(observe(decoded.result.output))
   expect(record.status).toBe('accepted')
-}, 60000)
+})
 
 test('declines a changed specialized handler in the anti stack', () => {
   const encoded = fixture('anti-specialized-exceptions', 'encoded.js')

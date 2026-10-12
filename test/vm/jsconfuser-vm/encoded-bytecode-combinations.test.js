@@ -53,7 +53,7 @@ test('decodes the twelve-effect encoded class stack', () => {
   expect(
     Object.values(record.effectObservation.components).every(Boolean),
   ).toBe(true)
-}, 60000)
+})
 
 test('declines a damaged class-inlined base64 payload', () => {
   const damaged = encoded.replace(/(decodeBytecode\(")[^"]/, '$1*')

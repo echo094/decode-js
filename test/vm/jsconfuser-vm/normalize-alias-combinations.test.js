@@ -95,7 +95,6 @@ test.each(samples)(
     for (const option of options)
       expect(record.effectObservation.components[option]).toBe(true)
   },
-  60000,
 )
 
 test('declines a changed alias body after a proved macro prefix', () => {

@@ -89,7 +89,6 @@ test.each([
     for (const option of options)
       expect(record.effectObservation.components[option]).toBe(true)
   },
-  60000,
 )
 
 test('declines a missing numeric handler in the lifted table', () => {

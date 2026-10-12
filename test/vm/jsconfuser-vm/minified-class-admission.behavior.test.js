@@ -36,4 +36,4 @@ for (const profile of [
       expect(observeException(source)).toEqual(expected)
       expect(observeException(encoded)).toEqual(expected)
       expect(observeException(output)).toEqual(expected)
-    }, 45000)
+    })

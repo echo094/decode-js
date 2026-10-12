@@ -62,7 +62,6 @@ test.each([
       ).toBe(true)
     }
   },
-  60000,
 )
 
 test('declines duplicate randomized opcode values', () => {

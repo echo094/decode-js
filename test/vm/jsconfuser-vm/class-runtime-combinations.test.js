@@ -57,7 +57,7 @@ test('decodes the eleven-effect class and handler-table stack', () => {
   expect(
     Object.values(record.effectObservation.components).every(Boolean),
   ).toBe(true)
-}, 60000)
+})
 
 test('declines a changed inlined numeric handler key', () => {
   const damaged = encoded.replace('VMPrototype[0] =', 'VMPrototype[999] =')

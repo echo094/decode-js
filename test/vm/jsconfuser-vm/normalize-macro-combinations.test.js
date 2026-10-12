@@ -83,7 +83,6 @@ test.each(samples)(
         expect(record.effectObservation.components[option]).toBe(true)
     }
   },
-  60000,
 )
 
 test('declines a changed macro case in the mixed runtime', () => {

@@ -55,7 +55,6 @@ test.each([
     expect(observe(renamed)).toEqual(observe(source))
     expect(observe(diagnosis.result.output)).toEqual(observe(source))
   },
-  45000,
 )
 
 test('fragment alpha equivalence preserves captured reads, writes, and shadows', () => {
@@ -129,5 +128,4 @@ test.each([
       diagnostic: { code },
     })
   },
-  45000,
 )

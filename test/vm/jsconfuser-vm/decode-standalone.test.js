@@ -267,7 +267,6 @@ function replaceBytecodeWords(source, words) {
 
 test(
   'recovers the tracked corpus with complete structure and bounded behavior',
-  { timeout: 120000 },
   () => {
     const entries = corpusCases()
     expect(entries).toHaveLength(38)
