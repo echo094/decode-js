@@ -14,6 +14,7 @@
     "deso": "node src/main.js -t sojson",
     "desov7": "node src/main.js -t sojsonv7",
     "test": "vitest --config vitest.config.js",
+    "test:light": "vitest --config vitest.light.config.js",
     "lint": "eslint --fix src"
   },
   "dependencies": {
