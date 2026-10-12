@@ -1,5 +1,5 @@
 import path from 'path'
-import { defineConfig } from 'vitest/config'
+import { configDefaults, defineConfig } from 'vitest/config'
 
 export default defineConfig({
   test: {
@@ -15,6 +15,9 @@ export default defineConfig({
       "reporter": ['text', 'json', 'json-summary'],
       "reportOnFailure": true,
     },
+    // sandbox-tests/ holds encoder checkouts fetched for qualification
+    // (scripts/qualify-jsconfuser-vm); their own suites are not decoder tests.
+    "exclude": [...configDefaults.exclude, 'sandbox-tests/**'],
     "passWithNoTests": true,
     // The jsconfuser fixtures run the whole decode pipeline over real encoder
     // output, and the largest are >100KB of obfuscated source - one full decode
