@@ -1,4 +1,8 @@
 import { parse } from '@babel/parser'
+import {
+  verifyRuntimeFinalizers,
+  scalarTimingValue,
+} from './runtime-finalizers.js'
 import { diagnoseClassRuntime } from './analyze-class-runtime.js'
 import { classRuntimeContainer } from './class-runtime-container.js'
 import { materializeHandlerTable } from './materialize-handler-table.js'
@@ -251,7 +255,13 @@ function makeResult(roles, scalarRoles, boot) {
           FRAME_START: scalarRoles.frameStart,
         }).map(([role, declaration]) => [
           role,
-          { name: declaration.name, value: scalarValue(declaration.init) },
+          {
+            name: declaration.name,
+            value:
+              role === 'TIMING_CHECKS'
+                ? scalarTimingValue(declaration.init)
+                : scalarValue(declaration.init),
+          },
         ]),
       ),
       constructors: {
@@ -400,6 +410,7 @@ function recognize(ast) {
   )
   assertMapReferences(context, structuralRoles, structuralRoles)
   assertRuntimeGraph(context, structuralRoles, scalarRoles, boot)
+  verifyRuntimeFinalizers(context, structuralRoles, scalarRoles)
   return makeResult(
     {
       ...structuralRoles,
@@ -427,6 +438,7 @@ export function diagnoseContainer(input) {
       result = recognize(ast)
     } catch (error) {
       if (!(error instanceof ContainerDecline)) throw error
+      if (error.code.startsWith('runtime-')) throw error
       let decodedPayload
       try {
         decodedPayload = materializeEncodedBytecode(ast)

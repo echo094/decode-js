@@ -1,0 +1,13 @@
+{
+  "normal": [
+    7,
+    true,
+    7
+  ],
+  "poisonErrorKinds": [
+    "Error",
+    "TypeError"
+  ],
+  "activeThreshold": 100,
+  "realDelayMs": 250
+}

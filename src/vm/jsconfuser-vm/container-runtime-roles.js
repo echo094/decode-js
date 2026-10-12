@@ -387,9 +387,8 @@ export function identifyScalars(context, declarations, roles, boot) {
   )
   const header = uniqueCandidate(headerCandidates, 'HEADER_SIZE scalar')
 
-  const timingCandidates = scalars.filter(
+  const timingCandidates = variables.filter(
     (candidate) =>
-      scalarValue(candidate.init) === false &&
       referenceCount(context, candidate.binding, roles.vmMethods.run[0].fn) ===
         2 &&
       hasNode(
@@ -404,7 +403,6 @@ export function identifyScalars(context, declarations, roles, boot) {
         roles.vmMethods.run[0].fn,
         (node) =>
           node.type === 'BinaryExpression' &&
-          node.operator === '>' &&
           context.sameRef(node.right, candidate.binding),
       ),
   )
@@ -415,8 +413,7 @@ export function identifyScalars(context, declarations, roles, boot) {
     !frameStart ||
     !header ||
     !timing ||
-    scalarValue(encode.init) !== false ||
-    scalarValue(timing.init) !== false
+    scalarValue(encode.init) !== false
   ) {
     decline('malformed-role', 'Pinned scalar roles are inconsistent')
   }

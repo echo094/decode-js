@@ -1,0 +1,124 @@
+{
+  "encoderPin": "20c5b96bf57337c568579352758d7685358650de",
+  "rng": {
+    "algorithm": "mulberry32",
+    "seed": 231
+  },
+  "toolchain": {
+    "node": "v26.10.0",
+    "jdk": "27",
+    "closure": "20260216.0.0"
+  },
+  "generator": "scripts/qualify-jsconfuser-vm/timing.mjs",
+  "cases": {
+    "finalizers": "finalizers.src.js"
+  },
+  "profiles": {
+    "baseline": {},
+    "timing": {
+      "timingChecks": 100
+    },
+    "patch": {
+      "aliasedOpcodes": true,
+      "antiInstrumentation": true,
+      "macroOpcodes": true,
+      "selfModifying": true,
+      "specializedOpcodes": true
+    },
+    "timingPatch": {
+      "aliasedOpcodes": true,
+      "antiInstrumentation": true,
+      "macroOpcodes": true,
+      "selfModifying": true,
+      "specializedOpcodes": true,
+      "timingChecks": 100
+    },
+    "encoded": {
+      "encodeBytecode": true
+    },
+    "timingEncoded": {
+      "encodeBytecode": true,
+      "timingChecks": 100
+    },
+    "table": {
+      "handlerTable": true
+    },
+    "timingTable": {
+      "handlerTable": true,
+      "timingChecks": 100
+    }
+  },
+  "boundary": "Known-source numeric nonminified, base64 payload/table dispatch/full PATCH stack; active timing atomic decline, disabled current recovery; no global JavaScript equivalence",
+  "baselineOptions": {
+    "randomizeOpcodes": false,
+    "shuffleOpcodes": false,
+    "encodeBytecode": false,
+    "concealConstants": false,
+    "controlFlowFlattening": false,
+    "dispatcher": false,
+    "stringConcealing": false,
+    "macroOpcodes": false,
+    "specializedOpcodes": false,
+    "aliasedOpcodes": false,
+    "antiInstrumentation": false,
+    "selfModifying": false,
+    "timingChecks": false,
+    "classObfuscation": false,
+    "handlerTable": false,
+    "minify": false,
+    "target": "browser"
+  },
+  "separateGeneration": {
+    "topLevelFinally": {
+      "worker": "scripts/qualify-jsconfuser-vm/worker.mjs",
+      "driver": "scripts/qualify-jsconfuser-vm/qualify.mjs",
+      "api": "runWorker(request, 65000)",
+      "sourceFile": "top-level-finally.src.js",
+      "outputFile": "top-level-finally.js",
+      "request": {
+        "action": "generate",
+        "seed": 231,
+        "options": {
+          "aliasedOpcodes": false,
+          "antiInstrumentation": false,
+          "classObfuscation": false,
+          "concealConstants": false,
+          "controlFlowFlattening": false,
+          "dispatcher": false,
+          "encodeBytecode": false,
+          "handlerTable": false,
+          "macroOpcodes": false,
+          "minify": false,
+          "randomizeOpcodes": false,
+          "selfModifying": false,
+          "shuffleOpcodes": false,
+          "specializedOpcodes": false,
+          "stringConcealing": false,
+          "target": "browser",
+          "timingChecks": false
+        }
+      },
+      "rng": {
+        "algorithm": "mulberry32",
+        "seed": 231
+      },
+      "toolchain": {
+        "node": "v26.10.0",
+        "jdk": "27",
+        "closure": "20260216.0.0"
+      },
+      "encoderPin": "20c5b96bf57337c568579352758d7685358650de",
+      "protocol": {
+        "journalPath": "Fresh output directory/generation.ndjson, initialized empty before runWorker",
+        "identities": "java and jar from audit.mjs snapshot({ generation: true })",
+        "source": "Read sourceFile as UTF-8; pass its exact string as request.source",
+        "rawNormalization": "Apply timing.mjs leading-line-comment removal to result.raw before writing outputFile",
+        "boundsMs": {
+          "worker": 65000,
+          "closure": 60000
+        },
+        "completion": "Require result.ok, exitCode 0, no signal or timeout, equal starting/final snapshot and exact output readback"
+      }
+    }
+  }
+}
