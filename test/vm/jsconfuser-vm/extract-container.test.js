@@ -8,6 +8,16 @@ import {
   extractContainer,
   extractContainerFromSource,
 } from '../../../src/vm/jsconfuser-vm/extract-container.js'
+import { diagnoseClassRuntime } from '../../../src/vm/jsconfuser-vm/analyze-class-runtime.js'
+import {
+  diagnoseMinifiedHandlerTable,
+  diagnoseMinifiedRuntime,
+} from '../../../src/vm/jsconfuser-vm/observe-minified-runtime.js'
+import { diagnoseMinifiedClassBoot } from '../../../src/vm/jsconfuser-vm/observe-minified-class-boot.js'
+import { materializeEncodedBytecode } from '../../../src/vm/jsconfuser-vm/materialize-encoded-bytecode.js'
+import { materializeMinifiedEncodedBytecode } from '../../../src/vm/jsconfuser-vm/materialize-minified-encoded-bytecode.js'
+import { materializeRandomizedRuntime } from '../../../src/vm/jsconfuser-vm/materialize-randomized-runtime.js'
+import { materializeHandlerTable } from '../../../src/vm/jsconfuser-vm/materialize-handler-table.js'
 
 const repositoryRoot = new URL('../../../', import.meta.url)
 const referencePath = new URL(
@@ -388,4 +398,82 @@ test('returns a stable diagnostic rather than throwing for malformed input', () 
     diagnostic: { code: 'extractor-error' },
   })
   expect(report.diagnostic.message).toContain('Unexpected token')
+})
+
+test('an inserted statement in decodeBytecode disconnects scalar roles', () => {
+  const opening = 'function decodeBytecode(s) {'
+  expect(reference.split(opening)).toHaveLength(2)
+  expect(diagnoseContainer(reference).ok).toBe(true)
+  expect(
+    diagnoseContainer(reference.replace(opening, `${opening}if (false) {}`)),
+  ).toEqual({
+    ok: false,
+    result: null,
+    diagnostic: {
+      code: 'incomplete-role',
+      message: 'Scalar roles are not connected to runtime metadata',
+    },
+  })
+})
+
+// Each entry succeeds on a parsed File and fails on the same parse's bare
+// Program: the observers report a frozen decline or let traversal throw.
+test.each([
+  ['reference/encoded.js', diagnoseContainer, 'extractor-error'],
+  [
+    'class-runtime-boot/encoded.js',
+    diagnoseClassRuntime,
+    'class-runtime-error',
+  ],
+  ['minified-runtime-boot/encoded.js', diagnoseMinifiedRuntime, null],
+  [
+    'minified-handler-table-exceptions/encoded.js',
+    diagnoseMinifiedHandlerTable,
+    null,
+  ],
+  ['minified-class-boot/encoded-169.js', diagnoseMinifiedClassBoot, null],
+  ['encoded-bytecode-arithmetic/encoded.js', materializeEncodedBytecode, null],
+  [
+    'minified-encoded-bytecode-exceptions/encoded.js',
+    materializeMinifiedEncodedBytecode,
+    null,
+  ],
+  [
+    'randomized-runtime-exceptions/encoded.js',
+    materializeRandomizedRuntime,
+    null,
+  ],
+  ['handler-table-boot/encoded.js', materializeHandlerTable, null],
+])('%s accepts File and refuses a raw Program', (name, entry, code) => {
+  const source = fs.readFileSync(
+    new URL(`test/vm/jsconfuser-vm/fixtures/${name}`, repositoryRoot),
+    'utf8',
+  )
+  const fresh = () =>
+    parse(source, { sourceType: 'script', allowReturnOutsideFunction: true })
+  const file = fresh()
+  const fileBefore = JSON.stringify(file)
+  const accepted = entry(file)
+  if (accepted && 'ok' in accepted) expect(accepted.ok).toBe(true)
+  else expect(accepted?.type).toBe('File')
+  expect(JSON.stringify(file)).toBe(fileBefore)
+
+  const program = fresh().program
+  const programBefore = JSON.stringify(program)
+  if (code) {
+    const refused = entry(program)
+    expect(refused).toMatchObject({
+      ok: false,
+      result: null,
+      diagnostic: { code },
+    })
+    expect(deepFrozen(refused)).toBe(true)
+  } else {
+    expect(() => entry(program)).toThrow(
+      new TypeError(
+        "Cannot read properties of undefined (reading 'getBlockParent')",
+      ),
+    )
+  }
+  expect(JSON.stringify(program)).toBe(programBefore)
 })

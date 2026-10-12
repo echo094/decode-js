@@ -1,4 +1,18 @@
 import { parse } from '@babel/parser'
+import { diagnoseClassRuntime } from './analyze-class-runtime.js'
+import { classRuntimeContainer } from './class-runtime-container.js'
+import { materializeHandlerTable } from './materialize-handler-table.js'
+import { materializeEncodedBytecode } from './materialize-encoded-bytecode.js'
+import { materializeMinifiedEncodedBytecode } from './materialize-minified-encoded-bytecode.js'
+import { materializeRandomizedMinifiedClass } from './materialize-randomized-minified-class.js'
+import { materializeRandomizedRuntime } from './materialize-randomized-runtime.js'
+import {
+  diagnoseMinifiedHandlerTable,
+  diagnoseMinifiedRuntime,
+} from './observe-minified-runtime.js'
+import { minifiedRuntimeContainer } from './minified-runtime-container.js'
+import { diagnoseMinifiedClassRuntime } from './observe-minified-class-runtime.js'
+import { minifiedClassRuntimeContainer } from './minified-class-runtime-container.js'
 import {
   ContainerDecline,
   EXPECTED_OPCODES,
@@ -67,12 +81,34 @@ function assertMapReferences(context, runtime, roles) {
   }
 
   const sentinelUses = referencePaths(context, roles.sentinels.binding)
+  const dispatch = context
+    .nodes(runtime.vmMethods.run[0].fn)
+    .find(({ node }) => node.type === 'SwitchStatement')?.node
+  const callCases = ['CALL', 'CALL_METHOD', 'NEW'].map((name) =>
+    dispatch?.cases.find(
+      (entry) =>
+        entry.test?.type === 'MemberExpression' &&
+        !entry.test.computed &&
+        context.sameRef(entry.test.object, roles.op.binding) &&
+        propertyName(entry.test.property) === name,
+    ),
+  )
   if (
-    sentinelUses.length !== 3 ||
+    sentinelUses.length < 3 ||
     sentinelUses.some(
       (path) =>
         path.parentPath?.node?.type !== 'MemberExpression' ||
-        propertyName(path.parentPath.node.property) !== 'CALL_SPREAD',
+        propertyName(path.parentPath.node.property) !== 'CALL_SPREAD' ||
+        !path.findParent(
+          (parent) => parent.node === runtime.vmMethods.run[0].fn,
+        ),
+    ) ||
+    callCases.some(
+      (entry) =>
+        !entry ||
+        sentinelUses.filter((path) =>
+          path.findParent((parent) => parent.node === entry),
+        ).length !== 1,
     )
   ) {
     decline('incomplete-role', 'CALL_SPREAD is not connected to all call paths')
@@ -174,6 +210,9 @@ function assertRuntimeGraph(context, roles, scalarRoles, boot) {
 
 function valuesForPool(node) {
   return node.elements.map((element) => {
+    if (element.type === 'UnaryExpression' && element.operator === '-') {
+      return -element.argument.value
+    }
     if (
       element.type === 'StringLiteral' ||
       element.type === 'NumericLiteral' ||
@@ -382,7 +421,105 @@ function parseInput(input) {
 
 export function diagnoseContainer(input) {
   try {
-    const result = recognize(parseInput(input))
+    const ast = parseInput(input)
+    let result
+    try {
+      result = recognize(ast)
+    } catch (error) {
+      if (!(error instanceof ContainerDecline)) throw error
+      let decodedPayload
+      try {
+        decodedPayload = materializeEncodedBytecode(ast)
+      } catch (encodingError) {
+        if (!(encodingError instanceof ContainerDecline)) throw encodingError
+      }
+      if (decodedPayload) return diagnoseContainer(decodedPayload)
+      let minifiedPayload
+      try {
+        minifiedPayload = materializeMinifiedEncodedBytecode(ast)
+      } catch (encodingError) {
+        if (!(encodingError instanceof ContainerDecline)) throw encodingError
+      }
+      if (minifiedPayload) return diagnoseContainer(minifiedPayload)
+      let canonicalRuntime
+      try {
+        canonicalRuntime = materializeRandomizedRuntime(ast)
+      } catch (randomizationError) {
+        if (!(randomizationError instanceof ContainerDecline))
+          throw randomizationError
+      }
+      if (canonicalRuntime) return diagnoseContainer(canonicalRuntime)
+      let classRuntime = diagnoseClassRuntime(ast)
+      if (!classRuntime.ok) {
+        const randomizedClass = diagnoseClassRuntime(ast, { randomized: true })
+        if (randomizedClass.ok) classRuntime = randomizedClass
+        else if (
+          randomizedClass.diagnostic.code.startsWith('randomized-class-')
+        )
+          decline(
+            randomizedClass.diagnostic.code,
+            randomizedClass.diagnostic.message,
+          )
+      }
+      if (classRuntime.ok) {
+        result = classRuntimeContainer(classRuntime.result)
+      } else {
+        // The complete ordinary minified contract owns explicit-map runtime
+        // spelling. Provisional class layout inference can also find its header
+        // roles, so let this enclosing proof establish the family first.
+        const minifiedRuntime = diagnoseMinifiedRuntime(ast)
+        if (minifiedRuntime.ok)
+          return deepFreeze({
+            ok: true,
+            result: minifiedRuntimeContainer(minifiedRuntime.result),
+            diagnostic: null,
+          })
+        const minifiedClass = diagnoseMinifiedClassRuntime(ast)
+        if (minifiedClass.ok) {
+          return deepFreeze({
+            ok: true,
+            result: minifiedClassRuntimeContainer(minifiedClass.result),
+            diagnostic: null,
+          })
+        }
+        // These complete-phase diagnostics follow a connected boot. Preserve
+        // the recognized source refusal instead of trying a weaker fallback.
+        if (minifiedClass.diagnostic.code.startsWith('minified-class-'))
+          decline(
+            minifiedClass.diagnostic.code,
+            minifiedClass.diagnostic.message,
+          )
+        const randomizedMinifiedClass = materializeRandomizedMinifiedClass(ast)
+        if (randomizedMinifiedClass) {
+          const complete = diagnoseMinifiedClassRuntime(
+            randomizedMinifiedClass.ast,
+          )
+          if (!complete.ok)
+            decline(complete.diagnostic.code, complete.diagnostic.message)
+          return deepFreeze({
+            ok: true,
+            result: minifiedClassRuntimeContainer(complete.result),
+            diagnostic: null,
+          })
+        }
+        const minifiedTable = diagnoseMinifiedHandlerTable(ast)
+        if (minifiedTable.ok) {
+          result = minifiedRuntimeContainer(minifiedTable.result)
+        } else {
+          let normalized
+          try {
+            normalized = materializeHandlerTable(ast)
+          } catch (handlerError) {
+            if (handlerError instanceof ContainerDecline) throw error
+            throw handlerError
+          }
+          const materializedClass = diagnoseClassRuntime(normalized)
+          result = materializedClass.ok
+            ? classRuntimeContainer(materializedClass.result)
+            : recognize(normalized)
+        }
+      }
+    }
     return deepFreeze({ ok: true, result, diagnostic: null })
   } catch (error) {
     if (error instanceof ContainerDecline) {
