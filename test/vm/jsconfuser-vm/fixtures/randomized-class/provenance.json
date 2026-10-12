@@ -1,0 +1,1672 @@
+{
+  "schemaVersion": "randomized-class-fixtures.v1",
+  "encoderCommit": "20c5b96bf57337c568579352758d7685358650de",
+  "fixtureRows": [
+    {
+      "path": "arithmetic-181.js",
+      "bytes": 35220,
+      "producerFile": "encoded.js",
+      "producerPopulationSummarySha256": "5c3c2b9bbfe0fdef0819763a531ab0d832550ef5cea88eb2a472de1aa25c266c",
+      "producer": {
+        "id": "arithmetic--randomizeOpcodesClassObfuscation--181",
+        "source": {
+          "bytes": 38
+        },
+        "emission": {
+          "bytes": 35220
+        },
+        "rawEmission": {
+          "bytes": 36292,
+          "sha256": "0df5daaa36f426eb6e6cb124ad59a8fb496075cfa79b7f9b44a209d24f91a34d"
+        },
+        "options": {
+          "aliasedOpcodes": false,
+          "antiInstrumentation": false,
+          "classObfuscation": true,
+          "concealConstants": false,
+          "controlFlowFlattening": false,
+          "dispatcher": false,
+          "encodeBytecode": false,
+          "handlerTable": false,
+          "macroOpcodes": false,
+          "minify": false,
+          "randomizeOpcodes": true,
+          "selfModifying": false,
+          "shuffleOpcodes": false,
+          "specializedOpcodes": false,
+          "stringConcealing": false,
+          "target": "browser",
+          "timingChecks": false
+        },
+        "rng": {
+          "algorithm": "mulberry32",
+          "draws": 608,
+          "seed": 181,
+          "state": 1195484821
+        },
+        "generationJournal": {
+          "bytes": 277451,
+          "sha256": "d320160b3e367b09212b0c07b4fd28b108bafb00716d944c52b752d721fa0f09"
+        },
+        "generationIdentities": {
+          "jar": {
+            "sha256": "4e187cea76222f444a74b1b336580281034789b2126af3e008c29106837fad6f"
+          },
+          "java": {
+            "executable": "java",
+            "release": "IMPLEMENTOR=\"Homebrew\"\nIMPLEMENTOR_VERSION=\"Homebrew\"\nJAVA_RUNTIME_VERSION=\"27\"\nJAVA_VERSION=\"27\"\nJAVA_VERSION_DATE=\"2026-09-15\"\nLIBC=\"default\"\nMODULES=\"java.base java.compiler java.datatransfer java.xml java.prefs java.desktop java.instrument java.logging java.management java.security.sasl java.naming java.rmi java.management.rmi java.net.http java.scripting java.security.jgss java.transaction.xa java.sql java.sql.rowset java.xml.crypto java.se java.smartcardio jdk.accessibility jdk.internal.jvmstat jdk.attach jdk.charsets jdk.internal.opt jdk.zipfs jdk.compiler jdk.crypto.cryptoki jdk.crypto.ec jdk.dynalink jdk.internal.ed jdk.editpad jdk.hotspot.agent jdk.httpserver jdk.incubator.vector jdk.internal.le jdk.internal.md jdk.jartool jdk.javadoc jdk.jcmd jdk.management jdk.management.agent jdk.jconsole jdk.jdeps jdk.jdwp.agent jdk.jdi jdk.jfr jdk.jlink jdk.jpackage jdk.jshell jdk.jstatd jdk.localedata jdk.management.jfr jdk.naming.dns jdk.naming.rmi jdk.net jdk.nio.mapmode jdk.sctp jdk.security.auth jdk.security.jgss jdk.unsupported jdk.unsupported.desktop jdk.xml.dom\"\nOS_ARCH=\"aarch64\"\nOS_NAME=\"Darwin\"\nSOURCE=\"\"\n",
+            "sha256": "05687a76275264affc701d1cbc005960002295e2da9f2833aa6c0ebfecd77943"
+          }
+        },
+        "processes": [],
+        "result": {
+          "bytes": 582536,
+          "sha256": "814a5b1328bdcb24545d2962ac46a241594da9c06d2e4f237e03641844553e48"
+        }
+      }
+    },
+    {
+      "path": "arithmetic-182.js",
+      "bytes": 36614,
+      "producerFile": "encoded.js",
+      "producerPopulationSummarySha256": "5c3c2b9bbfe0fdef0819763a531ab0d832550ef5cea88eb2a472de1aa25c266c",
+      "producer": {
+        "id": "arithmetic--randomizeOpcodesClassObfuscation--182",
+        "source": {
+          "bytes": 38
+        },
+        "emission": {
+          "bytes": 36614
+        },
+        "rawEmission": {
+          "bytes": 37686,
+          "sha256": "bdfdb1d6003b8335683b3944c9f423f9f68469abec430a3761233656fb2b6c49"
+        },
+        "options": {
+          "aliasedOpcodes": false,
+          "antiInstrumentation": false,
+          "classObfuscation": true,
+          "concealConstants": false,
+          "controlFlowFlattening": false,
+          "dispatcher": false,
+          "encodeBytecode": false,
+          "handlerTable": false,
+          "macroOpcodes": false,
+          "minify": false,
+          "randomizeOpcodes": true,
+          "selfModifying": false,
+          "shuffleOpcodes": false,
+          "specializedOpcodes": false,
+          "stringConcealing": false,
+          "target": "browser",
+          "timingChecks": false
+        },
+        "rng": {
+          "algorithm": "mulberry32",
+          "draws": 943,
+          "seed": 182,
+          "state": 589708849
+        },
+        "generationJournal": {
+          "bytes": 428784,
+          "sha256": "1186ed9c8aa2f02f68946855cef2c39c947d6be4310c8c0ad4990724d34f1234"
+        },
+        "generationIdentities": {
+          "jar": {
+            "sha256": "4e187cea76222f444a74b1b336580281034789b2126af3e008c29106837fad6f"
+          },
+          "java": {
+            "executable": "java",
+            "release": "IMPLEMENTOR=\"Homebrew\"\nIMPLEMENTOR_VERSION=\"Homebrew\"\nJAVA_RUNTIME_VERSION=\"27\"\nJAVA_VERSION=\"27\"\nJAVA_VERSION_DATE=\"2026-09-15\"\nLIBC=\"default\"\nMODULES=\"java.base java.compiler java.datatransfer java.xml java.prefs java.desktop java.instrument java.logging java.management java.security.sasl java.naming java.rmi java.management.rmi java.net.http java.scripting java.security.jgss java.transaction.xa java.sql java.sql.rowset java.xml.crypto java.se java.smartcardio jdk.accessibility jdk.internal.jvmstat jdk.attach jdk.charsets jdk.internal.opt jdk.zipfs jdk.compiler jdk.crypto.cryptoki jdk.crypto.ec jdk.dynalink jdk.internal.ed jdk.editpad jdk.hotspot.agent jdk.httpserver jdk.incubator.vector jdk.internal.le jdk.internal.md jdk.jartool jdk.javadoc jdk.jcmd jdk.management jdk.management.agent jdk.jconsole jdk.jdeps jdk.jdwp.agent jdk.jdi jdk.jfr jdk.jlink jdk.jpackage jdk.jshell jdk.jstatd jdk.localedata jdk.management.jfr jdk.naming.dns jdk.naming.rmi jdk.net jdk.nio.mapmode jdk.sctp jdk.security.auth jdk.security.jgss jdk.unsupported jdk.unsupported.desktop jdk.xml.dom\"\nOS_ARCH=\"aarch64\"\nOS_NAME=\"Darwin\"\nSOURCE=\"\"\n",
+            "sha256": "05687a76275264affc701d1cbc005960002295e2da9f2833aa6c0ebfecd77943"
+          }
+        },
+        "processes": [],
+        "result": {
+          "bytes": 757860,
+          "sha256": "d246c0b5d824c5efcf47361143694dfd2e32e2bcf7165b9f4ffda43b5fbdd8f8"
+        }
+      }
+    },
+    {
+      "path": "arithmetic-183.js",
+      "bytes": 37815,
+      "producerFile": "encoded.js",
+      "producerPopulationSummarySha256": "5c3c2b9bbfe0fdef0819763a531ab0d832550ef5cea88eb2a472de1aa25c266c",
+      "producer": {
+        "id": "arithmetic--randomizeOpcodesClassObfuscation--183",
+        "source": {
+          "bytes": 38
+        },
+        "emission": {
+          "bytes": 37815
+        },
+        "rawEmission": {
+          "bytes": 38887,
+          "sha256": "89cac0d0c8a0e8a3a69968a8399486460d6ae68059e3c15c5563033f6c6c98c7"
+        },
+        "options": {
+          "aliasedOpcodes": false,
+          "antiInstrumentation": false,
+          "classObfuscation": true,
+          "concealConstants": false,
+          "controlFlowFlattening": false,
+          "dispatcher": false,
+          "encodeBytecode": false,
+          "handlerTable": false,
+          "macroOpcodes": false,
+          "minify": false,
+          "randomizeOpcodes": true,
+          "selfModifying": false,
+          "shuffleOpcodes": false,
+          "specializedOpcodes": false,
+          "stringConcealing": false,
+          "target": "browser",
+          "timingChecks": false
+        },
+        "rng": {
+          "algorithm": "mulberry32",
+          "draws": 1228,
+          "seed": 183,
+          "state": 2894922739
+        },
+        "generationJournal": {
+          "bytes": 557765,
+          "sha256": "d5bf96e839d0c6edbb08c5e13c6e36c3dc9dee914e177fd386adc3b1bb6bfccc"
+        },
+        "generationIdentities": {
+          "jar": {
+            "sha256": "4e187cea76222f444a74b1b336580281034789b2126af3e008c29106837fad6f"
+          },
+          "java": {
+            "executable": "java",
+            "release": "IMPLEMENTOR=\"Homebrew\"\nIMPLEMENTOR_VERSION=\"Homebrew\"\nJAVA_RUNTIME_VERSION=\"27\"\nJAVA_VERSION=\"27\"\nJAVA_VERSION_DATE=\"2026-09-15\"\nLIBC=\"default\"\nMODULES=\"java.base java.compiler java.datatransfer java.xml java.prefs java.desktop java.instrument java.logging java.management java.security.sasl java.naming java.rmi java.management.rmi java.net.http java.scripting java.security.jgss java.transaction.xa java.sql java.sql.rowset java.xml.crypto java.se java.smartcardio jdk.accessibility jdk.internal.jvmstat jdk.attach jdk.charsets jdk.internal.opt jdk.zipfs jdk.compiler jdk.crypto.cryptoki jdk.crypto.ec jdk.dynalink jdk.internal.ed jdk.editpad jdk.hotspot.agent jdk.httpserver jdk.incubator.vector jdk.internal.le jdk.internal.md jdk.jartool jdk.javadoc jdk.jcmd jdk.management jdk.management.agent jdk.jconsole jdk.jdeps jdk.jdwp.agent jdk.jdi jdk.jfr jdk.jlink jdk.jpackage jdk.jshell jdk.jstatd jdk.localedata jdk.management.jfr jdk.naming.dns jdk.naming.rmi jdk.net jdk.nio.mapmode jdk.sctp jdk.security.auth jdk.security.jgss jdk.unsupported jdk.unsupported.desktop jdk.xml.dom\"\nOS_ARCH=\"aarch64\"\nOS_NAME=\"Darwin\"\nSOURCE=\"\"\n",
+            "sha256": "05687a76275264affc701d1cbc005960002295e2da9f2833aa6c0ebfecd77943"
+          }
+        },
+        "processes": [],
+        "result": {
+          "bytes": 906864,
+          "sha256": "b72689454d062e789d3823f82e7170c73c2757e3ad047cfe9b4b31a3d0392e59"
+        }
+      }
+    },
+    {
+      "path": "arithmetic-minified-191.js",
+      "bytes": 7980,
+      "producerFile": "encoded.js",
+      "producerPopulationSummarySha256": "de9ed90b93099dae69c38451c2d1e912bb3b98538a551fa37ff3cffa268db572",
+      "producer": {
+        "id": "arithmetic--randomizeOpcodesClassObfuscationMinify--191",
+        "source": {
+          "bytes": 38
+        },
+        "emission": {
+          "bytes": 7980
+        },
+        "rawEmission": {
+          "bytes": 7980
+        },
+        "options": {
+          "aliasedOpcodes": false,
+          "antiInstrumentation": false,
+          "classObfuscation": true,
+          "concealConstants": false,
+          "controlFlowFlattening": false,
+          "dispatcher": false,
+          "encodeBytecode": false,
+          "handlerTable": false,
+          "macroOpcodes": false,
+          "minify": true,
+          "randomizeOpcodes": true,
+          "selfModifying": false,
+          "shuffleOpcodes": false,
+          "specializedOpcodes": false,
+          "stringConcealing": false,
+          "target": "browser",
+          "timingChecks": false
+        },
+        "rng": {
+          "algorithm": "mulberry32",
+          "draws": 575,
+          "seed": 191,
+          "state": 883355146
+        },
+        "generationJournal": {
+          "bytes": 292712,
+          "sha256": "301a897f400358a4339647757155915c1521d2f708db70204023620965967d76"
+        },
+        "generationIdentities": {
+          "jar": {
+            "sha256": "4e187cea76222f444a74b1b336580281034789b2126af3e008c29106837fad6f"
+          },
+          "java": {
+            "executable": "java",
+            "release": "IMPLEMENTOR=\"Homebrew\"\nIMPLEMENTOR_VERSION=\"Homebrew\"\nJAVA_RUNTIME_VERSION=\"27\"\nJAVA_VERSION=\"27\"\nJAVA_VERSION_DATE=\"2026-09-15\"\nLIBC=\"default\"\nMODULES=\"java.base java.compiler java.datatransfer java.xml java.prefs java.desktop java.instrument java.logging java.management java.security.sasl java.naming java.rmi java.management.rmi java.net.http java.scripting java.security.jgss java.transaction.xa java.sql java.sql.rowset java.xml.crypto java.se java.smartcardio jdk.accessibility jdk.internal.jvmstat jdk.attach jdk.charsets jdk.internal.opt jdk.zipfs jdk.compiler jdk.crypto.cryptoki jdk.crypto.ec jdk.dynalink jdk.internal.ed jdk.editpad jdk.hotspot.agent jdk.httpserver jdk.incubator.vector jdk.internal.le jdk.internal.md jdk.jartool jdk.javadoc jdk.jcmd jdk.management jdk.management.agent jdk.jconsole jdk.jdeps jdk.jdwp.agent jdk.jdi jdk.jfr jdk.jlink jdk.jpackage jdk.jshell jdk.jstatd jdk.localedata jdk.management.jfr jdk.naming.dns jdk.naming.rmi jdk.net jdk.nio.mapmode jdk.sctp jdk.security.auth jdk.security.jgss jdk.unsupported jdk.unsupported.desktop jdk.xml.dom\"\nOS_ARCH=\"aarch64\"\nOS_NAME=\"Darwin\"\nSOURCE=\"\"\n",
+            "sha256": "05687a76275264affc701d1cbc005960002295e2da9f2833aa6c0ebfecd77943"
+          }
+        },
+        "processes": [
+          {
+            "executable": "java",
+            "argv": [
+              "-XX:+IgnoreUnrecognizedVMOptions",
+              "--sun-misc-unsafe-memory-access=allow",
+              "-jar",
+              "node_modules/google-closure-compiler-java/compiler.jar",
+              "--compilation_level=ADVANCED",
+              "--warning_level=QUIET"
+            ],
+            "startedAt": "2026-10-06T08:11:25.332Z",
+            "completedAt": "2026-10-06T08:11:26.382Z",
+            "exitCode": 0,
+            "signal": null,
+            "timedOut": false,
+            "stderrSha256": "9717649348925c2b6905ad51a04ee2aab3d9a10eee90372c56f53b0425423c5b"
+          }
+        ],
+        "result": {
+          "bytes": 13917558,
+          "sha256": "63f8bb3f6fbbb1b5e1ed9f580ef12fd588287c7d7daf10d7e1d80c13fba83cbe"
+        }
+      }
+    },
+    {
+      "path": "arithmetic-minified-192.js",
+      "bytes": 8758,
+      "producerFile": "encoded.js",
+      "producerPopulationSummarySha256": "de9ed90b93099dae69c38451c2d1e912bb3b98538a551fa37ff3cffa268db572",
+      "producer": {
+        "id": "arithmetic--randomizeOpcodesClassObfuscationMinify--192",
+        "source": {
+          "bytes": 38
+        },
+        "emission": {
+          "bytes": 8758
+        },
+        "rawEmission": {
+          "bytes": 8758
+        },
+        "options": {
+          "aliasedOpcodes": false,
+          "antiInstrumentation": false,
+          "classObfuscation": true,
+          "concealConstants": false,
+          "controlFlowFlattening": false,
+          "dispatcher": false,
+          "encodeBytecode": false,
+          "handlerTable": false,
+          "macroOpcodes": false,
+          "minify": true,
+          "randomizeOpcodes": true,
+          "selfModifying": false,
+          "shuffleOpcodes": false,
+          "specializedOpcodes": false,
+          "stringConcealing": false,
+          "target": "browser",
+          "timingChecks": false
+        },
+        "rng": {
+          "algorithm": "mulberry32",
+          "draws": 800,
+          "seed": 192,
+          "state": 668802656
+        },
+        "generationJournal": {
+          "bytes": 397090,
+          "sha256": "f7c3aee7319282f1b514b90d5a82c2a07536cfd09e9dd5a1478837b9a80b6c22"
+        },
+        "generationIdentities": {
+          "jar": {
+            "sha256": "4e187cea76222f444a74b1b336580281034789b2126af3e008c29106837fad6f"
+          },
+          "java": {
+            "executable": "java",
+            "release": "IMPLEMENTOR=\"Homebrew\"\nIMPLEMENTOR_VERSION=\"Homebrew\"\nJAVA_RUNTIME_VERSION=\"27\"\nJAVA_VERSION=\"27\"\nJAVA_VERSION_DATE=\"2026-09-15\"\nLIBC=\"default\"\nMODULES=\"java.base java.compiler java.datatransfer java.xml java.prefs java.desktop java.instrument java.logging java.management java.security.sasl java.naming java.rmi java.management.rmi java.net.http java.scripting java.security.jgss java.transaction.xa java.sql java.sql.rowset java.xml.crypto java.se java.smartcardio jdk.accessibility jdk.internal.jvmstat jdk.attach jdk.charsets jdk.internal.opt jdk.zipfs jdk.compiler jdk.crypto.cryptoki jdk.crypto.ec jdk.dynalink jdk.internal.ed jdk.editpad jdk.hotspot.agent jdk.httpserver jdk.incubator.vector jdk.internal.le jdk.internal.md jdk.jartool jdk.javadoc jdk.jcmd jdk.management jdk.management.agent jdk.jconsole jdk.jdeps jdk.jdwp.agent jdk.jdi jdk.jfr jdk.jlink jdk.jpackage jdk.jshell jdk.jstatd jdk.localedata jdk.management.jfr jdk.naming.dns jdk.naming.rmi jdk.net jdk.nio.mapmode jdk.sctp jdk.security.auth jdk.security.jgss jdk.unsupported jdk.unsupported.desktop jdk.xml.dom\"\nOS_ARCH=\"aarch64\"\nOS_NAME=\"Darwin\"\nSOURCE=\"\"\n",
+            "sha256": "05687a76275264affc701d1cbc005960002295e2da9f2833aa6c0ebfecd77943"
+          }
+        },
+        "processes": [
+          {
+            "executable": "java",
+            "argv": [
+              "-XX:+IgnoreUnrecognizedVMOptions",
+              "--sun-misc-unsafe-memory-access=allow",
+              "-jar",
+              "node_modules/google-closure-compiler-java/compiler.jar",
+              "--compilation_level=ADVANCED",
+              "--warning_level=QUIET"
+            ],
+            "startedAt": "2026-10-06T08:11:27.979Z",
+            "completedAt": "2026-10-06T08:11:29.054Z",
+            "exitCode": 0,
+            "signal": null,
+            "timedOut": false,
+            "stderrSha256": "9717649348925c2b6905ad51a04ee2aab3d9a10eee90372c56f53b0425423c5b"
+          }
+        ],
+        "result": {
+          "bytes": 14037540,
+          "sha256": "457edadc600deb87eeb09308515069949b0f26b0bf9b56848e639b3428a65014"
+        }
+      }
+    },
+    {
+      "path": "arithmetic-minified-193.js",
+      "bytes": 8678,
+      "producerFile": "encoded.js",
+      "producerPopulationSummarySha256": "de9ed90b93099dae69c38451c2d1e912bb3b98538a551fa37ff3cffa268db572",
+      "producer": {
+        "id": "arithmetic--randomizeOpcodesClassObfuscationMinify--193",
+        "source": {
+          "bytes": 38
+        },
+        "emission": {
+          "bytes": 8678
+        },
+        "rawEmission": {
+          "bytes": 8678
+        },
+        "options": {
+          "aliasedOpcodes": false,
+          "antiInstrumentation": false,
+          "classObfuscation": true,
+          "concealConstants": false,
+          "controlFlowFlattening": false,
+          "dispatcher": false,
+          "encodeBytecode": false,
+          "handlerTable": false,
+          "macroOpcodes": false,
+          "minify": true,
+          "randomizeOpcodes": true,
+          "selfModifying": false,
+          "shuffleOpcodes": false,
+          "specializedOpcodes": false,
+          "stringConcealing": false,
+          "target": "browser",
+          "timingChecks": false
+        },
+        "rng": {
+          "algorithm": "mulberry32",
+          "draws": 579,
+          "seed": 193,
+          "state": 3914651104
+        },
+        "generationJournal": {
+          "bytes": 296596,
+          "sha256": "7738052f6a049c61ffa25d600e3de2faa59218d1d1d46057f46141fca6fa471c"
+        },
+        "generationIdentities": {
+          "jar": {
+            "sha256": "4e187cea76222f444a74b1b336580281034789b2126af3e008c29106837fad6f"
+          },
+          "java": {
+            "executable": "java",
+            "release": "IMPLEMENTOR=\"Homebrew\"\nIMPLEMENTOR_VERSION=\"Homebrew\"\nJAVA_RUNTIME_VERSION=\"27\"\nJAVA_VERSION=\"27\"\nJAVA_VERSION_DATE=\"2026-09-15\"\nLIBC=\"default\"\nMODULES=\"java.base java.compiler java.datatransfer java.xml java.prefs java.desktop java.instrument java.logging java.management java.security.sasl java.naming java.rmi java.management.rmi java.net.http java.scripting java.security.jgss java.transaction.xa java.sql java.sql.rowset java.xml.crypto java.se java.smartcardio jdk.accessibility jdk.internal.jvmstat jdk.attach jdk.charsets jdk.internal.opt jdk.zipfs jdk.compiler jdk.crypto.cryptoki jdk.crypto.ec jdk.dynalink jdk.internal.ed jdk.editpad jdk.hotspot.agent jdk.httpserver jdk.incubator.vector jdk.internal.le jdk.internal.md jdk.jartool jdk.javadoc jdk.jcmd jdk.management jdk.management.agent jdk.jconsole jdk.jdeps jdk.jdwp.agent jdk.jdi jdk.jfr jdk.jlink jdk.jpackage jdk.jshell jdk.jstatd jdk.localedata jdk.management.jfr jdk.naming.dns jdk.naming.rmi jdk.net jdk.nio.mapmode jdk.sctp jdk.security.auth jdk.security.jgss jdk.unsupported jdk.unsupported.desktop jdk.xml.dom\"\nOS_ARCH=\"aarch64\"\nOS_NAME=\"Darwin\"\nSOURCE=\"\"\n",
+            "sha256": "05687a76275264affc701d1cbc005960002295e2da9f2833aa6c0ebfecd77943"
+          }
+        },
+        "processes": [
+          {
+            "executable": "java",
+            "argv": [
+              "-XX:+IgnoreUnrecognizedVMOptions",
+              "--sun-misc-unsafe-memory-access=allow",
+              "-jar",
+              "node_modules/google-closure-compiler-java/compiler.jar",
+              "--compilation_level=ADVANCED",
+              "--warning_level=QUIET"
+            ],
+            "startedAt": "2026-10-06T08:11:30.694Z",
+            "completedAt": "2026-10-06T08:11:31.754Z",
+            "exitCode": 0,
+            "signal": null,
+            "timedOut": false,
+            "stderrSha256": "9717649348925c2b6905ad51a04ee2aab3d9a10eee90372c56f53b0425423c5b"
+          }
+        ],
+        "result": {
+          "bytes": 13925672,
+          "sha256": "3681ad395a47c9f4121839b369f4fd25664bbb232cb52207f36f1d0793b902cf"
+        }
+      }
+    },
+    {
+      "path": "arithmetic.baseline.js",
+      "bytes": 37814,
+      "producerFile": "encoded.js",
+      "producerPopulationSummarySha256": "5c3c2b9bbfe0fdef0819763a531ab0d832550ef5cea88eb2a472de1aa25c266c",
+      "producer": {
+        "id": "arithmetic--baseline--181",
+        "source": {
+          "bytes": 38
+        },
+        "emission": {
+          "bytes": 37814
+        },
+        "rawEmission": {
+          "bytes": 38886,
+          "sha256": "459a9c4df35479fbeb480f1ef4ef9d21c68c488182a67c2ccc366a32c4405324"
+        },
+        "options": {
+          "aliasedOpcodes": false,
+          "antiInstrumentation": false,
+          "classObfuscation": false,
+          "concealConstants": false,
+          "controlFlowFlattening": false,
+          "dispatcher": false,
+          "encodeBytecode": false,
+          "handlerTable": false,
+          "macroOpcodes": false,
+          "minify": false,
+          "randomizeOpcodes": false,
+          "selfModifying": false,
+          "shuffleOpcodes": false,
+          "specializedOpcodes": false,
+          "stringConcealing": false,
+          "target": "browser",
+          "timingChecks": false
+        },
+        "rng": {
+          "algorithm": "mulberry32",
+          "draws": 0,
+          "seed": 181,
+          "state": 181
+        },
+        "generationJournal": {
+          "bytes": 2889,
+          "sha256": "c9312e34f9abed2b152e645a330d2a55978ce08e6dafee6029718c13c80e374e"
+        },
+        "generationIdentities": {
+          "jar": {
+            "sha256": "4e187cea76222f444a74b1b336580281034789b2126af3e008c29106837fad6f"
+          },
+          "java": {
+            "executable": "java",
+            "release": "IMPLEMENTOR=\"Homebrew\"\nIMPLEMENTOR_VERSION=\"Homebrew\"\nJAVA_RUNTIME_VERSION=\"27\"\nJAVA_VERSION=\"27\"\nJAVA_VERSION_DATE=\"2026-09-15\"\nLIBC=\"default\"\nMODULES=\"java.base java.compiler java.datatransfer java.xml java.prefs java.desktop java.instrument java.logging java.management java.security.sasl java.naming java.rmi java.management.rmi java.net.http java.scripting java.security.jgss java.transaction.xa java.sql java.sql.rowset java.xml.crypto java.se java.smartcardio jdk.accessibility jdk.internal.jvmstat jdk.attach jdk.charsets jdk.internal.opt jdk.zipfs jdk.compiler jdk.crypto.cryptoki jdk.crypto.ec jdk.dynalink jdk.internal.ed jdk.editpad jdk.hotspot.agent jdk.httpserver jdk.incubator.vector jdk.internal.le jdk.internal.md jdk.jartool jdk.javadoc jdk.jcmd jdk.management jdk.management.agent jdk.jconsole jdk.jdeps jdk.jdwp.agent jdk.jdi jdk.jfr jdk.jlink jdk.jpackage jdk.jshell jdk.jstatd jdk.localedata jdk.management.jfr jdk.naming.dns jdk.naming.rmi jdk.net jdk.nio.mapmode jdk.sctp jdk.security.auth jdk.security.jgss jdk.unsupported jdk.unsupported.desktop jdk.xml.dom\"\nOS_ARCH=\"aarch64\"\nOS_NAME=\"Darwin\"\nSOURCE=\"\"\n",
+            "sha256": "05687a76275264affc701d1cbc005960002295e2da9f2833aa6c0ebfecd77943"
+          }
+        },
+        "processes": [],
+        "result": {
+          "bytes": 13700964,
+          "sha256": "c648dc861161565da91a4b219f1793b0e8b9683b3c4f6ce55a20d5f58b18dc64"
+        }
+      }
+    },
+    {
+      "path": "arithmetic.source.js",
+      "bytes": 38,
+      "producerFile": "source.js",
+      "producerPopulationSummarySha256": "5c3c2b9bbfe0fdef0819763a531ab0d832550ef5cea88eb2a472de1aa25c266c",
+      "producer": {
+        "id": "arithmetic--baseline--181",
+        "source": {
+          "bytes": 38
+        },
+        "emission": {
+          "bytes": 37814
+        },
+        "rawEmission": {
+          "bytes": 38886,
+          "sha256": "459a9c4df35479fbeb480f1ef4ef9d21c68c488182a67c2ccc366a32c4405324"
+        },
+        "options": {
+          "aliasedOpcodes": false,
+          "antiInstrumentation": false,
+          "classObfuscation": false,
+          "concealConstants": false,
+          "controlFlowFlattening": false,
+          "dispatcher": false,
+          "encodeBytecode": false,
+          "handlerTable": false,
+          "macroOpcodes": false,
+          "minify": false,
+          "randomizeOpcodes": false,
+          "selfModifying": false,
+          "shuffleOpcodes": false,
+          "specializedOpcodes": false,
+          "stringConcealing": false,
+          "target": "browser",
+          "timingChecks": false
+        },
+        "rng": {
+          "algorithm": "mulberry32",
+          "draws": 0,
+          "seed": 181,
+          "state": 181
+        },
+        "generationJournal": {
+          "bytes": 2889,
+          "sha256": "c9312e34f9abed2b152e645a330d2a55978ce08e6dafee6029718c13c80e374e"
+        },
+        "generationIdentities": {
+          "jar": {
+            "sha256": "4e187cea76222f444a74b1b336580281034789b2126af3e008c29106837fad6f"
+          },
+          "java": {
+            "executable": "java",
+            "release": "IMPLEMENTOR=\"Homebrew\"\nIMPLEMENTOR_VERSION=\"Homebrew\"\nJAVA_RUNTIME_VERSION=\"27\"\nJAVA_VERSION=\"27\"\nJAVA_VERSION_DATE=\"2026-09-15\"\nLIBC=\"default\"\nMODULES=\"java.base java.compiler java.datatransfer java.xml java.prefs java.desktop java.instrument java.logging java.management java.security.sasl java.naming java.rmi java.management.rmi java.net.http java.scripting java.security.jgss java.transaction.xa java.sql java.sql.rowset java.xml.crypto java.se java.smartcardio jdk.accessibility jdk.internal.jvmstat jdk.attach jdk.charsets jdk.internal.opt jdk.zipfs jdk.compiler jdk.crypto.cryptoki jdk.crypto.ec jdk.dynalink jdk.internal.ed jdk.editpad jdk.hotspot.agent jdk.httpserver jdk.incubator.vector jdk.internal.le jdk.internal.md jdk.jartool jdk.javadoc jdk.jcmd jdk.management jdk.management.agent jdk.jconsole jdk.jdeps jdk.jdwp.agent jdk.jdi jdk.jfr jdk.jlink jdk.jpackage jdk.jshell jdk.jstatd jdk.localedata jdk.management.jfr jdk.naming.dns jdk.naming.rmi jdk.net jdk.nio.mapmode jdk.sctp jdk.security.auth jdk.security.jgss jdk.unsupported jdk.unsupported.desktop jdk.xml.dom\"\nOS_ARCH=\"aarch64\"\nOS_NAME=\"Darwin\"\nSOURCE=\"\"\n",
+            "sha256": "05687a76275264affc701d1cbc005960002295e2da9f2833aa6c0ebfecd77943"
+          }
+        },
+        "processes": [],
+        "result": {
+          "bytes": 13700964,
+          "sha256": "c648dc861161565da91a4b219f1793b0e8b9683b3c4f6ce55a20d5f58b18dc64"
+        }
+      }
+    },
+    {
+      "path": "exceptionRoutes-181.js",
+      "bytes": 36770,
+      "producerFile": "encoded.js",
+      "producerPopulationSummarySha256": "5c3c2b9bbfe0fdef0819763a531ab0d832550ef5cea88eb2a472de1aa25c266c",
+      "producer": {
+        "id": "exceptionRoutes--randomizeOpcodesClassObfuscation--181",
+        "source": {
+          "bytes": 462
+        },
+        "emission": {
+          "bytes": 36770
+        },
+        "rawEmission": {
+          "bytes": 45675,
+          "sha256": "e6cc570349ffa27e62e3d61b0e6d71b73ccbab89f30986fc623fb23d2143a19c"
+        },
+        "options": {
+          "aliasedOpcodes": false,
+          "antiInstrumentation": false,
+          "classObfuscation": true,
+          "concealConstants": false,
+          "controlFlowFlattening": false,
+          "dispatcher": false,
+          "encodeBytecode": false,
+          "handlerTable": false,
+          "macroOpcodes": false,
+          "minify": false,
+          "randomizeOpcodes": true,
+          "selfModifying": false,
+          "shuffleOpcodes": false,
+          "specializedOpcodes": false,
+          "stringConcealing": false,
+          "target": "browser",
+          "timingChecks": false
+        },
+        "rng": {
+          "algorithm": "mulberry32",
+          "draws": 608,
+          "seed": 181,
+          "state": 1195484821
+        },
+        "generationJournal": {
+          "bytes": 277451,
+          "sha256": "241c55d11c6999f9be8be009d4848ae74587eb2fbece4a9a0db858b994634dd7"
+        },
+        "generationIdentities": {
+          "jar": {
+            "sha256": "4e187cea76222f444a74b1b336580281034789b2126af3e008c29106837fad6f"
+          },
+          "java": {
+            "executable": "java",
+            "release": "IMPLEMENTOR=\"Homebrew\"\nIMPLEMENTOR_VERSION=\"Homebrew\"\nJAVA_RUNTIME_VERSION=\"27\"\nJAVA_VERSION=\"27\"\nJAVA_VERSION_DATE=\"2026-09-15\"\nLIBC=\"default\"\nMODULES=\"java.base java.compiler java.datatransfer java.xml java.prefs java.desktop java.instrument java.logging java.management java.security.sasl java.naming java.rmi java.management.rmi java.net.http java.scripting java.security.jgss java.transaction.xa java.sql java.sql.rowset java.xml.crypto java.se java.smartcardio jdk.accessibility jdk.internal.jvmstat jdk.attach jdk.charsets jdk.internal.opt jdk.zipfs jdk.compiler jdk.crypto.cryptoki jdk.crypto.ec jdk.dynalink jdk.internal.ed jdk.editpad jdk.hotspot.agent jdk.httpserver jdk.incubator.vector jdk.internal.le jdk.internal.md jdk.jartool jdk.javadoc jdk.jcmd jdk.management jdk.management.agent jdk.jconsole jdk.jdeps jdk.jdwp.agent jdk.jdi jdk.jfr jdk.jlink jdk.jpackage jdk.jshell jdk.jstatd jdk.localedata jdk.management.jfr jdk.naming.dns jdk.naming.rmi jdk.net jdk.nio.mapmode jdk.sctp jdk.security.auth jdk.security.jgss jdk.unsupported jdk.unsupported.desktop jdk.xml.dom\"\nOS_ARCH=\"aarch64\"\nOS_NAME=\"Darwin\"\nSOURCE=\"\"\n",
+            "sha256": "05687a76275264affc701d1cbc005960002295e2da9f2833aa6c0ebfecd77943"
+          }
+        },
+        "processes": [],
+        "result": {
+          "bytes": 630004,
+          "sha256": "0bd28b04c61795b0e2ca5163936a2fd95082374b016b3413ddad13e3fef31c8b"
+        }
+      }
+    },
+    {
+      "path": "exceptionRoutes-182.js",
+      "bytes": 38164,
+      "producerFile": "encoded.js",
+      "producerPopulationSummarySha256": "5c3c2b9bbfe0fdef0819763a531ab0d832550ef5cea88eb2a472de1aa25c266c",
+      "producer": {
+        "id": "exceptionRoutes--randomizeOpcodesClassObfuscation--182",
+        "source": {
+          "bytes": 462
+        },
+        "emission": {
+          "bytes": 38164
+        },
+        "rawEmission": {
+          "bytes": 47071,
+          "sha256": "224d09da00b901d6704c64fae365f0fc34df38066a7d91868f65ba3c180e107c"
+        },
+        "options": {
+          "aliasedOpcodes": false,
+          "antiInstrumentation": false,
+          "classObfuscation": true,
+          "concealConstants": false,
+          "controlFlowFlattening": false,
+          "dispatcher": false,
+          "encodeBytecode": false,
+          "handlerTable": false,
+          "macroOpcodes": false,
+          "minify": false,
+          "randomizeOpcodes": true,
+          "selfModifying": false,
+          "shuffleOpcodes": false,
+          "specializedOpcodes": false,
+          "stringConcealing": false,
+          "target": "browser",
+          "timingChecks": false
+        },
+        "rng": {
+          "algorithm": "mulberry32",
+          "draws": 943,
+          "seed": 182,
+          "state": 589708849
+        },
+        "generationJournal": {
+          "bytes": 428784,
+          "sha256": "b6cd592bdf44393759cf39d718a2ca3dc3c025b30a119317f2121ac27d37966f"
+        },
+        "generationIdentities": {
+          "jar": {
+            "sha256": "4e187cea76222f444a74b1b336580281034789b2126af3e008c29106837fad6f"
+          },
+          "java": {
+            "executable": "java",
+            "release": "IMPLEMENTOR=\"Homebrew\"\nIMPLEMENTOR_VERSION=\"Homebrew\"\nJAVA_RUNTIME_VERSION=\"27\"\nJAVA_VERSION=\"27\"\nJAVA_VERSION_DATE=\"2026-09-15\"\nLIBC=\"default\"\nMODULES=\"java.base java.compiler java.datatransfer java.xml java.prefs java.desktop java.instrument java.logging java.management java.security.sasl java.naming java.rmi java.management.rmi java.net.http java.scripting java.security.jgss java.transaction.xa java.sql java.sql.rowset java.xml.crypto java.se java.smartcardio jdk.accessibility jdk.internal.jvmstat jdk.attach jdk.charsets jdk.internal.opt jdk.zipfs jdk.compiler jdk.crypto.cryptoki jdk.crypto.ec jdk.dynalink jdk.internal.ed jdk.editpad jdk.hotspot.agent jdk.httpserver jdk.incubator.vector jdk.internal.le jdk.internal.md jdk.jartool jdk.javadoc jdk.jcmd jdk.management jdk.management.agent jdk.jconsole jdk.jdeps jdk.jdwp.agent jdk.jdi jdk.jfr jdk.jlink jdk.jpackage jdk.jshell jdk.jstatd jdk.localedata jdk.management.jfr jdk.naming.dns jdk.naming.rmi jdk.net jdk.nio.mapmode jdk.sctp jdk.security.auth jdk.security.jgss jdk.unsupported jdk.unsupported.desktop jdk.xml.dom\"\nOS_ARCH=\"aarch64\"\nOS_NAME=\"Darwin\"\nSOURCE=\"\"\n",
+            "sha256": "05687a76275264affc701d1cbc005960002295e2da9f2833aa6c0ebfecd77943"
+          }
+        },
+        "processes": [],
+        "result": {
+          "bytes": 805332,
+          "sha256": "d144af84bcc9d4a7ac40c2fd58921a93b53446cc006aeecb0a11cb8407f879cb"
+        }
+      }
+    },
+    {
+      "path": "exceptionRoutes-183.js",
+      "bytes": 39335,
+      "producerFile": "encoded.js",
+      "producerPopulationSummarySha256": "5c3c2b9bbfe0fdef0819763a531ab0d832550ef5cea88eb2a472de1aa25c266c",
+      "producer": {
+        "id": "exceptionRoutes--randomizeOpcodesClassObfuscation--183",
+        "source": {
+          "bytes": 462
+        },
+        "emission": {
+          "bytes": 39335
+        },
+        "rawEmission": {
+          "bytes": 48238,
+          "sha256": "df5827c2b00b37a1ab1916b3bc3a26d65ba2636a9e7162a498db54899b3c8532"
+        },
+        "options": {
+          "aliasedOpcodes": false,
+          "antiInstrumentation": false,
+          "classObfuscation": true,
+          "concealConstants": false,
+          "controlFlowFlattening": false,
+          "dispatcher": false,
+          "encodeBytecode": false,
+          "handlerTable": false,
+          "macroOpcodes": false,
+          "minify": false,
+          "randomizeOpcodes": true,
+          "selfModifying": false,
+          "shuffleOpcodes": false,
+          "specializedOpcodes": false,
+          "stringConcealing": false,
+          "target": "browser",
+          "timingChecks": false
+        },
+        "rng": {
+          "algorithm": "mulberry32",
+          "draws": 1228,
+          "seed": 183,
+          "state": 2894922739
+        },
+        "generationJournal": {
+          "bytes": 557765,
+          "sha256": "3fc6c8fc511b5e968639d7be99c9c96b85f189fd35456880a766f341af51468d"
+        },
+        "generationIdentities": {
+          "jar": {
+            "sha256": "4e187cea76222f444a74b1b336580281034789b2126af3e008c29106837fad6f"
+          },
+          "java": {
+            "executable": "java",
+            "release": "IMPLEMENTOR=\"Homebrew\"\nIMPLEMENTOR_VERSION=\"Homebrew\"\nJAVA_RUNTIME_VERSION=\"27\"\nJAVA_VERSION=\"27\"\nJAVA_VERSION_DATE=\"2026-09-15\"\nLIBC=\"default\"\nMODULES=\"java.base java.compiler java.datatransfer java.xml java.prefs java.desktop java.instrument java.logging java.management java.security.sasl java.naming java.rmi java.management.rmi java.net.http java.scripting java.security.jgss java.transaction.xa java.sql java.sql.rowset java.xml.crypto java.se java.smartcardio jdk.accessibility jdk.internal.jvmstat jdk.attach jdk.charsets jdk.internal.opt jdk.zipfs jdk.compiler jdk.crypto.cryptoki jdk.crypto.ec jdk.dynalink jdk.internal.ed jdk.editpad jdk.hotspot.agent jdk.httpserver jdk.incubator.vector jdk.internal.le jdk.internal.md jdk.jartool jdk.javadoc jdk.jcmd jdk.management jdk.management.agent jdk.jconsole jdk.jdeps jdk.jdwp.agent jdk.jdi jdk.jfr jdk.jlink jdk.jpackage jdk.jshell jdk.jstatd jdk.localedata jdk.management.jfr jdk.naming.dns jdk.naming.rmi jdk.net jdk.nio.mapmode jdk.sctp jdk.security.auth jdk.security.jgss jdk.unsupported jdk.unsupported.desktop jdk.xml.dom\"\nOS_ARCH=\"aarch64\"\nOS_NAME=\"Darwin\"\nSOURCE=\"\"\n",
+            "sha256": "05687a76275264affc701d1cbc005960002295e2da9f2833aa6c0ebfecd77943"
+          }
+        },
+        "processes": [],
+        "result": {
+          "bytes": 954148,
+          "sha256": "abf58c4aac5b6513266f1417ef106a4024f2f62ba5b817bc5cd5ccc1b83c45c2"
+        }
+      }
+    },
+    {
+      "path": "exceptionRoutes-minified-191.js",
+      "bytes": 9094,
+      "producerFile": "encoded.js",
+      "producerPopulationSummarySha256": "de9ed90b93099dae69c38451c2d1e912bb3b98538a551fa37ff3cffa268db572",
+      "producer": {
+        "id": "exceptionRoutes--randomizeOpcodesClassObfuscationMinify--191",
+        "source": {
+          "bytes": 462
+        },
+        "emission": {
+          "bytes": 9094
+        },
+        "rawEmission": {
+          "bytes": 9094
+        },
+        "options": {
+          "aliasedOpcodes": false,
+          "antiInstrumentation": false,
+          "classObfuscation": true,
+          "concealConstants": false,
+          "controlFlowFlattening": false,
+          "dispatcher": false,
+          "encodeBytecode": false,
+          "handlerTable": false,
+          "macroOpcodes": false,
+          "minify": true,
+          "randomizeOpcodes": true,
+          "selfModifying": false,
+          "shuffleOpcodes": false,
+          "specializedOpcodes": false,
+          "stringConcealing": false,
+          "target": "browser",
+          "timingChecks": false
+        },
+        "rng": {
+          "algorithm": "mulberry32",
+          "draws": 575,
+          "seed": 191,
+          "state": 883355146
+        },
+        "generationJournal": {
+          "bytes": 296319,
+          "sha256": "ab438d86e0ff3493ca5ab14540a65a123eb1b86371bfcacede47ec004af3b06f"
+        },
+        "generationIdentities": {
+          "jar": {
+            "sha256": "4e187cea76222f444a74b1b336580281034789b2126af3e008c29106837fad6f"
+          },
+          "java": {
+            "executable": "java",
+            "release": "IMPLEMENTOR=\"Homebrew\"\nIMPLEMENTOR_VERSION=\"Homebrew\"\nJAVA_RUNTIME_VERSION=\"27\"\nJAVA_VERSION=\"27\"\nJAVA_VERSION_DATE=\"2026-09-15\"\nLIBC=\"default\"\nMODULES=\"java.base java.compiler java.datatransfer java.xml java.prefs java.desktop java.instrument java.logging java.management java.security.sasl java.naming java.rmi java.management.rmi java.net.http java.scripting java.security.jgss java.transaction.xa java.sql java.sql.rowset java.xml.crypto java.se java.smartcardio jdk.accessibility jdk.internal.jvmstat jdk.attach jdk.charsets jdk.internal.opt jdk.zipfs jdk.compiler jdk.crypto.cryptoki jdk.crypto.ec jdk.dynalink jdk.internal.ed jdk.editpad jdk.hotspot.agent jdk.httpserver jdk.incubator.vector jdk.internal.le jdk.internal.md jdk.jartool jdk.javadoc jdk.jcmd jdk.management jdk.management.agent jdk.jconsole jdk.jdeps jdk.jdwp.agent jdk.jdi jdk.jfr jdk.jlink jdk.jpackage jdk.jshell jdk.jstatd jdk.localedata jdk.management.jfr jdk.naming.dns jdk.naming.rmi jdk.net jdk.nio.mapmode jdk.sctp jdk.security.auth jdk.security.jgss jdk.unsupported jdk.unsupported.desktop jdk.xml.dom\"\nOS_ARCH=\"aarch64\"\nOS_NAME=\"Darwin\"\nSOURCE=\"\"\n",
+            "sha256": "05687a76275264affc701d1cbc005960002295e2da9f2833aa6c0ebfecd77943"
+          }
+        },
+        "processes": [
+          {
+            "executable": "java",
+            "argv": [
+              "-XX:+IgnoreUnrecognizedVMOptions",
+              "--sun-misc-unsafe-memory-access=allow",
+              "-jar",
+              "node_modules/google-closure-compiler-java/compiler.jar",
+              "--compilation_level=ADVANCED",
+              "--warning_level=QUIET"
+            ],
+            "startedAt": "2026-10-06T08:13:17.104Z",
+            "completedAt": "2026-10-06T08:13:18.183Z",
+            "exitCode": 0,
+            "signal": null,
+            "timedOut": false,
+            "stderrSha256": "9717649348925c2b6905ad51a04ee2aab3d9a10eee90372c56f53b0425423c5b"
+          }
+        ],
+        "result": {
+          "bytes": 132583504,
+          "sha256": "46bfbf30853a5dac8babbc2cff9f1ea3567bf2ae1c1bd568c41bbcd821c9913e"
+        }
+      }
+    },
+    {
+      "path": "exceptionRoutes-minified-192.js",
+      "bytes": 9870,
+      "producerFile": "encoded.js",
+      "producerPopulationSummarySha256": "de9ed90b93099dae69c38451c2d1e912bb3b98538a551fa37ff3cffa268db572",
+      "producer": {
+        "id": "exceptionRoutes--randomizeOpcodesClassObfuscationMinify--192",
+        "source": {
+          "bytes": 462
+        },
+        "emission": {
+          "bytes": 9870
+        },
+        "rawEmission": {
+          "bytes": 9870
+        },
+        "options": {
+          "aliasedOpcodes": false,
+          "antiInstrumentation": false,
+          "classObfuscation": true,
+          "concealConstants": false,
+          "controlFlowFlattening": false,
+          "dispatcher": false,
+          "encodeBytecode": false,
+          "handlerTable": false,
+          "macroOpcodes": false,
+          "minify": true,
+          "randomizeOpcodes": true,
+          "selfModifying": false,
+          "shuffleOpcodes": false,
+          "specializedOpcodes": false,
+          "stringConcealing": false,
+          "target": "browser",
+          "timingChecks": false
+        },
+        "rng": {
+          "algorithm": "mulberry32",
+          "draws": 800,
+          "seed": 192,
+          "state": 668802656
+        },
+        "generationJournal": {
+          "bytes": 400498,
+          "sha256": "0507698f115e7790ae06294593aa9a1a405fcf5d33d6366116ae07bc53e2649d"
+        },
+        "generationIdentities": {
+          "jar": {
+            "sha256": "4e187cea76222f444a74b1b336580281034789b2126af3e008c29106837fad6f"
+          },
+          "java": {
+            "executable": "java",
+            "release": "IMPLEMENTOR=\"Homebrew\"\nIMPLEMENTOR_VERSION=\"Homebrew\"\nJAVA_RUNTIME_VERSION=\"27\"\nJAVA_VERSION=\"27\"\nJAVA_VERSION_DATE=\"2026-09-15\"\nLIBC=\"default\"\nMODULES=\"java.base java.compiler java.datatransfer java.xml java.prefs java.desktop java.instrument java.logging java.management java.security.sasl java.naming java.rmi java.management.rmi java.net.http java.scripting java.security.jgss java.transaction.xa java.sql java.sql.rowset java.xml.crypto java.se java.smartcardio jdk.accessibility jdk.internal.jvmstat jdk.attach jdk.charsets jdk.internal.opt jdk.zipfs jdk.compiler jdk.crypto.cryptoki jdk.crypto.ec jdk.dynalink jdk.internal.ed jdk.editpad jdk.hotspot.agent jdk.httpserver jdk.incubator.vector jdk.internal.le jdk.internal.md jdk.jartool jdk.javadoc jdk.jcmd jdk.management jdk.management.agent jdk.jconsole jdk.jdeps jdk.jdwp.agent jdk.jdi jdk.jfr jdk.jlink jdk.jpackage jdk.jshell jdk.jstatd jdk.localedata jdk.management.jfr jdk.naming.dns jdk.naming.rmi jdk.net jdk.nio.mapmode jdk.sctp jdk.security.auth jdk.security.jgss jdk.unsupported jdk.unsupported.desktop jdk.xml.dom\"\nOS_ARCH=\"aarch64\"\nOS_NAME=\"Darwin\"\nSOURCE=\"\"\n",
+            "sha256": "05687a76275264affc701d1cbc005960002295e2da9f2833aa6c0ebfecd77943"
+          }
+        },
+        "processes": [
+          {
+            "executable": "java",
+            "argv": [
+              "-XX:+IgnoreUnrecognizedVMOptions",
+              "--sun-misc-unsafe-memory-access=allow",
+              "-jar",
+              "node_modules/google-closure-compiler-java/compiler.jar",
+              "--compilation_level=ADVANCED",
+              "--warning_level=QUIET"
+            ],
+            "startedAt": "2026-10-06T08:13:20.215Z",
+            "completedAt": "2026-10-06T08:13:21.295Z",
+            "exitCode": 0,
+            "signal": null,
+            "timedOut": false,
+            "stderrSha256": "9717649348925c2b6905ad51a04ee2aab3d9a10eee90372c56f53b0425423c5b"
+          }
+        ],
+        "result": {
+          "bytes": 132703250,
+          "sha256": "c733a07a08d3d07d6c02ed6830be91446d463f86edebe2be5455de4a70a452a2"
+        }
+      }
+    },
+    {
+      "path": "exceptionRoutes-minified-193.js",
+      "bytes": 9788,
+      "producerFile": "encoded.js",
+      "producerPopulationSummarySha256": "de9ed90b93099dae69c38451c2d1e912bb3b98538a551fa37ff3cffa268db572",
+      "producer": {
+        "id": "exceptionRoutes--randomizeOpcodesClassObfuscationMinify--193",
+        "source": {
+          "bytes": 462
+        },
+        "emission": {
+          "bytes": 9788
+        },
+        "rawEmission": {
+          "bytes": 9788
+        },
+        "options": {
+          "aliasedOpcodes": false,
+          "antiInstrumentation": false,
+          "classObfuscation": true,
+          "concealConstants": false,
+          "controlFlowFlattening": false,
+          "dispatcher": false,
+          "encodeBytecode": false,
+          "handlerTable": false,
+          "macroOpcodes": false,
+          "minify": true,
+          "randomizeOpcodes": true,
+          "selfModifying": false,
+          "shuffleOpcodes": false,
+          "specializedOpcodes": false,
+          "stringConcealing": false,
+          "target": "browser",
+          "timingChecks": false
+        },
+        "rng": {
+          "algorithm": "mulberry32",
+          "draws": 579,
+          "seed": 193,
+          "state": 3914651104
+        },
+        "generationJournal": {
+          "bytes": 300191,
+          "sha256": "2c7bd6ee1c96e5826c88a457b7ddb960a9b23d60430e8d414afc31b26e82b4be"
+        },
+        "generationIdentities": {
+          "jar": {
+            "sha256": "4e187cea76222f444a74b1b336580281034789b2126af3e008c29106837fad6f"
+          },
+          "java": {
+            "executable": "java",
+            "release": "IMPLEMENTOR=\"Homebrew\"\nIMPLEMENTOR_VERSION=\"Homebrew\"\nJAVA_RUNTIME_VERSION=\"27\"\nJAVA_VERSION=\"27\"\nJAVA_VERSION_DATE=\"2026-09-15\"\nLIBC=\"default\"\nMODULES=\"java.base java.compiler java.datatransfer java.xml java.prefs java.desktop java.instrument java.logging java.management java.security.sasl java.naming java.rmi java.management.rmi java.net.http java.scripting java.security.jgss java.transaction.xa java.sql java.sql.rowset java.xml.crypto java.se java.smartcardio jdk.accessibility jdk.internal.jvmstat jdk.attach jdk.charsets jdk.internal.opt jdk.zipfs jdk.compiler jdk.crypto.cryptoki jdk.crypto.ec jdk.dynalink jdk.internal.ed jdk.editpad jdk.hotspot.agent jdk.httpserver jdk.incubator.vector jdk.internal.le jdk.internal.md jdk.jartool jdk.javadoc jdk.jcmd jdk.management jdk.management.agent jdk.jconsole jdk.jdeps jdk.jdwp.agent jdk.jdi jdk.jfr jdk.jlink jdk.jpackage jdk.jshell jdk.jstatd jdk.localedata jdk.management.jfr jdk.naming.dns jdk.naming.rmi jdk.net jdk.nio.mapmode jdk.sctp jdk.security.auth jdk.security.jgss jdk.unsupported jdk.unsupported.desktop jdk.xml.dom\"\nOS_ARCH=\"aarch64\"\nOS_NAME=\"Darwin\"\nSOURCE=\"\"\n",
+            "sha256": "05687a76275264affc701d1cbc005960002295e2da9f2833aa6c0ebfecd77943"
+          }
+        },
+        "processes": [
+          {
+            "executable": "java",
+            "argv": [
+              "-XX:+IgnoreUnrecognizedVMOptions",
+              "--sun-misc-unsafe-memory-access=allow",
+              "-jar",
+              "node_modules/google-closure-compiler-java/compiler.jar",
+              "--compilation_level=ADVANCED",
+              "--warning_level=QUIET"
+            ],
+            "startedAt": "2026-10-06T08:13:23.355Z",
+            "completedAt": "2026-10-06T08:13:24.414Z",
+            "exitCode": 0,
+            "signal": null,
+            "timedOut": false,
+            "stderrSha256": "9717649348925c2b6905ad51a04ee2aab3d9a10eee90372c56f53b0425423c5b"
+          }
+        ],
+        "result": {
+          "bytes": 132591582,
+          "sha256": "cad721f43a5751b5b79049e1b7d2075cd07ddc0d4f29abc775f73e9333c3eb29"
+        }
+      }
+    },
+    {
+      "path": "exceptionRoutes.baseline.js",
+      "bytes": 39060,
+      "producerFile": "encoded.js",
+      "producerPopulationSummarySha256": "5c3c2b9bbfe0fdef0819763a531ab0d832550ef5cea88eb2a472de1aa25c266c",
+      "producer": {
+        "id": "exceptionRoutes--baseline--181",
+        "source": {
+          "bytes": 462
+        },
+        "emission": {
+          "bytes": 39060
+        },
+        "rawEmission": {
+          "bytes": 47941,
+          "sha256": "91e18a17e38173072e102ea34e9561b10f16805560aff6edc3bcf5889d4ef3e9"
+        },
+        "options": {
+          "aliasedOpcodes": false,
+          "antiInstrumentation": false,
+          "classObfuscation": false,
+          "concealConstants": false,
+          "controlFlowFlattening": false,
+          "dispatcher": false,
+          "encodeBytecode": false,
+          "handlerTable": false,
+          "macroOpcodes": false,
+          "minify": false,
+          "randomizeOpcodes": false,
+          "selfModifying": false,
+          "shuffleOpcodes": false,
+          "specializedOpcodes": false,
+          "stringConcealing": false,
+          "target": "browser",
+          "timingChecks": false
+        },
+        "rng": {
+          "algorithm": "mulberry32",
+          "draws": 0,
+          "seed": 181,
+          "state": 181
+        },
+        "generationJournal": {
+          "bytes": 2889,
+          "sha256": "e0073c7846240251101a1329757d7f8a41ac21abcd9bb40c61de7f90a1844845"
+        },
+        "generationIdentities": {
+          "jar": {
+            "sha256": "4e187cea76222f444a74b1b336580281034789b2126af3e008c29106837fad6f"
+          },
+          "java": {
+            "executable": "java",
+            "release": "IMPLEMENTOR=\"Homebrew\"\nIMPLEMENTOR_VERSION=\"Homebrew\"\nJAVA_RUNTIME_VERSION=\"27\"\nJAVA_VERSION=\"27\"\nJAVA_VERSION_DATE=\"2026-09-15\"\nLIBC=\"default\"\nMODULES=\"java.base java.compiler java.datatransfer java.xml java.prefs java.desktop java.instrument java.logging java.management java.security.sasl java.naming java.rmi java.management.rmi java.net.http java.scripting java.security.jgss java.transaction.xa java.sql java.sql.rowset java.xml.crypto java.se java.smartcardio jdk.accessibility jdk.internal.jvmstat jdk.attach jdk.charsets jdk.internal.opt jdk.zipfs jdk.compiler jdk.crypto.cryptoki jdk.crypto.ec jdk.dynalink jdk.internal.ed jdk.editpad jdk.hotspot.agent jdk.httpserver jdk.incubator.vector jdk.internal.le jdk.internal.md jdk.jartool jdk.javadoc jdk.jcmd jdk.management jdk.management.agent jdk.jconsole jdk.jdeps jdk.jdwp.agent jdk.jdi jdk.jfr jdk.jlink jdk.jpackage jdk.jshell jdk.jstatd jdk.localedata jdk.management.jfr jdk.naming.dns jdk.naming.rmi jdk.net jdk.nio.mapmode jdk.sctp jdk.security.auth jdk.security.jgss jdk.unsupported jdk.unsupported.desktop jdk.xml.dom\"\nOS_ARCH=\"aarch64\"\nOS_NAME=\"Darwin\"\nSOURCE=\"\"\n",
+            "sha256": "05687a76275264affc701d1cbc005960002295e2da9f2833aa6c0ebfecd77943"
+          }
+        },
+        "processes": [],
+        "result": {
+          "bytes": 132377340,
+          "sha256": "2051a5e9bc511a3bb25307d87e9c468edc69301e5ec55c0a854f81899fb9fecb"
+        }
+      }
+    },
+    {
+      "path": "exceptionRoutes.source.js",
+      "bytes": 462,
+      "producerFile": "source.js",
+      "producerPopulationSummarySha256": "5c3c2b9bbfe0fdef0819763a531ab0d832550ef5cea88eb2a472de1aa25c266c",
+      "producer": {
+        "id": "exceptionRoutes--baseline--181",
+        "source": {
+          "bytes": 462
+        },
+        "emission": {
+          "bytes": 39060
+        },
+        "rawEmission": {
+          "bytes": 47941,
+          "sha256": "91e18a17e38173072e102ea34e9561b10f16805560aff6edc3bcf5889d4ef3e9"
+        },
+        "options": {
+          "aliasedOpcodes": false,
+          "antiInstrumentation": false,
+          "classObfuscation": false,
+          "concealConstants": false,
+          "controlFlowFlattening": false,
+          "dispatcher": false,
+          "encodeBytecode": false,
+          "handlerTable": false,
+          "macroOpcodes": false,
+          "minify": false,
+          "randomizeOpcodes": false,
+          "selfModifying": false,
+          "shuffleOpcodes": false,
+          "specializedOpcodes": false,
+          "stringConcealing": false,
+          "target": "browser",
+          "timingChecks": false
+        },
+        "rng": {
+          "algorithm": "mulberry32",
+          "draws": 0,
+          "seed": 181,
+          "state": 181
+        },
+        "generationJournal": {
+          "bytes": 2889,
+          "sha256": "e0073c7846240251101a1329757d7f8a41ac21abcd9bb40c61de7f90a1844845"
+        },
+        "generationIdentities": {
+          "jar": {
+            "sha256": "4e187cea76222f444a74b1b336580281034789b2126af3e008c29106837fad6f"
+          },
+          "java": {
+            "executable": "java",
+            "release": "IMPLEMENTOR=\"Homebrew\"\nIMPLEMENTOR_VERSION=\"Homebrew\"\nJAVA_RUNTIME_VERSION=\"27\"\nJAVA_VERSION=\"27\"\nJAVA_VERSION_DATE=\"2026-09-15\"\nLIBC=\"default\"\nMODULES=\"java.base java.compiler java.datatransfer java.xml java.prefs java.desktop java.instrument java.logging java.management java.security.sasl java.naming java.rmi java.management.rmi java.net.http java.scripting java.security.jgss java.transaction.xa java.sql java.sql.rowset java.xml.crypto java.se java.smartcardio jdk.accessibility jdk.internal.jvmstat jdk.attach jdk.charsets jdk.internal.opt jdk.zipfs jdk.compiler jdk.crypto.cryptoki jdk.crypto.ec jdk.dynalink jdk.internal.ed jdk.editpad jdk.hotspot.agent jdk.httpserver jdk.incubator.vector jdk.internal.le jdk.internal.md jdk.jartool jdk.javadoc jdk.jcmd jdk.management jdk.management.agent jdk.jconsole jdk.jdeps jdk.jdwp.agent jdk.jdi jdk.jfr jdk.jlink jdk.jpackage jdk.jshell jdk.jstatd jdk.localedata jdk.management.jfr jdk.naming.dns jdk.naming.rmi jdk.net jdk.nio.mapmode jdk.sctp jdk.security.auth jdk.security.jgss jdk.unsupported jdk.unsupported.desktop jdk.xml.dom\"\nOS_ARCH=\"aarch64\"\nOS_NAME=\"Darwin\"\nSOURCE=\"\"\n",
+            "sha256": "05687a76275264affc701d1cbc005960002295e2da9f2833aa6c0ebfecd77943"
+          }
+        },
+        "processes": [],
+        "result": {
+          "bytes": 132377340,
+          "sha256": "2051a5e9bc511a3bb25307d87e9c468edc69301e5ec55c0a854f81899fb9fecb"
+        }
+      }
+    },
+    {
+      "path": "spread-181.js",
+      "bytes": 35363,
+      "producerFile": "encoded.js",
+      "producerPopulationSummarySha256": "5c3c2b9bbfe0fdef0819763a531ab0d832550ef5cea88eb2a472de1aa25c266c",
+      "producer": {
+        "id": "spread--randomizeOpcodesClassObfuscation--181",
+        "source": {
+          "bytes": 93
+        },
+        "emission": {
+          "bytes": 35363
+        },
+        "rawEmission": {
+          "bytes": 37229,
+          "sha256": "2d6270275f482ff060a85347a563ec30139de58790c3af458f3ab38ac0da62f3"
+        },
+        "options": {
+          "aliasedOpcodes": false,
+          "antiInstrumentation": false,
+          "classObfuscation": true,
+          "concealConstants": false,
+          "controlFlowFlattening": false,
+          "dispatcher": false,
+          "encodeBytecode": false,
+          "handlerTable": false,
+          "macroOpcodes": false,
+          "minify": false,
+          "randomizeOpcodes": true,
+          "selfModifying": false,
+          "shuffleOpcodes": false,
+          "specializedOpcodes": false,
+          "stringConcealing": false,
+          "target": "browser",
+          "timingChecks": false
+        },
+        "rng": {
+          "algorithm": "mulberry32",
+          "draws": 608,
+          "seed": 181,
+          "state": 1195484821
+        },
+        "generationJournal": {
+          "bytes": 277451,
+          "sha256": "5c156415b19bdd04617201f91b412b130951932d5ec1c0d89be6748736ee9c29"
+        },
+        "generationIdentities": {
+          "jar": {
+            "sha256": "4e187cea76222f444a74b1b336580281034789b2126af3e008c29106837fad6f"
+          },
+          "java": {
+            "executable": "java",
+            "release": "IMPLEMENTOR=\"Homebrew\"\nIMPLEMENTOR_VERSION=\"Homebrew\"\nJAVA_RUNTIME_VERSION=\"27\"\nJAVA_VERSION=\"27\"\nJAVA_VERSION_DATE=\"2026-09-15\"\nLIBC=\"default\"\nMODULES=\"java.base java.compiler java.datatransfer java.xml java.prefs java.desktop java.instrument java.logging java.management java.security.sasl java.naming java.rmi java.management.rmi java.net.http java.scripting java.security.jgss java.transaction.xa java.sql java.sql.rowset java.xml.crypto java.se java.smartcardio jdk.accessibility jdk.internal.jvmstat jdk.attach jdk.charsets jdk.internal.opt jdk.zipfs jdk.compiler jdk.crypto.cryptoki jdk.crypto.ec jdk.dynalink jdk.internal.ed jdk.editpad jdk.hotspot.agent jdk.httpserver jdk.incubator.vector jdk.internal.le jdk.internal.md jdk.jartool jdk.javadoc jdk.jcmd jdk.management jdk.management.agent jdk.jconsole jdk.jdeps jdk.jdwp.agent jdk.jdi jdk.jfr jdk.jlink jdk.jpackage jdk.jshell jdk.jstatd jdk.localedata jdk.management.jfr jdk.naming.dns jdk.naming.rmi jdk.net jdk.nio.mapmode jdk.sctp jdk.security.auth jdk.security.jgss jdk.unsupported jdk.unsupported.desktop jdk.xml.dom\"\nOS_ARCH=\"aarch64\"\nOS_NAME=\"Darwin\"\nSOURCE=\"\"\n",
+            "sha256": "05687a76275264affc701d1cbc005960002295e2da9f2833aa6c0ebfecd77943"
+          }
+        },
+        "processes": [],
+        "result": {
+          "bytes": 585036,
+          "sha256": "bf3c142afe5daceff1eafba63c871141c68df78743364082a4fae77d8302d148"
+        }
+      }
+    },
+    {
+      "path": "spread-182.js",
+      "bytes": 36759,
+      "producerFile": "encoded.js",
+      "producerPopulationSummarySha256": "5c3c2b9bbfe0fdef0819763a531ab0d832550ef5cea88eb2a472de1aa25c266c",
+      "producer": {
+        "id": "spread--randomizeOpcodesClassObfuscation--182",
+        "source": {
+          "bytes": 93
+        },
+        "emission": {
+          "bytes": 36759
+        },
+        "rawEmission": {
+          "bytes": 38626,
+          "sha256": "36b3a705b608f66aff04ce8730b4a37b67859db50ee1bbdd5a52c411a54d085a"
+        },
+        "options": {
+          "aliasedOpcodes": false,
+          "antiInstrumentation": false,
+          "classObfuscation": true,
+          "concealConstants": false,
+          "controlFlowFlattening": false,
+          "dispatcher": false,
+          "encodeBytecode": false,
+          "handlerTable": false,
+          "macroOpcodes": false,
+          "minify": false,
+          "randomizeOpcodes": true,
+          "selfModifying": false,
+          "shuffleOpcodes": false,
+          "specializedOpcodes": false,
+          "stringConcealing": false,
+          "target": "browser",
+          "timingChecks": false
+        },
+        "rng": {
+          "algorithm": "mulberry32",
+          "draws": 943,
+          "seed": 182,
+          "state": 589708849
+        },
+        "generationJournal": {
+          "bytes": 428784,
+          "sha256": "a3269955c86a86abd360636fc26e68b505b3e3f6a3a45ed0ef223cafa3eda4b7"
+        },
+        "generationIdentities": {
+          "jar": {
+            "sha256": "4e187cea76222f444a74b1b336580281034789b2126af3e008c29106837fad6f"
+          },
+          "java": {
+            "executable": "java",
+            "release": "IMPLEMENTOR=\"Homebrew\"\nIMPLEMENTOR_VERSION=\"Homebrew\"\nJAVA_RUNTIME_VERSION=\"27\"\nJAVA_VERSION=\"27\"\nJAVA_VERSION_DATE=\"2026-09-15\"\nLIBC=\"default\"\nMODULES=\"java.base java.compiler java.datatransfer java.xml java.prefs java.desktop java.instrument java.logging java.management java.security.sasl java.naming java.rmi java.management.rmi java.net.http java.scripting java.security.jgss java.transaction.xa java.sql java.sql.rowset java.xml.crypto java.se java.smartcardio jdk.accessibility jdk.internal.jvmstat jdk.attach jdk.charsets jdk.internal.opt jdk.zipfs jdk.compiler jdk.crypto.cryptoki jdk.crypto.ec jdk.dynalink jdk.internal.ed jdk.editpad jdk.hotspot.agent jdk.httpserver jdk.incubator.vector jdk.internal.le jdk.internal.md jdk.jartool jdk.javadoc jdk.jcmd jdk.management jdk.management.agent jdk.jconsole jdk.jdeps jdk.jdwp.agent jdk.jdi jdk.jfr jdk.jlink jdk.jpackage jdk.jshell jdk.jstatd jdk.localedata jdk.management.jfr jdk.naming.dns jdk.naming.rmi jdk.net jdk.nio.mapmode jdk.sctp jdk.security.auth jdk.security.jgss jdk.unsupported jdk.unsupported.desktop jdk.xml.dom\"\nOS_ARCH=\"aarch64\"\nOS_NAME=\"Darwin\"\nSOURCE=\"\"\n",
+            "sha256": "05687a76275264affc701d1cbc005960002295e2da9f2833aa6c0ebfecd77943"
+          }
+        },
+        "processes": [],
+        "result": {
+          "bytes": 760374,
+          "sha256": "27e36584f5ee30d6180e1cd04a264435fda28d6b0a470ca7942b7c1aef0d3832"
+        }
+      }
+    },
+    {
+      "path": "spread-183.js",
+      "bytes": 37956,
+      "producerFile": "encoded.js",
+      "producerPopulationSummarySha256": "5c3c2b9bbfe0fdef0819763a531ab0d832550ef5cea88eb2a472de1aa25c266c",
+      "producer": {
+        "id": "spread--randomizeOpcodesClassObfuscation--183",
+        "source": {
+          "bytes": 93
+        },
+        "emission": {
+          "bytes": 37956
+        },
+        "rawEmission": {
+          "bytes": 39822,
+          "sha256": "befd05eb0088858ff7fd0880a2029ec14385d94f797aebc5c517d75b64621899"
+        },
+        "options": {
+          "aliasedOpcodes": false,
+          "antiInstrumentation": false,
+          "classObfuscation": true,
+          "concealConstants": false,
+          "controlFlowFlattening": false,
+          "dispatcher": false,
+          "encodeBytecode": false,
+          "handlerTable": false,
+          "macroOpcodes": false,
+          "minify": false,
+          "randomizeOpcodes": true,
+          "selfModifying": false,
+          "shuffleOpcodes": false,
+          "specializedOpcodes": false,
+          "stringConcealing": false,
+          "target": "browser",
+          "timingChecks": false
+        },
+        "rng": {
+          "algorithm": "mulberry32",
+          "draws": 1228,
+          "seed": 183,
+          "state": 2894922739
+        },
+        "generationJournal": {
+          "bytes": 557765,
+          "sha256": "2b6e8bfb95a85e8d9dea5f49d8e30b23a470b928a427165352ae640cfae4290a"
+        },
+        "generationIdentities": {
+          "jar": {
+            "sha256": "4e187cea76222f444a74b1b336580281034789b2126af3e008c29106837fad6f"
+          },
+          "java": {
+            "executable": "java",
+            "release": "IMPLEMENTOR=\"Homebrew\"\nIMPLEMENTOR_VERSION=\"Homebrew\"\nJAVA_RUNTIME_VERSION=\"27\"\nJAVA_VERSION=\"27\"\nJAVA_VERSION_DATE=\"2026-09-15\"\nLIBC=\"default\"\nMODULES=\"java.base java.compiler java.datatransfer java.xml java.prefs java.desktop java.instrument java.logging java.management java.security.sasl java.naming java.rmi java.management.rmi java.net.http java.scripting java.security.jgss java.transaction.xa java.sql java.sql.rowset java.xml.crypto java.se java.smartcardio jdk.accessibility jdk.internal.jvmstat jdk.attach jdk.charsets jdk.internal.opt jdk.zipfs jdk.compiler jdk.crypto.cryptoki jdk.crypto.ec jdk.dynalink jdk.internal.ed jdk.editpad jdk.hotspot.agent jdk.httpserver jdk.incubator.vector jdk.internal.le jdk.internal.md jdk.jartool jdk.javadoc jdk.jcmd jdk.management jdk.management.agent jdk.jconsole jdk.jdeps jdk.jdwp.agent jdk.jdi jdk.jfr jdk.jlink jdk.jpackage jdk.jshell jdk.jstatd jdk.localedata jdk.management.jfr jdk.naming.dns jdk.naming.rmi jdk.net jdk.nio.mapmode jdk.sctp jdk.security.auth jdk.security.jgss jdk.unsupported jdk.unsupported.desktop jdk.xml.dom\"\nOS_ARCH=\"aarch64\"\nOS_NAME=\"Darwin\"\nSOURCE=\"\"\n",
+            "sha256": "05687a76275264affc701d1cbc005960002295e2da9f2833aa6c0ebfecd77943"
+          }
+        },
+        "processes": [],
+        "result": {
+          "bytes": 909352,
+          "sha256": "404ff665455c85d0630eb8ba0d361ed665d0d0b3d4b1d3222b1805d31a8e86f0"
+        }
+      }
+    },
+    {
+      "path": "spread-minified-191.js",
+      "bytes": 8100,
+      "producerFile": "encoded.js",
+      "producerPopulationSummarySha256": "de9ed90b93099dae69c38451c2d1e912bb3b98538a551fa37ff3cffa268db572",
+      "producer": {
+        "id": "spread--randomizeOpcodesClassObfuscationMinify--191",
+        "source": {
+          "bytes": 93
+        },
+        "emission": {
+          "bytes": 8100
+        },
+        "rawEmission": {
+          "bytes": 8100
+        },
+        "options": {
+          "aliasedOpcodes": false,
+          "antiInstrumentation": false,
+          "classObfuscation": true,
+          "concealConstants": false,
+          "controlFlowFlattening": false,
+          "dispatcher": false,
+          "encodeBytecode": false,
+          "handlerTable": false,
+          "macroOpcodes": false,
+          "minify": true,
+          "randomizeOpcodes": true,
+          "selfModifying": false,
+          "shuffleOpcodes": false,
+          "specializedOpcodes": false,
+          "stringConcealing": false,
+          "target": "browser",
+          "timingChecks": false
+        },
+        "rng": {
+          "algorithm": "mulberry32",
+          "draws": 575,
+          "seed": 191,
+          "state": 883355146
+        },
+        "generationJournal": {
+          "bytes": 293078,
+          "sha256": "b8c78fd08bc02725251ec75e981db48911007f8b48e6f31ac17ec2f37d090dac"
+        },
+        "generationIdentities": {
+          "jar": {
+            "sha256": "4e187cea76222f444a74b1b336580281034789b2126af3e008c29106837fad6f"
+          },
+          "java": {
+            "executable": "java",
+            "release": "IMPLEMENTOR=\"Homebrew\"\nIMPLEMENTOR_VERSION=\"Homebrew\"\nJAVA_RUNTIME_VERSION=\"27\"\nJAVA_VERSION=\"27\"\nJAVA_VERSION_DATE=\"2026-09-15\"\nLIBC=\"default\"\nMODULES=\"java.base java.compiler java.datatransfer java.xml java.prefs java.desktop java.instrument java.logging java.management java.security.sasl java.naming java.rmi java.management.rmi java.net.http java.scripting java.security.jgss java.transaction.xa java.sql java.sql.rowset java.xml.crypto java.se java.smartcardio jdk.accessibility jdk.internal.jvmstat jdk.attach jdk.charsets jdk.internal.opt jdk.zipfs jdk.compiler jdk.crypto.cryptoki jdk.crypto.ec jdk.dynalink jdk.internal.ed jdk.editpad jdk.hotspot.agent jdk.httpserver jdk.incubator.vector jdk.internal.le jdk.internal.md jdk.jartool jdk.javadoc jdk.jcmd jdk.management jdk.management.agent jdk.jconsole jdk.jdeps jdk.jdwp.agent jdk.jdi jdk.jfr jdk.jlink jdk.jpackage jdk.jshell jdk.jstatd jdk.localedata jdk.management.jfr jdk.naming.dns jdk.naming.rmi jdk.net jdk.nio.mapmode jdk.sctp jdk.security.auth jdk.security.jgss jdk.unsupported jdk.unsupported.desktop jdk.xml.dom\"\nOS_ARCH=\"aarch64\"\nOS_NAME=\"Darwin\"\nSOURCE=\"\"\n",
+            "sha256": "05687a76275264affc701d1cbc005960002295e2da9f2833aa6c0ebfecd77943"
+          }
+        },
+        "processes": [
+          {
+            "executable": "java",
+            "argv": [
+              "-XX:+IgnoreUnrecognizedVMOptions",
+              "--sun-misc-unsafe-memory-access=allow",
+              "-jar",
+              "node_modules/google-closure-compiler-java/compiler.jar",
+              "--compilation_level=ADVANCED",
+              "--warning_level=QUIET"
+            ],
+            "startedAt": "2026-10-06T08:12:17.438Z",
+            "completedAt": "2026-10-06T08:12:18.497Z",
+            "exitCode": 0,
+            "signal": null,
+            "timedOut": false,
+            "stderrSha256": "9717649348925c2b6905ad51a04ee2aab3d9a10eee90372c56f53b0425423c5b"
+          }
+        ],
+        "result": {
+          "bytes": 23886035,
+          "sha256": "95a7ac2987483674f5a3ffea3e877f27439b06dcaf9a77d15eab43324c375376"
+        }
+      }
+    },
+    {
+      "path": "spread-minified-192.js",
+      "bytes": 8876,
+      "producerFile": "encoded.js",
+      "producerPopulationSummarySha256": "de9ed90b93099dae69c38451c2d1e912bb3b98538a551fa37ff3cffa268db572",
+      "producer": {
+        "id": "spread--randomizeOpcodesClassObfuscationMinify--192",
+        "source": {
+          "bytes": 93
+        },
+        "emission": {
+          "bytes": 8876
+        },
+        "rawEmission": {
+          "bytes": 8876
+        },
+        "options": {
+          "aliasedOpcodes": false,
+          "antiInstrumentation": false,
+          "classObfuscation": true,
+          "concealConstants": false,
+          "controlFlowFlattening": false,
+          "dispatcher": false,
+          "encodeBytecode": false,
+          "handlerTable": false,
+          "macroOpcodes": false,
+          "minify": true,
+          "randomizeOpcodes": true,
+          "selfModifying": false,
+          "shuffleOpcodes": false,
+          "specializedOpcodes": false,
+          "stringConcealing": false,
+          "target": "browser",
+          "timingChecks": false
+        },
+        "rng": {
+          "algorithm": "mulberry32",
+          "draws": 800,
+          "seed": 192,
+          "state": 668802656
+        },
+        "generationJournal": {
+          "bytes": 397450,
+          "sha256": "a7a8c59c9419108a3df962b9e23d772e5b8c185256d76f046113a2f6a15f6478"
+        },
+        "generationIdentities": {
+          "jar": {
+            "sha256": "4e187cea76222f444a74b1b336580281034789b2126af3e008c29106837fad6f"
+          },
+          "java": {
+            "executable": "java",
+            "release": "IMPLEMENTOR=\"Homebrew\"\nIMPLEMENTOR_VERSION=\"Homebrew\"\nJAVA_RUNTIME_VERSION=\"27\"\nJAVA_VERSION=\"27\"\nJAVA_VERSION_DATE=\"2026-09-15\"\nLIBC=\"default\"\nMODULES=\"java.base java.compiler java.datatransfer java.xml java.prefs java.desktop java.instrument java.logging java.management java.security.sasl java.naming java.rmi java.management.rmi java.net.http java.scripting java.security.jgss java.transaction.xa java.sql java.sql.rowset java.xml.crypto java.se java.smartcardio jdk.accessibility jdk.internal.jvmstat jdk.attach jdk.charsets jdk.internal.opt jdk.zipfs jdk.compiler jdk.crypto.cryptoki jdk.crypto.ec jdk.dynalink jdk.internal.ed jdk.editpad jdk.hotspot.agent jdk.httpserver jdk.incubator.vector jdk.internal.le jdk.internal.md jdk.jartool jdk.javadoc jdk.jcmd jdk.management jdk.management.agent jdk.jconsole jdk.jdeps jdk.jdwp.agent jdk.jdi jdk.jfr jdk.jlink jdk.jpackage jdk.jshell jdk.jstatd jdk.localedata jdk.management.jfr jdk.naming.dns jdk.naming.rmi jdk.net jdk.nio.mapmode jdk.sctp jdk.security.auth jdk.security.jgss jdk.unsupported jdk.unsupported.desktop jdk.xml.dom\"\nOS_ARCH=\"aarch64\"\nOS_NAME=\"Darwin\"\nSOURCE=\"\"\n",
+            "sha256": "05687a76275264affc701d1cbc005960002295e2da9f2833aa6c0ebfecd77943"
+          }
+        },
+        "processes": [
+          {
+            "executable": "java",
+            "argv": [
+              "-XX:+IgnoreUnrecognizedVMOptions",
+              "--sun-misc-unsafe-memory-access=allow",
+              "-jar",
+              "node_modules/google-closure-compiler-java/compiler.jar",
+              "--compilation_level=ADVANCED",
+              "--warning_level=QUIET"
+            ],
+            "startedAt": "2026-10-06T08:12:20.146Z",
+            "completedAt": "2026-10-06T08:12:21.224Z",
+            "exitCode": 0,
+            "signal": null,
+            "timedOut": false,
+            "stderrSha256": "9717649348925c2b6905ad51a04ee2aab3d9a10eee90372c56f53b0425423c5b"
+          }
+        ],
+        "result": {
+          "bytes": 24005999,
+          "sha256": "a307a0a499b5437f9a3e9b6fcecbf6f23fdcea57a18d67b6636a6e26cfecdeb8"
+        }
+      }
+    },
+    {
+      "path": "spread-minified-193.js",
+      "bytes": 8794,
+      "producerFile": "encoded.js",
+      "producerPopulationSummarySha256": "de9ed90b93099dae69c38451c2d1e912bb3b98538a551fa37ff3cffa268db572",
+      "producer": {
+        "id": "spread--randomizeOpcodesClassObfuscationMinify--193",
+        "source": {
+          "bytes": 93
+        },
+        "emission": {
+          "bytes": 8794
+        },
+        "rawEmission": {
+          "bytes": 8794
+        },
+        "options": {
+          "aliasedOpcodes": false,
+          "antiInstrumentation": false,
+          "classObfuscation": true,
+          "concealConstants": false,
+          "controlFlowFlattening": false,
+          "dispatcher": false,
+          "encodeBytecode": false,
+          "handlerTable": false,
+          "macroOpcodes": false,
+          "minify": true,
+          "randomizeOpcodes": true,
+          "selfModifying": false,
+          "shuffleOpcodes": false,
+          "specializedOpcodes": false,
+          "stringConcealing": false,
+          "target": "browser",
+          "timingChecks": false
+        },
+        "rng": {
+          "algorithm": "mulberry32",
+          "draws": 579,
+          "seed": 193,
+          "state": 3914651104
+        },
+        "generationJournal": {
+          "bytes": 296950,
+          "sha256": "2b915c72719dd91eca72f89339ab81beb76fdc142526d4fcb9e0a4667292fd1f"
+        },
+        "generationIdentities": {
+          "jar": {
+            "sha256": "4e187cea76222f444a74b1b336580281034789b2126af3e008c29106837fad6f"
+          },
+          "java": {
+            "executable": "java",
+            "release": "IMPLEMENTOR=\"Homebrew\"\nIMPLEMENTOR_VERSION=\"Homebrew\"\nJAVA_RUNTIME_VERSION=\"27\"\nJAVA_VERSION=\"27\"\nJAVA_VERSION_DATE=\"2026-09-15\"\nLIBC=\"default\"\nMODULES=\"java.base java.compiler java.datatransfer java.xml java.prefs java.desktop java.instrument java.logging java.management java.security.sasl java.naming java.rmi java.management.rmi java.net.http java.scripting java.security.jgss java.transaction.xa java.sql java.sql.rowset java.xml.crypto java.se java.smartcardio jdk.accessibility jdk.internal.jvmstat jdk.attach jdk.charsets jdk.internal.opt jdk.zipfs jdk.compiler jdk.crypto.cryptoki jdk.crypto.ec jdk.dynalink jdk.internal.ed jdk.editpad jdk.hotspot.agent jdk.httpserver jdk.incubator.vector jdk.internal.le jdk.internal.md jdk.jartool jdk.javadoc jdk.jcmd jdk.management jdk.management.agent jdk.jconsole jdk.jdeps jdk.jdwp.agent jdk.jdi jdk.jfr jdk.jlink jdk.jpackage jdk.jshell jdk.jstatd jdk.localedata jdk.management.jfr jdk.naming.dns jdk.naming.rmi jdk.net jdk.nio.mapmode jdk.sctp jdk.security.auth jdk.security.jgss jdk.unsupported jdk.unsupported.desktop jdk.xml.dom\"\nOS_ARCH=\"aarch64\"\nOS_NAME=\"Darwin\"\nSOURCE=\"\"\n",
+            "sha256": "05687a76275264affc701d1cbc005960002295e2da9f2833aa6c0ebfecd77943"
+          }
+        },
+        "processes": [
+          {
+            "executable": "java",
+            "argv": [
+              "-XX:+IgnoreUnrecognizedVMOptions",
+              "--sun-misc-unsafe-memory-access=allow",
+              "-jar",
+              "node_modules/google-closure-compiler-java/compiler.jar",
+              "--compilation_level=ADVANCED",
+              "--warning_level=QUIET"
+            ],
+            "startedAt": "2026-10-06T08:12:22.909Z",
+            "completedAt": "2026-10-06T08:12:23.966Z",
+            "exitCode": 0,
+            "signal": null,
+            "timedOut": false,
+            "stderrSha256": "9717649348925c2b6905ad51a04ee2aab3d9a10eee90372c56f53b0425423c5b"
+          }
+        ],
+        "result": {
+          "bytes": 23894113,
+          "sha256": "3643fc98434bc48eae050ec89f720cf6be869c39958f86647c4db7588da996c2"
+        }
+      }
+    },
+    {
+      "path": "spread.baseline.js",
+      "bytes": 37923,
+      "producerFile": "encoded.js",
+      "producerPopulationSummarySha256": "5c3c2b9bbfe0fdef0819763a531ab0d832550ef5cea88eb2a472de1aa25c266c",
+      "producer": {
+        "id": "spread--baseline--181",
+        "source": {
+          "bytes": 93
+        },
+        "emission": {
+          "bytes": 37923
+        },
+        "rawEmission": {
+          "bytes": 39776,
+          "sha256": "7d5e1ad53a1730b63a200fb4dd4a246fe4c795f2eff3e4a19af4b530485350ac"
+        },
+        "options": {
+          "aliasedOpcodes": false,
+          "antiInstrumentation": false,
+          "classObfuscation": false,
+          "concealConstants": false,
+          "controlFlowFlattening": false,
+          "dispatcher": false,
+          "encodeBytecode": false,
+          "handlerTable": false,
+          "macroOpcodes": false,
+          "minify": false,
+          "randomizeOpcodes": false,
+          "selfModifying": false,
+          "shuffleOpcodes": false,
+          "specializedOpcodes": false,
+          "stringConcealing": false,
+          "target": "browser",
+          "timingChecks": false
+        },
+        "rng": {
+          "algorithm": "mulberry32",
+          "draws": 0,
+          "seed": 181,
+          "state": 181
+        },
+        "generationJournal": {
+          "bytes": 2889,
+          "sha256": "1af6bff47a6da3384c8b46f0f0c2879f9f6a8405bb7d4a69695f4652a2ab6390"
+        },
+        "generationIdentities": {
+          "jar": {
+            "sha256": "4e187cea76222f444a74b1b336580281034789b2126af3e008c29106837fad6f"
+          },
+          "java": {
+            "executable": "java",
+            "release": "IMPLEMENTOR=\"Homebrew\"\nIMPLEMENTOR_VERSION=\"Homebrew\"\nJAVA_RUNTIME_VERSION=\"27\"\nJAVA_VERSION=\"27\"\nJAVA_VERSION_DATE=\"2026-09-15\"\nLIBC=\"default\"\nMODULES=\"java.base java.compiler java.datatransfer java.xml java.prefs java.desktop java.instrument java.logging java.management java.security.sasl java.naming java.rmi java.management.rmi java.net.http java.scripting java.security.jgss java.transaction.xa java.sql java.sql.rowset java.xml.crypto java.se java.smartcardio jdk.accessibility jdk.internal.jvmstat jdk.attach jdk.charsets jdk.internal.opt jdk.zipfs jdk.compiler jdk.crypto.cryptoki jdk.crypto.ec jdk.dynalink jdk.internal.ed jdk.editpad jdk.hotspot.agent jdk.httpserver jdk.incubator.vector jdk.internal.le jdk.internal.md jdk.jartool jdk.javadoc jdk.jcmd jdk.management jdk.management.agent jdk.jconsole jdk.jdeps jdk.jdwp.agent jdk.jdi jdk.jfr jdk.jlink jdk.jpackage jdk.jshell jdk.jstatd jdk.localedata jdk.management.jfr jdk.naming.dns jdk.naming.rmi jdk.net jdk.nio.mapmode jdk.sctp jdk.security.auth jdk.security.jgss jdk.unsupported jdk.unsupported.desktop jdk.xml.dom\"\nOS_ARCH=\"aarch64\"\nOS_NAME=\"Darwin\"\nSOURCE=\"\"\n",
+            "sha256": "05687a76275264affc701d1cbc005960002295e2da9f2833aa6c0ebfecd77943"
+          }
+        },
+        "processes": [],
+        "result": {
+          "bytes": 23670371,
+          "sha256": "0ca8a7fb3d55a632116cac9d2a677b11df8504f48649ee901ef268c747562e5c"
+        }
+      }
+    },
+    {
+      "path": "spread.source.js",
+      "bytes": 93,
+      "producerFile": "source.js",
+      "producerPopulationSummarySha256": "5c3c2b9bbfe0fdef0819763a531ab0d832550ef5cea88eb2a472de1aa25c266c",
+      "producer": {
+        "id": "spread--baseline--181",
+        "source": {
+          "bytes": 93
+        },
+        "emission": {
+          "bytes": 37923
+        },
+        "rawEmission": {
+          "bytes": 39776,
+          "sha256": "7d5e1ad53a1730b63a200fb4dd4a246fe4c795f2eff3e4a19af4b530485350ac"
+        },
+        "options": {
+          "aliasedOpcodes": false,
+          "antiInstrumentation": false,
+          "classObfuscation": false,
+          "concealConstants": false,
+          "controlFlowFlattening": false,
+          "dispatcher": false,
+          "encodeBytecode": false,
+          "handlerTable": false,
+          "macroOpcodes": false,
+          "minify": false,
+          "randomizeOpcodes": false,
+          "selfModifying": false,
+          "shuffleOpcodes": false,
+          "specializedOpcodes": false,
+          "stringConcealing": false,
+          "target": "browser",
+          "timingChecks": false
+        },
+        "rng": {
+          "algorithm": "mulberry32",
+          "draws": 0,
+          "seed": 181,
+          "state": 181
+        },
+        "generationJournal": {
+          "bytes": 2889,
+          "sha256": "1af6bff47a6da3384c8b46f0f0c2879f9f6a8405bb7d4a69695f4652a2ab6390"
+        },
+        "generationIdentities": {
+          "jar": {
+            "sha256": "4e187cea76222f444a74b1b336580281034789b2126af3e008c29106837fad6f"
+          },
+          "java": {
+            "executable": "java",
+            "release": "IMPLEMENTOR=\"Homebrew\"\nIMPLEMENTOR_VERSION=\"Homebrew\"\nJAVA_RUNTIME_VERSION=\"27\"\nJAVA_VERSION=\"27\"\nJAVA_VERSION_DATE=\"2026-09-15\"\nLIBC=\"default\"\nMODULES=\"java.base java.compiler java.datatransfer java.xml java.prefs java.desktop java.instrument java.logging java.management java.security.sasl java.naming java.rmi java.management.rmi java.net.http java.scripting java.security.jgss java.transaction.xa java.sql java.sql.rowset java.xml.crypto java.se java.smartcardio jdk.accessibility jdk.internal.jvmstat jdk.attach jdk.charsets jdk.internal.opt jdk.zipfs jdk.compiler jdk.crypto.cryptoki jdk.crypto.ec jdk.dynalink jdk.internal.ed jdk.editpad jdk.hotspot.agent jdk.httpserver jdk.incubator.vector jdk.internal.le jdk.internal.md jdk.jartool jdk.javadoc jdk.jcmd jdk.management jdk.management.agent jdk.jconsole jdk.jdeps jdk.jdwp.agent jdk.jdi jdk.jfr jdk.jlink jdk.jpackage jdk.jshell jdk.jstatd jdk.localedata jdk.management.jfr jdk.naming.dns jdk.naming.rmi jdk.net jdk.nio.mapmode jdk.sctp jdk.security.auth jdk.security.jgss jdk.unsupported jdk.unsupported.desktop jdk.xml.dom\"\nOS_ARCH=\"aarch64\"\nOS_NAME=\"Darwin\"\nSOURCE=\"\"\n",
+            "sha256": "05687a76275264affc701d1cbc005960002295e2da9f2833aa6c0ebfecd77943"
+          }
+        },
+        "processes": [],
+        "result": {
+          "bytes": 23670371,
+          "sha256": "0ca8a7fb3d55a632116cac9d2a677b11df8504f48649ee901ef268c747562e5c"
+        }
+      }
+    }
+  ],
+  "boundary": "Exact source/options/RNG/emission provenance; finite recognition fixtures, no general semantics claim"
+}
