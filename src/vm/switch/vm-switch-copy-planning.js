@@ -568,7 +568,7 @@ export function emitInstruction(
     return `__recovered_handlers.pop();\n${next}`
   if (operation.kind === 'finally-setup')
     return `__recovered_handlers.push({ kind: 'finally', target: ${operation.target}, continuation: ${operation.continuation}, payload: ${operation.payload}, throwPad: ${operation.throwPad} });\n${next}`
-  if (operation.kind === 'debugger') return `void 0;\n${next}`
+  if (operation.kind === 'debugger') return next
   decline(
     'unsupported-switch-operation',
     `VM switch emission does not support ${operation.kind}`,

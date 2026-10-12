@@ -59,6 +59,34 @@ function withCases(cases, registerCount) {
   return model
 }
 
+test.each(['structured', 'state-machine'])(
+  '%s: DEBUGGER emits no statement and preserves the following effect',
+  (mode) => {
+    const operations = [
+      { kind: 'assign', destination: 0, value: { kind: 'literal', value: 7 } },
+      { kind: 'debugger' },
+      { kind: 'global-write', name: 'RESULT', source: 0 },
+      { kind: 'return', source: 0 },
+    ]
+    const model = withCases(
+      operations.map((operation, pc) => ({ pc, nextPc: pc + 1, operation })),
+      1,
+    )
+    if (mode === 'state-machine') {
+      model.controlByFunction = new Map([[0, { mode }]])
+      model.structuredControl = { edges: [] }
+    }
+    const { output } = emitVmSwitchProgram(model)
+    expect(output).not.toContain('debugger;')
+    expect(output).not.toContain('void 0;')
+    expect(output.includes('__recovered_dispatch')).toBe(mode === 'state-machine')
+    const context = { RESULT: null }
+    context.globalThis = context
+    runSource(output, context)
+    expect(context.RESULT).toBe(7)
+  },
+)
+
 test('keeps a terminal throw after handler pop outside the recovered catch', () => {
   const operations = [
     { kind: 'catch-setup', target: 4, exceptionRegister: 0 },

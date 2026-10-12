@@ -14,6 +14,7 @@ import { diagnoseMinifiedClassBoot } from './observe-minified-class-boot.js'
 import {
   HANDLER_CLAUSES,
   DEFAULT_CLAUSE,
+  DEBUGGER_WITHOUT_STATEMENT,
 } from './minified-class-handler-clauses.js'
 import {
   ownedFunctions,
@@ -656,7 +657,14 @@ function observe(input, { deferEntry = false } = {}) {
   for (const item of dispatch.cases) {
     const opcode = numberValue(item.test)
     const pattern =
-      item.test === null ? DEFAULT_CLAUSE : HANDLER_CLAUSES.get(opcode)
+      item.test === null
+        ? DEFAULT_CLAUSE
+        : opcode === EXPECTED_OPCODES.DEBUGGER &&
+            !context
+              .nodes(item)
+              .some(({ node }) => node.type === 'DebuggerStatement')
+          ? DEBUGGER_WITHOUT_STATEMENT
+          : HANDLER_CLAUSES.get(opcode)
     requireGraph(pattern, 'handler', `Unknown numeric handler ${opcode}`)
     const result = tryClause(
       pattern,

@@ -370,6 +370,15 @@ export function verifyClassRuntimeContract(
       const leftBreak = left.at(-1)?.type === 'BreakStatement'
       const rightBreak = right.at(-1)?.type === 'BreakStatement'
       if (leftBreak && !rightBreak) mismatch('case fallthrough')
+      // Deleting the DEBUGGER statement leaves only the existing case exit.
+      if (
+        left.length === 2 &&
+        left[0].type === 'DebuggerStatement' &&
+        leftBreak &&
+        right.length === 1 &&
+        rightBreak
+      )
+        return
       compare(
         leftBreak ? left.slice(0, -1) : left,
         rightBreak ? right.slice(0, -1) : right,

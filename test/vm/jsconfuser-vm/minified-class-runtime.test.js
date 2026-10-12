@@ -426,9 +426,7 @@ test('PATCH, DEBUGGER, closure shell and finally record have complete discrimina
     [
       57,
       (path) => {
-        path.node.consequent = path.node.consequent.filter(
-          (node) => node.type !== 'DebuggerStatement',
-        )
+        path.node.consequent.unshift(opaque())
       },
     ],
     [

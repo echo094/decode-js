@@ -149,6 +149,7 @@ set(
 )
 set(58, `$regs[$fp+0]=${reg};break;`)
 set(57, 'debugger;break;')
+export const DEBUGGER_WITHOUT_STATEMENT = semanticClause('break;')
 export const HANDLER_CLAUSES = bodies
 export const DEFAULT_CLAUSE = semanticClause(
   'throw Error("Unknown opcode: "+$opcode+" at pc "+($regs[$fp+0]-1));',

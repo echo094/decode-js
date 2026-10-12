@@ -13,6 +13,7 @@ import { semanticShape } from './minified-class-semantic-clauses.js'
 import {
   HANDLER_CLAUSES,
   DEFAULT_CLAUSE,
+  DEBUGGER_WITHOUT_STATEMENT,
 } from './minified-class-handler-clauses.js'
 import { ownedFunctions } from './minified-class-owned-functions.js'
 import { clauseLiveness } from './minified-class-binding-liveness.js'
@@ -902,6 +903,7 @@ export function materializeRandomizedMinifiedClass(input) {
   const patterns = new Map(
     [...HANDLER_CLAUSES].map(([opcode, body]) => [opcode, skeleton(body)]),
   )
+  const debuggerWithoutStatement = skeleton(DEBUGGER_WITHOUT_STATEMENT)
   const opcodes = {}
   for (const entry of dispatch.cases) {
     if (entry.test === null) {
@@ -920,7 +922,10 @@ export function materializeRandomizedMinifiedClass(input) {
     )
     const candidate = skeleton(semanticShape(entry.consequent), context)
     const matches = [...patterns].filter(
-      ([, signature]) => signature === candidate,
+      ([opcode, signature]) =>
+        signature === candidate ||
+        (opcode === EXPECTED_OPCODES.DEBUGGER &&
+          debuggerWithoutStatement === candidate),
     )
     fail(matches.length === 1, 'Semantic case skeleton is missing or ambiguous')
     const opcode = matches[0][0],

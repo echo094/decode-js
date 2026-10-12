@@ -122,11 +122,6 @@ export function verifyProtectionCases(
   ) {
     decline('class-runtime-opcodes', 'Opcode 56 rewrite key changed')
   }
-  unique(
-    caseNodes(context, dispatch, 57).filter(
-      (node) => node.type === 'DebuggerStatement',
-    ),
-    'Opcode 57 debugger',
-  )
+  // The complete runtime contract checks DEBUGGER with or without its statement.
   return Object.freeze({ protectionCases: 5 })
 }
