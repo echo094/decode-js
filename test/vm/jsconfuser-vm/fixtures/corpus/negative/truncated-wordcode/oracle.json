@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "negative-oracle.v1",
+  "cellId": "truncated-wordcode",
+  "expectedStatus": "declined",
+  "expectedDiagnostic": "wordcode-declined",
+  "outputMustEqualInput": true,
+  "targetExecution": false,
+  "vmExecuted": false,
+  "behavioralOracleInvoked": false,
+  "reason": "The final instruction is removed, leaving a structurally truncated stream.",
+  "sourceEvidence": [
+    "encoder/js-confuser-vm/test/features/Literals.test.js:4-177"
+  ],
+  "semanticTags": [
+    "numeric-wordcode",
+    "truncated-instruction",
+    "atomic-decline"
+  ],
+  "comparison": {
+    "sourceExpected": "static-decline-contract",
+    "recoveredExpected": "not-applicable"
+  },
+  "exclusions": [
+    "This negative oracle is never evaled or executed; it records only the registered decline contract.",
+    "No behavioral source oracle is used to make a decline look like successful decompilation."
+  ]
+}

@@ -1,0 +1,1 @@
+function work() { let value = 7; window.SAVED = () => value; window.pauseGate(); return value; } try { window.TEST_OUTPUT = work(); } finally { window.CLEANED = true; } window.TEST_OUTPUT = [window.TEST_OUTPUT, window.CLEANED, window.SAVED()];

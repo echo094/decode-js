@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "negative-oracle.v1",
+  "cellId": "structural-container-role",
+  "expectedStatus": "declined",
+  "expectedDiagnostic": "container-declined",
+  "outputMustEqualInput": true,
+  "targetExecution": false,
+  "vmExecuted": false,
+  "behavioralOracleInvoked": false,
+  "reason": "The registered role metadata is parseable but has an invalid register-base shape.",
+  "sourceEvidence": [
+    "encoder/js-confuser-vm/test/features/Literals.test.js:4-177"
+  ],
+  "semanticTags": [
+    "parseable-source",
+    "role-operand-shape",
+    "container-schema"
+  ],
+  "comparison": {
+    "sourceExpected": "static-decline-contract",
+    "recoveredExpected": "not-applicable"
+  },
+  "exclusions": [
+    "This negative oracle is never evaled or executed; it records only the registered decline contract.",
+    "No behavioral source oracle is used to make a decline look like successful decompilation."
+  ]
+}
