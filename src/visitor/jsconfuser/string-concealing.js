@@ -2,7 +2,7 @@ import generator from '@babel/generator'
 import * as t from '@babel/types'
 
 import ivm from 'isolated-vm'
-const isolate = new ivm.Isolate()
+const isolate = new ivm.Isolate({ memoryLimit: 32 })
 
 import safeFunc from '../../utility/safe-func.js'
 const safeDeleteNode = safeFunc.safeDeleteNode
@@ -418,7 +418,7 @@ function evalWrapperCallSites(fnPath, wrapperBinding, decodeFnName, arrayName) {
 
   const vm = isolate.createContextSync()
   try {
-    vm.evalSync(bundleCode)
+    vm.evalSync(bundleCode, { timeout: 5000 })
   } catch (e) {
     console.warn(
       `[StringConcealing] Failed to eval decoder bundle for ${wrapperName}: ${e.message}`,
