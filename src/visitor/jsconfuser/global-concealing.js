@@ -96,9 +96,9 @@ function readSnifferName(binding) {
  * its own `FunctionDeclaration` id, the `var f = function …` declarator it initializes, or
  * the `f = function …` assignment left when the declaration and its value were emitted
  * separately. The last is the common one on a `high` sample and is *ours* - the CFF decode
- * lifts the encoder's scope-anchor property into a hoisted `var` plus an assignment (see
- * that pass's Upstream Effects) - which is why keying this visitor on `FunctionDeclaration`
- * meant it never fired at all rather than matching and declining.
+ * lifts the encoder's scope-anchor property into a hoisted `var` plus an assignment - which
+ * is why keying this visitor on `FunctionDeclaration` meant it never fired at all rather than
+ * matching and declining.
  */
 function readHolderName(fnPath) {
   if (fnPath.isFunctionDeclaration()) {
