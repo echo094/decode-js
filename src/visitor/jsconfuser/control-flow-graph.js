@@ -2065,8 +2065,8 @@ function findOutlinedFunctionWrappers(root, { mainFnName, runtimeName }) {
  * statement of the body, no argument or an `undefined` one - so removing it is free, and
  * leaving it in is not: it displaces the real last statement, which is how a downstream
  * matcher that addresses a template's roles from the end of the body sees a shape it cannot
- * recognise. That is an Upstream Effect of *ours*, and this is the pass that emits it, so it
- * is fixed here once rather than tolerated in each matcher it defeats.
+ * recognise. The shape is *ours*, emitted here into every later pass's input, so it is
+ * fixed here once rather than tolerated in each matcher it defeats.
  *
  * Only the value-less forms: a `return <something else>` at the end of a body is the
  * function's real result. `undefined` is read as the value, consistently with the
@@ -2902,7 +2902,7 @@ function collapseInlineFlattenedFunction(match, name) {
   // body, running off the end already returns undefined, and the appended `return;` is dead.
   // Not merely redundant - it displaces the real last statement, which is what a matcher
   // reading a template's roles from the end of a body has to see, and `deDispatcherInit`'s
-  // does. Same Upstream Effect as `dropTrailingDeadReturn`'s, one splice later.
+  // does. The same shape `dropTrailingDeadReturn` removes, one splice later.
   const stmtList = anchor.container
   const lastHarnessNode = harness.statements[harness.statements.length - 1].node
   const fallsThrough = !(
