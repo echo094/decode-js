@@ -171,6 +171,39 @@ function isAttached(path) {
 }
 
 /**
+ * The slot number an index names, or null if it can't be resolved yet.
+ *
+ * DuplicateLiteralsRemoval can deduplicate its own index literals. When it rewrites a value's
+ * first occurrence to `arr[i]` while the list holding it is still being walked, the encoder
+ * visits that `i` too, and a repeated `i` becomes `arr[arr[j]]`. A VM word array - hundreds of
+ * small numbers in one ArrayExpression - nests this way almost every time. The inner read names
+ * a slot of this same array, so it resolves now, through the element it reads, unlike a
+ * CFF-wrapped index. Anything that isn't a read of this binding, or reads a slot that is not a
+ * plain integer, stays unresolved.
+ */
+function resolveIndex(node, scope, match) {
+  if (t.isNumericLiteral(node)) return node.value
+  if (
+    !t.isMemberExpression(node) ||
+    !node.computed ||
+    !t.isIdentifier(node.object, { name: match.arrayName }) ||
+    scope.getBinding(match.arrayName) !== match.binding
+  ) {
+    return null
+  }
+  const inner = resolveIndex(node.property, scope, match)
+  if (
+    !Number.isInteger(inner) ||
+    inner < 0 ||
+    inner >= match.elements.length ||
+    !t.isNumericLiteral(match.elements[inner])
+  ) {
+    return null
+  }
+  return match.elements[inner].value
+}
+
+/**
  * Fresh closure state per call (RGF recursively re-invokes the whole
  * pipeline on each eval-wrapped sub-program, so module-level state would
  * leak between runs). The array is always Program-scoped, so a plain name
@@ -235,21 +268,24 @@ function substituteArrayReads(match, cleanupCandidates) {
     // substitutable. Bail on the whole array rather than skipping the one site.
     if (!isReadPosition(member)) return
 
-    const prop = member.node.property
-    if (!t.isNumericLiteral(prop) || !Number.isInteger(prop.value)) {
+    const index = resolveIndex(member.node.property, member.scope, match)
+    if (!Number.isInteger(index)) {
       // An index that isn't a resolved number yet is the CFF-wrapped case above: the
       // same slot will be spelled differently here than at the sites that do
       // substitute, so bail on the array as a whole.
       return
     }
-    if (prop.value < 0 || prop.value >= match.elements.length) {
+    if (index < 0 || index >= match.elements.length) {
       // Out of range indexes no slot at all. It is already a plain number, so it has
       // no second spelling to disagree with and no later pass will resolve it
       // differently - skipping just this site is safe.
       continue
     }
 
-    pending.push({ member, index: prop.value })
+    // A nested read's inner reference is queued as well. Whichever of the two is replaced
+    // first, the other is either still attached and resolves to the same index computed
+    // here, or is detached and skipped below.
+    pending.push({ member, index })
   }
 
   if (pending.length === 0) return

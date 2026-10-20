@@ -1,8 +1,1 @@
-const __p_dlrArray = [1, "x", true];
-var a = __p_dlrArray[0];
-var b = __p_dlrArray[0];
-var c = __p_dlrArray[1];
-var d = __p_dlrArray[1];
-var e = __p_dlrArray[2];
-var f = __p_dlrArray[2];
-console.log(a, b, c, d, e, f);
+const __p_gXwQ_dlrArray=[1,"x",true,0];var a=[__p_gXwQ_dlrArray[__p_gXwQ_dlrArray[3]],__p_gXwQ_dlrArray[__p_gXwQ_dlrArray[0]],__p_gXwQ_dlrArray[2],__p_gXwQ_dlrArray[0],__p_gXwQ_dlrArray[1],__p_gXwQ_dlrArray[2],__p_gXwQ_dlrArray[3]];

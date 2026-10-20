@@ -5,6 +5,10 @@ import deDuplicateLiteralInit from '#visitor/jsconfuser/duplicate-literal'
 
 const root = join(__dirname, 'duplicate-literal')
 
+// Encoder output: js-confuser 2.1.3 (31c5a47), {target:'node', duplicateLiteralsRemoval:true},
+// source `var a = [1, "x", true, 1, "x", true, 0];`. A first occurrence rewritten while its
+// sibling list is still being walked has its own index literal deduplicated, so two reads come
+// out nested (`arr[arr[3]]`, `arr[arr[0]]`) and resolve through a different slot.
 test('many-values', () => {
   const tc = 'many-values'
   getResult(deDuplicateLiteralInit(), true, join(root, tc))
