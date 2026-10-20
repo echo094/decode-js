@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "negative-oracle.v1",
+  "cellId": "reference-invalid-register",
+  "expectedStatus": "declined",
+  "expectedDiagnostic": "cfg-declined",
+  "outputMustEqualInput": true,
+  "targetExecution": false,
+  "vmExecuted": false,
+  "behavioralOracleInvoked": false,
+  "reason": "A LOAD_CONST destination register is outside the function register file.",
+  "sourceEvidence": [
+    "encoder/js-confuser-vm/test/features/Literals.test.js:4-177"
+  ],
+  "semanticTags": [
+    "register-reference",
+    "out-of-range",
+    "atomic-decline"
+  ],
+  "comparison": {
+    "sourceExpected": "static-decline-contract",
+    "recoveredExpected": "not-applicable"
+  },
+  "exclusions": [
+    "This negative oracle is never evaled or executed; it records only the registered decline contract.",
+    "No behavioral source oracle is used to make a decline look like successful decompilation."
+  ]
+}

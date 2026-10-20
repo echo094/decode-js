@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "negative-oracle.v1",
+  "cellId": "unknown-opcode",
+  "expectedStatus": "declined",
+  "expectedDiagnostic": "wordcode-declined",
+  "outputMustEqualInput": true,
+  "targetExecution": false,
+  "vmExecuted": false,
+  "behavioralOracleInvoked": false,
+  "reason": "The first opcode is outside the pinned VM opcode table.",
+  "sourceEvidence": [
+    "encoder/js-confuser-vm/test/features/Literals.test.js:4-177"
+  ],
+  "semanticTags": [
+    "numeric-wordcode",
+    "unknown-opcode",
+    "atomic-decline"
+  ],
+  "comparison": {
+    "sourceExpected": "static-decline-contract",
+    "recoveredExpected": "not-applicable"
+  },
+  "exclusions": [
+    "This negative oracle is never evaled or executed; it records only the registered decline contract.",
+    "No behavioral source oracle is used to make a decline look like successful decompilation."
+  ]
+}

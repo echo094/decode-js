@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "negative-oracle.v1",
+  "cellId": "missing-container-role",
+  "expectedStatus": "declined",
+  "expectedDiagnostic": "container-declined",
+  "outputMustEqualInput": true,
+  "targetExecution": false,
+  "vmExecuted": false,
+  "behavioralOracleInvoked": false,
+  "reason": "The bytecode role is renamed, so the source is not a valid container.",
+  "sourceEvidence": [
+    "encoder/js-confuser-vm/test/features/Literals.test.js:4-177"
+  ],
+  "semanticTags": [
+    "parseable-source",
+    "missing-bytecode-role",
+    "container-contract"
+  ],
+  "comparison": {
+    "sourceExpected": "static-decline-contract",
+    "recoveredExpected": "not-applicable"
+  },
+  "exclusions": [
+    "This negative oracle is never evaled or executed; it records only the registered decline contract.",
+    "No behavioral source oracle is used to make a decline look like successful decompilation."
+  ]
+}

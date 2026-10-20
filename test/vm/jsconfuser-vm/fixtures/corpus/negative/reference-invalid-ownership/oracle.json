@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "negative-oracle.v1",
+  "cellId": "reference-invalid-ownership",
+  "expectedStatus": "declined",
+  "expectedDiagnostic": "functions-declined",
+  "outputMustEqualInput": true,
+  "targetExecution": false,
+  "vmExecuted": false,
+  "behavioralOracleInvoked": false,
+  "reason": "A MAKE_CLOSURE target is redirected to the root function, breaking ownership partitioning.",
+  "sourceEvidence": [
+    "encoder/js-confuser-vm/test/features/Closures.test.js:4-110"
+  ],
+  "semanticTags": [
+    "closure-reference",
+    "function-ownership",
+    "invalid-target"
+  ],
+  "comparison": {
+    "sourceExpected": "static-decline-contract",
+    "recoveredExpected": "not-applicable"
+  },
+  "exclusions": [
+    "This negative oracle is never evaled or executed; it records only the registered decline contract.",
+    "No behavioral source oracle is used to make a decline look like successful decompilation."
+  ]
+}

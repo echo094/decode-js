@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "negative-oracle.v1",
+  "cellId": "ordinary-near-miss",
+  "expectedStatus": "declined",
+  "expectedDiagnostic": "container-declined",
+  "outputMustEqualInput": true,
+  "targetExecution": false,
+  "vmExecuted": false,
+  "behavioralOracleInvoked": false,
+  "reason": "Parseable ordinary JavaScript has no jsconfuser-vm container role.",
+  "sourceEvidence": [
+    "decoder/decode-js/test/vm/jsconfuser-vm/integration/harness.test.js:167-179"
+  ],
+  "semanticTags": [
+    "ordinary-javascript",
+    "parseable",
+    "not-a-vm-container"
+  ],
+  "comparison": {
+    "sourceExpected": "static-decline-contract",
+    "recoveredExpected": "not-applicable"
+  },
+  "exclusions": [
+    "This negative oracle is never evaled or executed; it records only the registered decline contract.",
+    "No behavioral source oracle is used to make a decline look like successful decompilation."
+  ]
+}

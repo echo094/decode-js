@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "oracle.v1",
+  "cellId": "f-throw-catch",
+  "hostProfile": "minimal-window-v1",
+  "globals": {},
+  "setup": {
+    "state": {},
+    "aliases": []
+  },
+  "actions": [],
+  "timeoutMs": 2000,
+  "expected": null,
+  "expectedThrow": {
+    "type": "primitive",
+    "value": {
+      "kind": "uncaught",
+      "caught": [
+        {
+          "type": "string",
+          "value": "boom"
+        },
+        {
+          "type": "Error",
+          "message": "bad"
+        }
+      ]
+    }
+  },
+  "semanticTags": [
+    "throw",
+    "catch",
+    "uncaught",
+    "primitive-error",
+    "error-object"
+  ],
+  "hazards": [
+    "The cell intentionally has no successful TEST_OUTPUT; source/raw/stripped must agree on the exact tagged uncaught object and its caught evidence.",
+    "Error stack text is excluded; only the stable Error name/message and primitive caught value are retained."
+  ],
+  "exclusions": [
+    "Compiler/runtime internals, debug comments, and opcode/IR coverage remain excluded until step 2."
+  ],
+  "comparison": {
+    "sourceRawStripped": "exact-normalized-observable",
+    "expectedKind": "tagged-throw"
+  }
+}

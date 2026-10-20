@@ -1,0 +1,42 @@
+{
+  "schemaVersion": "oracle.v1",
+  "cellId": "f-accessors-and-methods",
+  "hostProfile": "minimal-window-v1",
+  "globals": {},
+  "setup": {
+    "state": {},
+    "aliases": []
+  },
+  "actions": [],
+  "timeoutMs": 2000,
+  "expected": [
+    7,
+    7,
+    11,
+    [
+      "computed",
+      "method",
+      "value"
+    ]
+  ],
+  "expectedThrow": null,
+  "semanticTags": [
+    "getter",
+    "setter",
+    "computed-key",
+    "computed-state",
+    "method-shorthand",
+    "enumeration"
+  ],
+  "hazards": [
+    "Computed key evaluation and accessor/method enumeration are observed through explicit values and sorted keys; property identity is not compared across processes.",
+    "The child uses the minimal-window-v1 profile and no ambient globals beyond the declared source."
+  ],
+  "exclusions": [
+    "Compiler/runtime internals, debug comments, and opcode/IR coverage remain excluded until step 2."
+  ],
+  "comparison": {
+    "sourceRawStripped": "exact-normalized-observable",
+    "expectedKind": "normalized-value"
+  }
+}

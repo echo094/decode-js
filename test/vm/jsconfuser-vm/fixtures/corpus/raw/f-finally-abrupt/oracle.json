@@ -1,0 +1,52 @@
+{
+  "schemaVersion": "oracle.v1",
+  "cellId": "f-finally-abrupt",
+  "hostProfile": "minimal-window-v1",
+  "globals": {},
+  "setup": {
+    "state": {},
+    "aliases": []
+  },
+  "actions": [],
+  "timeoutMs": 2000,
+  "expected": [
+    "normal",
+    {
+      "type": "undefined"
+    },
+    [
+      "try",
+      "finally",
+      "boom",
+      "finally-catch",
+      "inner-finally",
+      "nested-caught-deep",
+      "outer-finally",
+      "loop-body-0",
+      "loop-finally-0",
+      "loop-finally-1",
+      "loop-finally-2"
+    ]
+  ],
+  "expectedThrow": null,
+  "semanticTags": [
+    "finally",
+    "return",
+    "throw",
+    "catch",
+    "nested-finally",
+    "loop-abrupt",
+    "completion-order"
+  ],
+  "hazards": [
+    "The log is the source-visible oracle for nested-finalizer order and for finalizers crossed by continue/break; exception stacks are excluded.",
+    "The loop bounds are fixed and synchronous so every abrupt completion remains finite and reproducible."
+  ],
+  "exclusions": [
+    "Compiler/runtime internals, debug comments, and opcode/IR coverage remain excluded until step 2."
+  ],
+  "comparison": {
+    "sourceRawStripped": "exact-normalized-observable",
+    "expectedKind": "normalized-value"
+  }
+}

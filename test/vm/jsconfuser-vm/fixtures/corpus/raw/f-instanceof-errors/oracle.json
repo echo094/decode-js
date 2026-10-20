@@ -1,0 +1,33 @@
+{
+  "schemaVersion": "oracle.v1",
+  "cellId": "f-instanceof-errors",
+  "hostProfile": "minimal-window-v1",
+  "globals": {},
+  "setup": {
+    "state": {},
+    "aliases": []
+  },
+  "actions": [],
+  "timeoutMs": 2000,
+  "expected": [
+    "TypeError",
+    true
+  ],
+  "expectedThrow": null,
+  "semanticTags": [
+    "instanceof",
+    "native-error",
+    "exception"
+  ],
+  "hazards": [
+    "Finite synchronous child-process oracle with SIGKILL timeout; no time, random, network, locale, async, or stack observables.",
+    "Tagged projection compares declared values only; function identity, object identity, and host-dependent stack data are excluded."
+  ],
+  "exclusions": [
+    "Compiler/runtime internals, debug comments, and opcode/IR coverage remain excluded until step 2."
+  ],
+  "comparison": {
+    "sourceRawStripped": "exact-normalized-observable",
+    "expectedKind": "normalized-value"
+  }
+}
