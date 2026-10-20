@@ -47,7 +47,8 @@ A sample whose range overlaps that gap is reported as unknown rather than treate
 ### `jsconfuser`
 
 Covers JS-Confuser 2.x up to and including the `high` preset. Which transforms are
-reversed, which are not, and why: [docs/jsconfuser.md](docs/jsconfuser.md).
+reversed, which are not, and why are documented in the
+[decode-nexus jsconfuser plugin reference](https://github.com/echo094/decode-nexus/blob/main/skills/decode-js/plugins/jsconfuser.md).
 
 ## Usage
 
