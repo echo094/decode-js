@@ -1,0 +1,96 @@
+{
+  "note": "Each encoded file is the VM encoder's output for source.js with the listed options, the leading disassembly comment block removed (the committed corpus format). Math.random was replaced by the seeded PRNG used by cff-loop-return (mulberry32: state += 0x6d2b79f5, then the standard mulberry32 output). minify runs the Closure Compiler and needs a JDK on PATH. Regenerating with the same encoder revision, options and seed reproduces the bytes.",
+  "vmEncoder": {
+    "revision": "20c5b96bf57337c568579352758d7685358650de",
+    "version": "0.1.5"
+  },
+  "files": {
+    "class-minify.encoded.js": {
+      "options": {
+        "classObfuscation": true,
+        "minify": true
+      },
+      "seed": 324508639
+    },
+    "class-minify-table-shuffle.encoded.js": {
+      "options": {
+        "classObfuscation": true,
+        "minify": true,
+        "handlerTable": true,
+        "shuffleOpcodes": true
+      },
+      "seed": 324508639
+    },
+    "class-minify-aliased.encoded.js": {
+      "options": {
+        "classObfuscation": true,
+        "minify": true,
+        "aliasedOpcodes": true
+      },
+      "seed": 1
+    },
+    "class-minify-specialized.encoded.js": {
+      "options": {
+        "classObfuscation": true,
+        "minify": true,
+        "specializedOpcodes": true
+      },
+      "seed": 2
+    },
+    "minify-aliased.encoded.js": {
+      "options": {
+        "minify": true,
+        "aliasedOpcodes": true
+      },
+      "seed": 324508639
+    },
+    "minify-randomized.encoded.js": {
+      "options": {
+        "minify": true,
+        "randomizeOpcodes": true
+      },
+      "seed": 324508639
+    },
+    "minify-table-randomized.encoded.js": {
+      "options": {
+        "minify": true,
+        "handlerTable": true,
+        "randomizeOpcodes": true
+      },
+      "seed": 324508639
+    },
+    "minify-table-aliased.encoded.js": {
+      "options": {
+        "minify": true,
+        "handlerTable": true,
+        "aliasedOpcodes": true
+      },
+      "seed": 324508639
+    },
+    "minify-table-macro.encoded.js": {
+      "options": {
+        "minify": true,
+        "handlerTable": true,
+        "macroOpcodes": true
+      },
+      "seed": 324508639
+    },
+    "minify-table-specialized.encoded.js": {
+      "options": {
+        "minify": true,
+        "handlerTable": true,
+        "specializedOpcodes": true
+      },
+      "seed": 324508639
+    },
+    "minify-table-anti.encoded.js": {
+      "options": {
+        "minify": true,
+        "handlerTable": true,
+        "antiInstrumentation": true
+      },
+      "seed": 324508639
+    }
+  },
+  "claim": "runtime-layer options re-spell the interpreter (class obfuscation, Closure ADVANCED minify, handler table, case shuffle) and leave the payload unchanged: Packet A locates words, pool and root descriptor by the boot skeleton, the added-opcode readers find handlers by behaviour in a minified runtime, and randomized opcode values get their meaning from handler behaviour, so the decode behaves as the source"
+}

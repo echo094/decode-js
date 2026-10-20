@@ -1,0 +1,32 @@
+{
+  "encoderPin": "20c5b96bf57337c568579352758d7685358650de",
+  "rng": {
+    "algorithm": "mulberry32",
+    "seed": 211
+  },
+  "toolchain": {
+    "node": "26.10.0",
+    "jdk": "27 (Homebrew)",
+    "closure": "20260216.0.0"
+  },
+  "generator": "scripts/qualify-jsconfuser-vm/patch.mjs",
+  "profiles": {
+    "alias": "selfModifying+aliasedOpcodes",
+    "macro": "selfModifying+macroOpcodes",
+    "specialized": "selfModifying+specializedOpcodes",
+    "anti": "selfModifying+antiInstrumentation",
+    "stack": "selfModifying+aliasedOpcodes+macroOpcodes+specializedOpcodes+antiInstrumentation",
+    "finally": "selfModifying+aliasedOpcodes+macroOpcodes+specializedOpcodes+antiInstrumentation",
+    "arrays": "selfModifying+aliasedOpcodes+macroOpcodes+specializedOpcodes"
+  },
+  "boundary": "Known-source numeric nonminified runtime, added-opcode/PATCH source and current native behavior/recovery/state; no universal semantics claim",
+  "cases": {
+    "alias": "arithmetic",
+    "macro": "arithmetic",
+    "specialized": "arithmetic",
+    "anti": "arithmetic",
+    "stack": "arithmetic",
+    "finally": "tryFinally",
+    "arrays": "patchArrays"
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "schemaVersion": "negative-oracle.v1",
+  "cellId": "control-stale-target",
+  "expectedStatus": "declined",
+  "expectedDiagnostic": "unemittable-structured-control",
+  "outputMustEqualInput": true,
+  "targetExecution": false,
+  "vmExecuted": false,
+  "behavioralOracleInvoked": false,
+  "reason": "A branch is redirected to a valid boundary that violates the structured-control premise.",
+  "sourceEvidence": [
+    "encoder/js-confuser-vm/test/features/IfStatements.test.js:4-115",
+    "encoder/js-confuser-vm/test/features/Loops.test.js:4-186"
+  ],
+  "semanticTags": [
+    "structured-control",
+    "stale-target",
+    "parseable-reference"
+  ],
+  "comparison": {
+    "sourceExpected": "static-decline-contract",
+    "recoveredExpected": "not-applicable"
+  },
+  "exclusions": [
+    "This negative oracle is never evaled or executed; it records only the registered decline contract.",
+    "No behavioral source oracle is used to make a decline look like successful decompilation."
+  ]
+}

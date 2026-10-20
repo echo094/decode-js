@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "negative-oracle.v1",
+  "cellId": "handler-invalid-target",
+  "expectedStatus": "declined",
+  "expectedDiagnostic": "references-declined",
+  "outputMustEqualInput": true,
+  "targetExecution": false,
+  "vmExecuted": false,
+  "behavioralOracleInvoked": false,
+  "reason": "The FINALLY_SETUP handler target is outside the wordcode stream.",
+  "sourceEvidence": [
+    "encoder/js-confuser-vm/test/features/TryFinally.test.js:1-402"
+  ],
+  "semanticTags": [
+    "finally-handler",
+    "target-reference",
+    "out-of-range"
+  ],
+  "comparison": {
+    "sourceExpected": "static-decline-contract",
+    "recoveredExpected": "not-applicable"
+  },
+  "exclusions": [
+    "This negative oracle is never evaled or executed; it records only the registered decline contract.",
+    "No behavioral source oracle is used to make a decline look like successful decompilation."
+  ]
+}

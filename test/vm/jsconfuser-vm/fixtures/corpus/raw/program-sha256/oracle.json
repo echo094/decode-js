@@ -1,0 +1,74 @@
+{
+  "schemaVersion": "oracle.v1",
+  "cellId": "program-sha256",
+  "hostProfile": "minimal-window-v1",
+  "globals": {},
+  "setup": {
+    "state": {},
+    "aliases": []
+  },
+  "actions": [
+    {
+      "op": "keys",
+      "root": "output",
+      "path": [],
+      "as": "keys"
+    },
+    {
+      "op": "call",
+      "root": "output",
+      "path": [
+        "hex"
+      ],
+      "args": [
+        "Hello World!"
+      ],
+      "as": "hexHello"
+    },
+    {
+      "op": "call",
+      "root": "output",
+      "path": [
+        "hex"
+      ],
+      "args": [
+        "Another SHA256"
+      ],
+      "as": "hexAnother"
+    }
+  ],
+  "timeoutMs": 2000,
+  "expected": {
+    "keys": [
+      "hex",
+      "b64",
+      "any",
+      "hex_hmac",
+      "b64_hmac",
+      "any_hmac"
+    ],
+    "hexHello": "7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069",
+    "hexAnother": "846cf19f7bbbe6039a261bb17b693d27a77562843491bb9c053ba3b01921c10f"
+  },
+  "expectedThrow": null,
+  "semanticTags": [
+    "whole-program",
+    "nested-functions",
+    "closure",
+    "loops",
+    "bitwise",
+    "api"
+  ],
+  "hazards": [
+    "Finite synchronous child-process oracle with SIGKILL timeout; no time, random, network, locale, async, or stack observables.",
+    "Tagged projection compares declared values only; function identity, object identity, and host-dependent stack data are excluded.",
+    "Post-evaluation observations use only the finite declarative actions recorded in the oracle; function values are never serialized."
+  ],
+  "exclusions": [
+    "Compiler/runtime internals, debug comments, and opcode/IR coverage remain excluded until step 2."
+  ],
+  "comparison": {
+    "sourceRawStripped": "exact-normalized-observable",
+    "expectedKind": "normalized-value"
+  }
+}

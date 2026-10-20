@@ -1,0 +1,42 @@
+{
+  "schemaVersion": "oracle.v1",
+  "cellId": "composition-loop-dependent-calls",
+  "hostProfile": "minimal-window-v1",
+  "globals": {},
+  "setup": {
+    "state": {},
+    "aliases": []
+  },
+  "actions": [],
+  "timeoutMs": 2000,
+  "expected": {
+    "trace": [
+      4,
+      1,
+      10,
+      2
+    ],
+    "total": 41
+  },
+  "expectedThrow": null,
+  "semanticTags": [
+    "for-loop",
+    "call-in-loop",
+    "call-result-branch",
+    "dependent-second-call",
+    "method-mutation"
+  ],
+  "hazards": [
+    "Finite synchronous child-process oracle with SIGKILL timeout; no time, random, network, locale, async, or stack observables.",
+    "Tagged JSON-safe projection excludes identity-only assertions and host-dependent stack data.",
+    "The accessor event list is the observable that distinguishes computed-key/getter/RHS/setter evaluation order."
+  ],
+  "exclusions": [
+    "Encoder internals, debug comments, and decoder behavior are not used to define the expected observable.",
+    "The try/finally cell remains a source-backed unsupported boundary if the registered decoder declines it."
+  ],
+  "comparison": {
+    "sourceExpected": "exact-normalized-observable",
+    "recoveredExpected": "exact-normalized-observable on success only"
+  }
+}
