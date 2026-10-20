@@ -1,0 +1,74 @@
+{
+  "id": "exceptions--minifySelfModifyingEncodeBytecode--184",
+  "case": "exceptions",
+  "profile": "minifySelfModifyingEncodeBytecode",
+  "seed": 184,
+  "options": {
+    "randomizeOpcodes": false,
+    "shuffleOpcodes": false,
+    "encodeBytecode": true,
+    "concealConstants": false,
+    "controlFlowFlattening": false,
+    "dispatcher": false,
+    "stringConcealing": false,
+    "macroOpcodes": false,
+    "specializedOpcodes": false,
+    "aliasedOpcodes": false,
+    "antiInstrumentation": false,
+    "selfModifying": true,
+    "timingChecks": false,
+    "classObfuscation": false,
+    "handlerTable": false,
+    "minify": true,
+    "target": "browser"
+  },
+  "status": "accepted",
+  "diagnostic": null,
+  "sourceObservation": {
+    "kind": "value",
+    "value": [
+      "negative",
+      5,
+      true
+    ]
+  },
+  "encodedObservation": {
+    "kind": "value",
+    "value": [
+      "negative",
+      5,
+      true
+    ]
+  },
+  "decodedObservation": {
+    "kind": "value",
+    "value": [
+      "negative",
+      5,
+      true
+    ]
+  },
+  "effectObservation": {
+    "axis": "serialized-bytecode-components",
+    "observed": true,
+    "components": {
+      "minify": true,
+      "selfModifying": true,
+      "encodeBytecode": true
+    }
+  },
+  "provenance": {
+    "kind": "retained-cell-with-incomplete-generation-provenance",
+    "generation": {
+      "encoderCommit": null,
+      "decoderCommit": null,
+      "toolSha256": null,
+      "nodeVersion": null,
+      "rng": null,
+      "generatedAt": null,
+      "executionProvenance": null
+    },
+    "decodedBytesRetained": false,
+    "completeEffectControlsRetained": false
+  }
+}

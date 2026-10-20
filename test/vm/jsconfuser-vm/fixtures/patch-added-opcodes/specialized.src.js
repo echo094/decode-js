@@ -1,0 +1,1 @@
+window.TEST_OUTPUT = (6 * 7 + 3) % 5;

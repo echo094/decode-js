@@ -1,0 +1,63 @@
+{
+  "id": "closures--aliasedOpcodes--2",
+  "case": "closures",
+  "profile": "aliasedOpcodes",
+  "seed": 2,
+  "options": {
+    "randomizeOpcodes": false,
+    "shuffleOpcodes": false,
+    "encodeBytecode": false,
+    "concealConstants": false,
+    "controlFlowFlattening": false,
+    "dispatcher": false,
+    "stringConcealing": false,
+    "macroOpcodes": false,
+    "specializedOpcodes": false,
+    "aliasedOpcodes": true,
+    "antiInstrumentation": false,
+    "selfModifying": false,
+    "timingChecks": false,
+    "classObfuscation": false,
+    "handlerTable": false,
+    "minify": false,
+    "target": "browser"
+  },
+  "status": "declined",
+  "diagnostic": {
+    "code": "wordcode-declined",
+    "message": "Packet B declined the input wordcode"
+  },
+  "sourceObservation": {
+    "kind": "value",
+    "value": [
+      4,
+      5
+    ]
+  },
+  "encodedObservation": {
+    "kind": "value",
+    "value": [
+      4,
+      5
+    ]
+  },
+  "decodedObservation": null,
+  "effectObservation": {
+    "axis": "serialized-bytecode",
+    "observed": true
+  },
+  "provenance": {
+    "kind": "retained-cell-with-incomplete-generation-provenance",
+    "generation": {
+      "encoderCommit": null,
+      "decoderCommit": null,
+      "toolSha256": null,
+      "nodeVersion": null,
+      "rng": null,
+      "generatedAt": null,
+      "executionProvenance": null
+    },
+    "decodedBytesRetained": false,
+    "completeEffectControlsRetained": false
+  }
+}
