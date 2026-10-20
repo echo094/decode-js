@@ -1,0 +1,57 @@
+{
+  "id": "arithmetic--encodeBytecode--147",
+  "case": "arithmetic",
+  "profile": "encodeBytecode",
+  "seed": 147,
+  "options": {
+    "randomizeOpcodes": false,
+    "shuffleOpcodes": false,
+    "encodeBytecode": true,
+    "concealConstants": false,
+    "controlFlowFlattening": false,
+    "dispatcher": false,
+    "stringConcealing": false,
+    "macroOpcodes": false,
+    "specializedOpcodes": false,
+    "aliasedOpcodes": false,
+    "antiInstrumentation": false,
+    "selfModifying": false,
+    "timingChecks": false,
+    "classObfuscation": false,
+    "handlerTable": false,
+    "minify": false,
+    "target": "browser"
+  },
+  "status": "accepted",
+  "diagnostic": null,
+  "sourceObservation": {
+    "kind": "value",
+    "value": 0
+  },
+  "encodedObservation": {
+    "kind": "value",
+    "value": 0
+  },
+  "decodedObservation": {
+    "kind": "value",
+    "value": 0
+  },
+  "effectObservation": {
+    "axis": "serialized-bytecode",
+    "observed": true
+  },
+  "provenance": {
+    "kind": "retained-cell-with-incomplete-generation-provenance",
+    "generation": {
+      "encoderCommit": null,
+      "decoderCommit": null,
+      "toolSha256": null,
+      "nodeVersion": null,
+      "rng": null,
+      "generatedAt": null,
+      "executionProvenance": null
+    },
+    "decodedBytesRetained": false,
+    "completeEffectControlsRetained": false
+  }
+}
