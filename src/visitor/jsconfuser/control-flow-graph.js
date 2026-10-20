@@ -1414,7 +1414,7 @@ function makeScopeFlattenVisitor(scopeName, nameFor) {
         return
       }
       path.replaceWith(
-        t.identifier(nameFor(match.scopeProperty, match.varName)),
+        t.identifier(nameFor(match.scopeProperty, match.varName, path)),
       )
       path.skip()
       unwrapThisGuardCallee(path)
@@ -1460,18 +1460,33 @@ function makeScopeFlattenVisitor(scopeName, nameFor) {
  */
 function flattenScopeMembersInGraph(
   root,
-  { scopeName, pairNames = new Map(), usedNames = new Set() },
+  {
+    scopeName,
+    pairNames = new Map(),
+    usedNames = new Set(),
+    reservedNames = new Set(),
+  },
 ) {
   const introduced = []
 
-  function nameFor(scopeProperty, varName) {
+  function nameFor(scopeProperty, varName, referencePath) {
     const key = `${scopeProperty}::${varName}`
     if (pairNames.has(key)) {
       return pairNames.get(key)
     }
     let candidate = varName
     let suffix = 2
-    while (usedNames.has(candidate)) {
+    // `varName` came from the encoder's scope-member key, but the graph still carries
+    // ordinary lexical bindings from helpers which were never moved into that scope.
+    // Resolve the candidate at the exact reference site so an introduced declaration
+    // cannot capture or be captured by a real binding with the same spelling. The
+    // binding object is the source-derived identity; comparing text alone is unsafe
+    // when nested functions shadow a helper name.
+    while (
+      usedNames.has(candidate) ||
+      reservedNames.has(candidate) ||
+      referencePath?.scope.getBinding(candidate)
+    ) {
       candidate = `${varName}_${suffix}`
       suffix++
     }
@@ -1874,6 +1889,28 @@ function declareIntroducedVariables(names) {
 }
 
 /**
+ * Returns the lexical names owned by a function before its body is replaced by decoded
+ * graph statements. Graph paths are intentionally detached from that original scope by
+ * the time flattening runs, so their `NodePath.scope` cannot be used as the reservation
+ * source; this snapshot keeps the binding identity information while it is still live.
+ */
+function functionBindingNames(functionPath) {
+  const names = new Set()
+  let scope = functionPath.scope
+  while (scope) {
+    for (const name of Object.keys(scope.bindings)) {
+      names.add(name)
+    }
+    scope = scope.parent
+  }
+  const body = functionPath.get('body')
+  for (const name of Object.keys(body.scope.bindings)) {
+    names.add(name)
+  }
+  return names
+}
+
+/**
  * Matches one outlined-nested-function wrapper's `FunctionExpression`:
  * `function(...restName){ return mainFnName(vector,
  * scopeObjExpr, runtimeIdent, restName) }`. This is what a hoisted `function fnName(...){}`
@@ -2152,6 +2189,7 @@ function decodeFlattenedFunction(vector, ctx) {
     scopeName,
     pairNames,
     usedNames,
+    reservedNames,
     keepReturnFlag,
   } = ctx
 
@@ -2174,6 +2212,7 @@ function decodeFlattenedFunction(vector, ctx) {
     scopeName,
     pairNames,
     usedNames,
+    reservedNames,
   })
 
   const wrappers = findOutlinedFunctionWrappers(graph, {
@@ -2181,6 +2220,9 @@ function decodeFlattenedFunction(vector, ctx) {
     runtimeName,
   })
   for (const wrapper of wrappers) {
+    for (const name of functionBindingNames(wrapper.functionPath)) {
+      usedNames.add(name)
+    }
     const body = decodeFlattenedFunction(wrapper.entryVector, ctx)
     if (body === null) {
       return null
@@ -2515,7 +2557,12 @@ function dropDeadHarnessSlot(blockPath, name) {
  * if that conversion fired), it's unwrapped back into a plain expression statement (or
  * dropped entirely if it had no argument) before splicing into the Program.
  */
-function decodeControlFlowApplication(mainFnPath, harness, isProgram) {
+function decodeControlFlowApplication(
+  mainFnPath,
+  harness,
+  isProgram,
+  blockUsedNames = new Set(),
+) {
   const dispatcher = parseDispatcher(mainFnPath)
   if (!dispatcher) {
     return null
@@ -2552,7 +2599,8 @@ function decodeControlFlowApplication(mainFnPath, harness, isProgram) {
     stringsBlob: xor ? xor.stringsBlob : null,
     scopeName,
     pairNames: new Map(),
-    usedNames: new Set(),
+    usedNames: blockUsedNames,
+    reservedNames: functionBindingNames(mainFnPath),
   })
   if (!body) {
     return null
@@ -2957,7 +3005,11 @@ function collapseInlineFlattenedFunction(match, name) {
  * external entry matches every real sample seen; a genuine multi-external-entry inline fn -
  * not yet observed - is left untouched rather than mis-decoded from an arbitrary one.)
  */
-function decodeInlineFlattenedFunction(match, searchRoot) {
+function decodeInlineFlattenedFunction(
+  match,
+  searchRoot,
+  sharedUsedNames = new Set(),
+) {
   const parent = match.fnPath.parentPath
   let name = null
   if (parent.isAssignmentExpression() && parent.get('left').isIdentifier()) {
@@ -2990,7 +3042,8 @@ function decodeInlineFlattenedFunction(match, searchRoot) {
     stringsBlob: xor ? xor.stringsBlob : null,
     scopeName: match.scopeName,
     pairNames: new Map(),
-    usedNames: new Set(),
+    usedNames: sharedUsedNames,
+    reservedNames: functionBindingNames(match.fnPath),
     // An inline fn stays callable and its enclosing `if (flag) return ...` harness is not
     // removed, so its returns must keep the `didReturnVar = true` write (see parseReturnValue).
     keepReturnFlag: true,
@@ -3028,7 +3081,10 @@ function decodeInlineFlattenedFunction(match, searchRoot) {
  * doesn't re-attempt and loop on it forever while still giving every *other* match in the
  * same block its own chance.
  */
-function decodeControlFlowFlatteningInBlock(blockPath) {
+function decodeControlFlowFlatteningInBlock(
+  blockPath,
+  sharedUsedNames = new Set(),
+) {
   const isProgram = blockPath.isProgram()
   const block = isProgram
     ? blockPath
@@ -3040,6 +3096,18 @@ function decodeControlFlowFlatteningInBlock(blockPath) {
   }
 
   const failed = new Set()
+  // Separate CFF applications can be lifted into this same lexical block. Their pair
+  // caches must stay independent, but their emitted declarations share one namespace;
+  // reserve the block's live names and allocate every newly introduced name from one
+  // block-wide set so two applications cannot each emit an unrelated `d`.
+  const blockUsedNames = sharedUsedNames
+  let scope = block.scope
+  while (scope) {
+    for (const name of Object.keys(scope.bindings)) {
+      blockUsedNames.add(name)
+    }
+    scope = scope.parent
+  }
 
   for (;;) {
     const stmts = block.get('body')
@@ -3081,7 +3149,12 @@ function decodeControlFlowFlatteningInBlock(blockPath) {
       return
     }
 
-    const body = decodeControlFlowApplication(mainFnPath, harness, isProgram)
+    const body = decodeControlFlowApplication(
+      mainFnPath,
+      harness,
+      isProgram,
+      blockUsedNames,
+    )
     if (!body) {
       failed.add(mainFnPath.node)
       continue
@@ -3459,23 +3532,24 @@ function deCffHelperCleanupInit() {
  * convention.
  */
 function deControlFlowFlatteningGraphInit() {
+  const sharedUsedNames = new Set()
   return {
     Program: {
       exit(path) {
-        decodeControlFlowFlatteningInBlock(path)
+        decodeControlFlowFlatteningInBlock(path, sharedUsedNames)
         cleanupOrphanedCffHelpers(path)
       },
     },
     Function: {
       exit(path) {
-        decodeControlFlowFlatteningInBlock(path)
+        decodeControlFlowFlatteningInBlock(path, sharedUsedNames)
         // An inline-flattened function IS itself a `Function`, so its own `exit` is where we
         // decode it. Its external call site lives in an enclosing
         // scope, so the whole Program is the search root for the entry vector.
         const inlineMatch = matchInlineFlattenedFunction(path)
         if (inlineMatch) {
           const program = path.findParent((p) => p.isProgram())
-          decodeInlineFlattenedFunction(inlineMatch, program)
+          decodeInlineFlattenedFunction(inlineMatch, program, sharedUsedNames)
         }
       },
     },
