@@ -16,9 +16,9 @@
     "lint": "eslint --fix src"
   },
   "dependencies": {
-    "@babel/generator": "^8.0.0",
+    "@babel/generator": "^8.0.6",
     "@babel/parser": "^8.0.0",
-    "@babel/traverse": "^8.0.0",
+    "@babel/traverse": "^8.0.7",
     "@babel/types": "^8.0.0",
     "isolated-vm": "^7.0.0"
   },
