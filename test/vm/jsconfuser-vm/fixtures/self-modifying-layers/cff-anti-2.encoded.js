@@ -1,0 +1,1168 @@
+var CONSTANTS = [/* 0 */41342, /* 1 */17930, /* 2 */"undefined", /* 3 */2113, /* 4 */"Infinity", /* 5 */19507, /* 6 */"isNaN", /* 7 */34911, /* 8 */12864, /* 9 */"JSON", /* 10 */22107, /* 11 */38665, /* 12 */"Boolean", /* 13 */1, /* 14 */"RegExp", /* 15 */"Z1JP", /* 16 */0, /* 17 */undefined, /* 18 */"pn7", /* 19 */51222, /* 20 */11416, /* 21 */"window", /* 22 */"xzY3uA35", /* 23 */20625, /* 24 */"ixtit3qr", /* 25 */56166, /* 26 */"Wx1dPQ", /* 27 */44244, /* 28 */48119, /* 29 */"TEST_OUTPUT", /* 30 */4];
+var BYTECODE = [56, 5, 1013, 1025, 138668148, 8, 3, 16, 11, 12, 11, 19, 1, 15, 6, 19, 0, 56, 22, 991, 1013, 2062093430, 56, 905, 953, 955, 2227414787, 17, 4, 0, 19, 56, 880, 940, 954, 157389284, 16, 19, 22, 13, 21, 23, 23, 21, 56, 49, 1144, 1165, 1516068587, 56, 919, 883, 892, 2015137540, 12, 14, 23, 1, 56, 968, 907, 914, 1108984185, 26, 17, 4, 21, 5, 17, 6, 45, 6, 17, 20, 24, 5, 15, 18, 21, 10, 56, 85, 1025, 1069, 900605278, 19, 22, 7, 20, 20, 22, 0, 13, 15, 2, 16, 8, 18, 16, 8, 16, 18, 23, 0, 8, 56, 972, 967, 968, 541686133, 24, 0, 6, 1, 25, 10, 16, 18, 32, 11, 11, 56, 966, 1089, 1095, 800754151, 1, 22, 50427, 56, 134, 850, 868, 3491641410, 22, 22, 8, 19, 56, 1108, 940, 956, 4229242187, 18, 21, 17, 5, 23, 14, 4, 19, 54, 40, 12, 548, 0, 13, 0, 0, 61, 41, 40, 41, 40, 13, 40, 41, 10, 63, 14, 41, 40, 41, 8, 41, 2, 40, 40, 10, 40, 41, 40, 14, 186, 39, 752, 0, 15, 1, 0, 64, 2, 40, 40, 10, 16, 40, 0, 15, 40, 61, 40, 40, 40, 41, 16, 40, 40, 10, 56, 214, 1131, 1144, 1903028716, 56, 877, 888, 902, 390052414, 19, 20, 0, 22, 15, 12, 21, 11, 40, 17, 237, 39, 641, 56, 1116, 885, 894, 2740201059, 0, 18, 3, 0, 64, 4, 41, 41, 10, 19, 41, 0, 18, 40, 61, 41, 40, 40, 40, 19, 41, 40, 10, 63, 20, 40, 40, 40, 8, 40, 0, 40, 41, 10, 40, 40, 40, 20, 278, 39, 589, 56, 283, 868, 872, 159851854, 34, 5, 3, 50, 65, 21208, 10, 40, 41, 41, 41, 21, 40, 41, 40, 40, 22, 61, 40, 41, 40, 41, 22, 41, 40, 10, 63, 23, 41, 40, 40, 8, 41, 1, 41, 41, 10, 41, 41, 40, 23, 332, 39, 720, 56, 895, 1092, 1104, 655329445, 0, 24, 5, 0, 64, 6, 41, 40, 10, 25, 40, 0, 24, 41, 61, 40, 41, 40, 40, 25, 40, 40, 10, 63, 26, 41, 40, 40, 8, 40, 2, 40, 40, 10, 40, 41, 40, 26, 373, 39, 792, 0, 27, 7, 0, 65, 64603, 10, 40, 41, 41, 40, 27, 40, 41, 41, 41, 28, 61, 40, 40, 41, 40, 28, 41, 41, 10, 63, 29, 41, 41, 40, 8, 41, 1, 41, 41, 10, 41, 41, 40, 29, 420, 39, 758, 1, 18, 51832, 0, 30, 8, 0, 64, 9, 40, 40, 10, 31, 41, 0, 30, 40, 61, 40, 41, 40, 40, 31, 40, 41, 10, 63, 32, 41, 41, 41, 8, 40, 2, 41, 41, 10, 40, 41, 40, 32, 461, 39, 548, 0, 33, 10, 0, 65, 61880, 10, 40, 40, 41, 41, 33, 40, 41, 41, 41, 34, 61, 41, 40, 40, 40, 34, 41, 40, 10, 63, 35, 41, 41, 40, 8, 41, 1, 41, 41, 10, 40, 40, 40, 35, 505, 39, 718, 0, 36, 11, 0, 64, 12, 40, 40, 10, 37, 41, 0, 36, 41, 61, 40, 40, 41, 41, 37, 40, 40, 10, 63, 38, 40, 41, 40, 8, 41, 0, 40, 41, 10, 40, 40, 40, 38, 546, 39, 674, 39, 129, 61, 40, 41, 40, 41, 4, 40, 40, 44, 0, 44, 13, 0, 65, 8212, 4, 40, 40, 40, 40, 44, 41, 41, 41, 40, 5, 1, 39, 11843, 64, 14, 41, 41, 8, 8, 40, 0, 39, 41, 39, 129, 66, 4, 41, 0, 41, 41, 41, 41, 15, 41, 41, 44, 0, 41, 41, 41, 41, 44, 626, 1, 39, 36063, 65, 2033, 8, 41, 40, 40, 41, 39, 41, 40, 41, 40, 8, 39, 129, 1, 39, 2602, 64, 4, 40, 40, 8, 8, 40, 0, 39, 40, 39, 129, 61, 40, 41, 41, 41, 5, 40, 40, 4, 1, 39, 2113, 64, 4, 41, 40, 8, 8, 40, 0, 39, 40, 39, 129, 56, 973, 1084, 1089, 1437323995, 16, 11, 17, 7, 65, 4865, 3, 41, 41, 40, 40, 4, 41, 41, 40, 40, 44, 61, 41, 40, 40, 41, 44, 40, 40, 3, 1, 39, 16558, 65, 58554, 8, 41, 40, 40, 40, 39, 41, 41, 40, 40, 8, 39, 129, 20, 1, 7, 16, 45, 3, 0, 44, 16, 0, 61, 40, 40, 40, 40, 44, 41, 40, 4, 1, 39, 11416, 64, 6, 40, 40, 8, 8, 40, 0, 39, 40, 39, 129, 21, 4, 18, 8, 0, 44, 17, 0, 45, 44, 4, 2, 0, 44, 16, 0, 61, 40, 40, 40, 41, 44, 41, 40, 3, 1, 39, 15404, 64, 2, 41, 41, 8, 8, 41, 0, 39, 41, 39, 129, 23, 18, 7, 0, 1, 39, 15256, 66, 8, 41, 39, 40, 41, 41, 41, 18, 41, 41, 39, 0, 41, 40, 40, 41, 39, 832, 1, 39, 44154, 65, 40623, 8, 40, 40, 40, 41, 39, 41, 41, 40, 41, 8, 39, 129, 1, 39, 5489, 65, 35518, 8, 41, 40, 41, 41, 39, 41, 41, 41, 40, 8, 39, 129, 1851179216, 210585684, 2864837593, 1224628296, 3878985923, 2238658667, 597922252, 3252422748, 1611825377, 4266593207, 2625935261, 985020645, 3639189598, 1998936572, 358543424, 3012577522, 1372569855, 4026790860, 2814092282, 1173633122, 3828003064, 2187401233, 13, 7, 23, 24, 27, 22, 18, 11, 36, 19, 1, 56, 938, 1077, 1093, 4080163523, 56, 893, 894, 903, 956785024, 56, 982, 976, 983, 3620676529, 27, 24, 11, 18, 16, 12, 2, 21, 20, 15, 24, 22, 14, 17, 2, 24, 15, 13, 1, 12, 16, 2, 2, 12, 26, 21, 14, 21, 23, 2, 1, 6, 5, 20, 20, 14, 16, 21, 8, 32, 2, 15, 27, 22, 13, 15, 17, 20, 15, 8, 19, 24, 11, 11, 24, 19, 19, 20, 19, 8, 17, 12, 32, 3, 7, 34, 18, 20, 24, 15, 15, 13, 14, 15, 3, 0, 19, 23, 9, 2, 16, 9, 24, 9, 22, 0, 4, 8, 16, 7, 3, 10, 12, 421547801, 3075622252, 1435358687, 4089539957, 2449138526, 808740632, 3463123753, 1822932750, 182191363, 2836825401, 1195998477, 3850759454, 2210277136, 569424880, 3224317816, 1583502582, 4238329196, 2597014812, 956751137, 3610785574, 1970643752, 330112810, 2793296369, 1152450161, 3807199960, 2166736475, 525972420, 3180670530, 1540022998, 4193810884, 2553540171, 913251035, 3567289933, 1927154673, 3554869736, 1914603711, 273944715, 2928246671, 1287775156, 3942492317, 2302029977, 661178780, 3316072839, 1675360427, 34623334, 2688736137, 1048486026, 3702532279, 2062389643, 421857717, 3076030649, 1435900078, 4090213287, 2449946469, 809148669, 3463768421, 1823044039, 182573383, 2837201148, 1196604281, 3850426264, 2210097339, 569893022, 3223874018, 1583812949, 4237998273, 2597323595, 957188079, 3611652936, 1970858216, 330441077, 2985277944, 1344483614, 3999161106, 2358560544, 717835020, 3371815115, 1731471717, 5, 20, 1, 56, 892, 938, 941, 2486080494, 17, 6, 6, 12, 12, 2, 12, 18, 25, 6, 0, 0, 11, 4, 11, 18, 25, 5, 8, 7, 56, 897, 981, 983, 2861048524, 56, 1079, 920, 928, 1169694486, 56, 975, 1110, 1125, 318887172, 56, 984, 966, 968, 3443331114, 32, 16, 14, 56, 894, 906, 919, 302570143, 4, 2, 22, 1, 16, 17, 262479847, 2916725339, 1276524270, 3930882664, 2290552293, 649852494, 3304332016, 1663741517, 23149466, 2677823129, 1037159078, 3691085298, 2050803278, 4170390581, 2529748009, 889349126, 3544046692, 1903244514, 262816873, 2917457402, 1276857451, 3931632884, 2290902108, 650030131, 3304141887, 1663931459, 23465409, 2677636187, 1037374666, 3691680841, 2051030979, 410756168, 3065468104, 1424555093];
+var MAIN_START_PC = 0;
+var MAIN_REG_COUNT = 10;
+var ENCODE_BYTECODE = false;
+var TIMING_CHECKS = false;
+var OP = {
+  LOAD_CONST: 0,
+  LOAD_INT: 1,
+  LOAD_GLOBAL: 2,
+  LOAD_UPVALUE: 3,
+  LOAD_THIS: 4,
+  MOVE: 5,
+  STORE_GLOBAL: 6,
+  STORE_UPVALUE: 7,
+  GET_PROP: 8,
+  SET_PROP: 9,
+  DELETE_PROP: 10,
+  ADD: 11,
+  SUB: 12,
+  MUL: 13,
+  DIV: 14,
+  MOD: 15,
+  EXP: 60,
+  BAND: 16,
+  BOR: 17,
+  BXOR: 18,
+  SHL: 19,
+  SHR: 20,
+  USHR: 21,
+  LT: 22,
+  GT: 23,
+  LTE: 24,
+  GTE: 25,
+  EQ: 26,
+  NEQ: 27,
+  LOOSE_EQ: 28,
+  LOOSE_NEQ: 29,
+  IN: 30,
+  INSTANCEOF: 31,
+  UNARY_NEG: 32,
+  UNARY_POS: 33,
+  UNARY_NOT: 34,
+  UNARY_BITNOT: 35,
+  TYPEOF: 36,
+  VOID: 37,
+  TYPEOF_SAFE: 38,
+  JUMP: 39,
+  JUMP_IF_FALSE: 40,
+  JUMP_IF_TRUE: 41,
+  CALL: 42,
+  CALL_METHOD: 43,
+  NEW: 44,
+  RETURN: 45,
+  THROW: 46,
+  MAKE_CLOSURE: 47,
+  BUILD_ARRAY: 48,
+  BUILD_OBJECT: 49,
+  DEFINE_GETTER: 50,
+  DEFINE_SETTER: 51,
+  FOR_IN_SETUP: 52,
+  FOR_IN_NEXT: 53,
+  TRY_SETUP: 54,
+  TRY_END: 55,
+  PATCH: 56,
+  DEBUGGER: 57,
+  JUMP_REG: 58,
+  FINALLY_SETUP: 59
+};
+var SENTINELS = {
+  CALL_SPREAD: 65535
+};
+var SLOTS = {
+  PC: 0,
+  CALLER: 1,
+  RET_DST: 2,
+  THIS: 3,
+  CLOSURE: 4,
+  HANDLERS: 5,
+  FRAME_SIZE: 6,
+  REG_BASE: 7
+};
+var HEADER_SIZE = 8;
+var FRAME_START = 1;
+function base64ToBytes(s) {
+  return typeof Buffer !== "undefined" ? Buffer.from(s, "base64") : Uint8Array.from(atob(s), function (c) {
+    return c.charCodeAt(0);
+  });
+}
+function decodeBytecode(s) {
+  if (!ENCODE_BYTECODE) return s;
+  var b = base64ToBytes(s);
+  // Each slot is a u32 stored as 4 little-endian bytes.
+  var r = new Uint32Array(b.length / 4);
+  for (var i = 0; i < r.length; i++) r[i] = (b[i * 4] | b[i * 4 + 1] << 8 | b[i * 4 + 2] << 16 | b[i * 4 + 3] << 24) >>> 0;
+  return r;
+}
+
+// Closure map
+// Maps shell functions -> inner Closure so the VM can fast-path instead of going through a sub-VM on internal calls.
+// A WeakMap is used over a Symbol to prevent leaking information to debuggers
+var CLOSURE_MAP = new WeakMap();
+
+// Upvalue (Lua style)
+// While the outer frame is alive: reads/writes go to vm._regs[_absSlot].
+// After the outer frame returns (closed): reads/writes hit this._value.
+// (_absSlot is an absolute index into the flat slot array, so it stays valid
+// no matter where the owning frame's block sits.)
+function Upvalue(regs, absSlot) {
+  this._regs = regs; // shared reference to VM._regs flat array
+  this._absSlot = absSlot; // absolute index; stable as long as frame is alive
+  this._closed = false;
+  this._value = undefined;
+}
+Upvalue.prototype._read = function () {
+  return this._closed ? this._value : this._regs[this._absSlot];
+};
+Upvalue.prototype._write = function (v) {
+  if (this._closed) this._value = v;else this._regs[this._absSlot] = v;
+};
+Upvalue.prototype._close = function () {
+  this._value = this._regs[this._absSlot];
+  this._closed = true;
+};
+
+// Closure & Frame
+function Closure(fn) {
+  this.fn = fn;
+  this.upvalues = [];
+  this.prototype = {}; // <- default prototype object for `new`
+}
+
+// VM
+// There is no Frame object and no frame stack. A frame is a block of slots in
+// the flat array `_regs`: HEADER_SIZE header slots (see utils/frame-layout.ts) followed
+// by the frame's registers. `_f` — the only piece of live execution state the VM
+// object exposes — is the current frame's base offset, and each frame's CALLER
+// slot points at the one that called it, so the call stack is an implicit linked
+// list with nothing to enumerate.
+function VM(bytecode, constants, globals) {
+  this.bytecode = bytecode;
+  this.constants = constants;
+  this.globals = globals;
+  // Open upvalues, keyed by absolute slot; created on the first capture so a
+  // closure-free program never allocates it. See captureUpvalue().
+  this._openUpvalues = null;
+
+  // Flat slot array (Lua-style register file, with the frame headers folded in).
+  // _regsTop is the next free slot (= base of the hypothetical next frame).
+  // On CALL:   newBase = _regsTop; _regsTop += HEADER_SIZE + fn.regCount
+  // On RETURN: _regsTop = <returning frame's base>   (pop the whole block)
+  // Slot 0 is never part of a frame: it holds the value run() hands back, and
+  // doubles as the "no frame" sentinel for _f / CALLER.
+  this._regs = [];
+  this._regsTop = FRAME_START;
+  this._f = 0;
+}
+
+// Consume the next slot from the flat bytecode stream and advance the PC.
+// Called by opcode handlers to read each of their operands in order.
+// The PC is a header slot, so no object anywhere holds a property containing it.
+VM.prototype._operand = function () {
+  return this.bytecode[this._regs[this._f + SLOTS.PC]++];
+};
+
+// Push a new frame block on top of the slot array and make it current.
+// retDst encodes the caller's destination register as (reg << 1), with bit 0 set
+// for a constructor call (`new`) — RETURN uses it to decide whether to hand back
+// the THIS slot instead of the returned value.
+// args === null skips parameter setup (used for the root frame).
+VM.prototype._pushFrame = function (closure, args, thisVal, retDst) {
+  var fn = closure.fn;
+  var regs = this._regs;
+  var fp = this._regsTop;
+  var size = HEADER_SIZE + fn.regCount;
+  var end = fp + size;
+  while (regs.length < end) regs.push(undefined);
+  for (var i = fp; i < end; i++) regs[i] = undefined;
+  var base = fp + HEADER_SIZE;
+  regs[fp + SLOTS.PC] = fn.startPc;
+  regs[fp + SLOTS.CALLER] = this._f;
+  regs[fp + SLOTS.RET_DST] = retDst;
+  regs[fp + SLOTS.THIS] = thisVal;
+  regs[fp + SLOTS.CLOSURE] = closure;
+  regs[fp + SLOTS.FRAME_SIZE] = size;
+  regs[fp + SLOTS.REG_BASE] = base;
+
+  // Seeds for the decoy header slots this build happens to have (see utils/frame-layout.ts)
+  /* @NOISE */
+  if (typeof SLOTS.NOISE_END === "number") regs[fp + SLOTS.NOISE_END] = end;
+  if (typeof SLOTS.NOISE_PARAMS === "number") regs[fp + SLOTS.NOISE_PARAMS] = fn.paramCount;
+  if (typeof SLOTS.NOISE_ARGS === "number") regs[fp + SLOTS.NOISE_ARGS] = args;
+  if (typeof SLOTS.NOISE_PC === "number") regs[fp + SLOTS.NOISE_PC] = fn.startPc;
+  if (typeof SLOTS.NOISE_COUNTER === "number") regs[fp + SLOTS.NOISE_COUNTER] = 0;
+  this._regsTop = end;
+  if (args) {
+    if (fn.hasRest) {
+      var restSlot = fn.paramCount - 1;
+      for (var p = 0; p < restSlot; p++) regs[base + p] = p < args.length ? args[p] : undefined;
+      regs[base + restSlot] = args.slice(restSlot);
+    } else {
+      for (var a = 0; a < args.length && a < fn.regCount; a++) regs[base + a] = args[a];
+    }
+    if (fn.paramCount < fn.regCount) regs[base + fn.paramCount] = args;
+  }
+  this._f = fp;
+};
+VM.prototype.captureUpvalue = function (fp, slot) {
+  // Dedup by absolute slot — two closures capturing the same local share one
+  // Upvalue. _openUpvalues is keyed BY absolute slot rather than being a list of
+  // live captures, so this is a direct lookup instead of a scan, and closing a
+  // frame's captures costs a walk of that frame's own window (below) instead of
+  // a filter over every capture in the program. Entries are removed on close, so
+  // anything found here is open by construction.
+  var absSlot = this._regs[fp + SLOTS.REG_BASE] + slot;
+  var uvs = this._openUpvalues || (this._openUpvalues = []);
+  return uvs[absSlot] || (uvs[absSlot] = new Upvalue(this._regs, absSlot));
+};
+
+// Reads and decodes a constant from the pool.
+// idx: pool index (first operand of the constant pair emitted by resolveConstants).
+// key: conceal key (second operand). 0 means no concealment.
+//
+// For integers:  stored value is (original ^ key) with the full u32 key; XOR
+//                again to recover (JS `^` is int32, so this is symmetric).
+// For strings:   stored value is a base64 string containing u16 LE byte pairs.
+//                Mirrors decodeBytecode: base64 → bytes → u16 LE → XOR with a
+//                position-based Weyl keystream seeded by the full u32 key.
+// idxIn, keyIn are passed in from specializedOpcodes when the operands are determined at compile time.
+VM.prototype._constant = function (idxIn, keyIn) {
+  var idx = idxIn ?? this._operand();
+  var key = keyIn ?? this._operand();
+  var v = this.constants[idx];
+  if (!key) return v;
+  if (typeof v === "number") return v ^ key;
+  if (typeof v !== "string") return v;
+
+  // String: base64-decode to u16 LE byte pairs, then XOR each code with a
+  // 16-bit keystream word derived from the full 32-bit key + position.
+  var b = base64ToBytes(v);
+  var out = "";
+  var k = key;
+  for (var i = 0; i < b.length / 2; i++) {
+    k = k + 0x9e3779b9 | 0; // 32-bit Weyl step (position-based)
+    var ks = (k ^ k >>> 13) & 0xffff; // 16-bit keystream word
+    var code = b[i * 2] | b[i * 2 + 1] << 8; // u16 LE
+    out += String.fromCharCode(code ^ ks);
+  }
+  return out;
+};
+VM.prototype._closeUpvaluesFor = function (fp) {
+  // Called on RETURN — close every upvalue captured from this frame's register
+  // window [REG_BASE, end of the frame block) and free its table entry, so a
+  // later frame reusing those slots starts with no captures.
+  var uvs = this._openUpvalues;
+  if (!uvs) return; // nothing in this program ever captured a local
+  var regs = this._regs;
+  var hi = fp + regs[fp + SLOTS.FRAME_SIZE];
+  for (var i = regs[fp + SLOTS.REG_BASE]; i < hi; i++) {
+    var uv = uvs[i];
+    if (uv) {
+      uv._close();
+      uvs[i] = undefined;
+    }
+  }
+};
+
+// Executes `closure` to completion and returns its return value.
+// The root frame's CALLER slot is 0 (the sentinel), so its RETURN parks the
+// value in slot 0 and clears _f, which stops the loop below.
+VM.prototype.run = function (closure, thisVal, args) {
+  var now = () => {
+    return performance.now();
+  };
+  var lastTime = now();
+  this._pushFrame(closure, args, thisVal, 0);
+  while (true) {
+    var fp = this._f;
+    var regs = this._regs;
+    var bc = this.bytecode;
+    var pc = regs[fp + SLOTS.PC];
+    if (pc >= bc.length) break;
+    regs[fp + SLOTS.PC] = pc + 1;
+    var op = this.bytecode[pc];
+    // var opcode = this.bytecode[pc];
+    // console.log(`[run] pc=${pc}, opcode=${opcode}, name=${Object.keys(OP).find((key) => OP[key] === opcode)}`);
+
+    // Churn the decoy header slots so the real PC isn't the only slot moving
+    /* @NOISE */
+    if (typeof SLOTS.NOISE_PC === "number") regs[fp + SLOTS.NOISE_PC] = (regs[fp + SLOTS.NOISE_PC] + 1) % bc.length;
+    if (typeof SLOTS.NOISE_COUNTER === "number") regs[fp + SLOTS.NOISE_COUNTER]++;
+    if (typeof SLOTS.NOISE_MIRROR === "number") regs[fp + SLOTS.NOISE_MIRROR] = op;
+    if (typeof SLOTS.NOISE_ACC === "number") regs[fp + SLOTS.NOISE_ACC] = regs[fp + SLOTS.NOISE_ACC] ^ pc | 0;
+
+    // Debugging protection: Detects debugger by checking for >1s pauses which can only happen from debugger; or extremely slow sync tasks
+    if (TIMING_CHECKS) {
+      var currentTime = now();
+      var isTamper = currentTime - lastTime > TIMING_CHECKS;
+      lastTime = currentTime;
+      if (isTamper) {
+        // Poison the bytecode
+        for (var i = 0; i < this.bytecode.length; i++) this.bytecode[i] = 0;
+        // Break the current state
+        for (var i2 = fp; i2 < this._regsTop; i2++) this._regs[i2] = undefined;
+        op = OP.JUMP;
+        regs[fp + SLOTS.PC] = this.bytecode.length; // jump past end to halt
+      }
+    }
+    try {
+      var base = regs[fp + SLOTS.REG_BASE];
+
+      /* @SWITCH */
+      switch (op) {
+        case OP.LOAD_CONST:
+          {
+            var dst = this._operand();
+            regs[base + dst] = this._constant();
+            break;
+          }
+        case OP.LOAD_INT:
+          {
+            var dst = this._operand();
+            regs[base + dst] = this._operand();
+            break;
+          }
+        case OP.LOAD_GLOBAL:
+          {
+            var dst = this._operand();
+            var globalName = this._constant();
+            if (!(globalName in this.globals)) {
+              throw new ReferenceError(`${globalName} is not defined`);
+            }
+            regs[base + dst] = this.globals[globalName];
+            break;
+          }
+        case OP.LOAD_UPVALUE:
+          {
+            var dst = this._operand();
+            regs[base + dst] = regs[fp + SLOTS.CLOSURE].upvalues[this._operand()]._read();
+            break;
+          }
+        case OP.LOAD_THIS:
+          {
+            var dst = this._operand();
+            regs[base + dst] = regs[fp + SLOTS.THIS];
+            break;
+          }
+        case OP.MOVE:
+          {
+            var dst = this._operand();
+            regs[base + dst] = regs[base + this._operand()];
+            break;
+          }
+        case OP.STORE_GLOBAL:
+          {
+            // globals[globalName] = regs[src]
+            this.globals[this._constant()] = regs[base + this._operand()];
+            break;
+          }
+        case OP.STORE_UPVALUE:
+          {
+            var uvIdx = this._operand();
+            regs[fp + SLOTS.CLOSURE].upvalues[uvIdx]._write(regs[base + this._operand()]);
+            break;
+          }
+        case OP.GET_PROP:
+          {
+            // dst = regs[obj][regs[key]]
+            var dst = this._operand();
+            var obj = regs[base + this._operand()];
+            var key = regs[base + this._operand()];
+            regs[base + dst] = obj[key];
+            break;
+          }
+        case OP.SET_PROP:
+          {
+            // regs[obj][regs[key]] = regs[val]
+            var obj = regs[base + this._operand()];
+            var key = regs[base + this._operand()];
+            var val = regs[base + this._operand()];
+            // Reflect.set performs [[Set]] without throwing on failure (non-strict mode behavior)
+            Reflect.set(obj, key, val);
+            break;
+          }
+        case OP.DELETE_PROP:
+          {
+            // regs[dst] = delete regs[obj][regs[key]]
+            // The delete operator returns true if successful which is most cases
+            var dst = this._operand();
+            var obj = regs[base + this._operand()];
+            var key = regs[base + this._operand()];
+            regs[base + dst] = delete obj[key];
+            break;
+          }
+
+        // Arithmetic  (dst, src1, src2)
+        case OP.ADD:
+          {
+            var dst = this._operand();
+            var a = regs[base + this._operand()];
+            regs[base + dst] = a + regs[base + this._operand()];
+            break;
+          }
+        case OP.SUB:
+          {
+            var dst = this._operand();
+            var a = regs[base + this._operand()];
+            regs[base + dst] = a - regs[base + this._operand()];
+            break;
+          }
+        case OP.MUL:
+          {
+            var dst = this._operand();
+            var a = regs[base + this._operand()];
+            regs[base + dst] = a * regs[base + this._operand()];
+            break;
+          }
+        case OP.DIV:
+          {
+            var dst = this._operand();
+            var a = regs[base + this._operand()];
+            regs[base + dst] = a / regs[base + this._operand()];
+            break;
+          }
+        case OP.MOD:
+          {
+            var dst = this._operand();
+            var a = regs[base + this._operand()];
+            regs[base + dst] = a % regs[base + this._operand()];
+            break;
+          }
+        case OP.EXP:
+          {
+            // Math.pow instead of `**`
+            var dst = this._operand();
+            var a = regs[base + this._operand()];
+            regs[base + dst] = Math.pow(a, regs[base + this._operand()]);
+            break;
+          }
+        case OP.BAND:
+          {
+            var dst = this._operand();
+            var a = regs[base + this._operand()];
+            regs[base + dst] = a & regs[base + this._operand()];
+            break;
+          }
+        case OP.BOR:
+          {
+            var dst = this._operand();
+            var a = regs[base + this._operand()];
+            regs[base + dst] = a | regs[base + this._operand()];
+            break;
+          }
+        case OP.BXOR:
+          {
+            var dst = this._operand();
+            var a = regs[base + this._operand()];
+            regs[base + dst] = a ^ regs[base + this._operand()];
+            break;
+          }
+        case OP.SHL:
+          {
+            var dst = this._operand();
+            var a = regs[base + this._operand()];
+            regs[base + dst] = a << regs[base + this._operand()];
+            break;
+          }
+        case OP.SHR:
+          {
+            var dst = this._operand();
+            var a = regs[base + this._operand()];
+            regs[base + dst] = a >> regs[base + this._operand()];
+            break;
+          }
+        case OP.USHR:
+          {
+            var dst = this._operand();
+            var a = regs[base + this._operand()];
+            regs[base + dst] = a >>> regs[base + this._operand()];
+            break;
+          }
+
+        // Comparison  (dst, src1, src2)
+        case OP.LT:
+          {
+            var dst = this._operand();
+            var a = regs[base + this._operand()];
+            regs[base + dst] = a < regs[base + this._operand()];
+            break;
+          }
+        case OP.GT:
+          {
+            var dst = this._operand();
+            var a = regs[base + this._operand()];
+            regs[base + dst] = a > regs[base + this._operand()];
+            break;
+          }
+        case OP.LTE:
+          {
+            var dst = this._operand();
+            var a = regs[base + this._operand()];
+            regs[base + dst] = a <= regs[base + this._operand()];
+            break;
+          }
+        case OP.GTE:
+          {
+            var dst = this._operand();
+            var a = regs[base + this._operand()];
+            regs[base + dst] = a >= regs[base + this._operand()];
+            break;
+          }
+        case OP.EQ:
+          {
+            var dst = this._operand();
+            var a = regs[base + this._operand()];
+            regs[base + dst] = a === regs[base + this._operand()];
+            break;
+          }
+        case OP.NEQ:
+          {
+            var dst = this._operand();
+            var a = regs[base + this._operand()];
+            regs[base + dst] = a !== regs[base + this._operand()];
+            break;
+          }
+        case OP.LOOSE_EQ:
+          {
+            var dst = this._operand();
+            var a = regs[base + this._operand()];
+            regs[base + dst] = a == regs[base + this._operand()];
+            break;
+          }
+        case OP.LOOSE_NEQ:
+          {
+            var dst = this._operand();
+            var a = regs[base + this._operand()];
+            regs[base + dst] = a != regs[base + this._operand()];
+            break;
+          }
+        case OP.IN:
+          {
+            var dst = this._operand();
+            var a = regs[base + this._operand()];
+            regs[base + dst] = a in regs[base + this._operand()];
+            break;
+          }
+        case OP.INSTANCEOF:
+          {
+            // regs[dst] = regs[obj] instanceof regs[ctor]
+            // Since VM closures are wrapped in native function shells (MAKE_CLOSURE), the native operator works
+            var dst = this._operand();
+            var obj = regs[base + this._operand()];
+            regs[base + dst] = obj instanceof regs[base + this._operand()];
+            break;
+          }
+
+        // Unary  (dst, src)
+        case OP.UNARY_NEG:
+          {
+            var dst = this._operand();
+            regs[base + dst] = -regs[base + this._operand()];
+            break;
+          }
+        case OP.UNARY_POS:
+          {
+            var dst = this._operand();
+            regs[base + dst] = +regs[base + this._operand()];
+            break;
+          }
+        case OP.UNARY_NOT:
+          {
+            var dst = this._operand();
+            regs[base + dst] = !regs[base + this._operand()];
+            break;
+          }
+        case OP.UNARY_BITNOT:
+          {
+            var dst = this._operand();
+            regs[base + dst] = ~regs[base + this._operand()];
+            break;
+          }
+        case OP.TYPEOF:
+          {
+            var dst = this._operand();
+            regs[base + dst] = typeof regs[base + this._operand()];
+            break;
+          }
+        case OP.VOID:
+          {
+            var dst = this._operand();
+            this._operand(); // consumes argument (intended)
+            regs[base + dst] = undefined;
+            break;
+          }
+        case OP.TYPEOF_SAFE:
+          {
+            // regs[dst] = typeof window[name]
+            // Never throws ReferenceError, instead returns undefined for undeclared variables
+            var dst = this._operand();
+            var name = this._constant();
+            var val = Object.prototype.hasOwnProperty.call(this.globals, name) ? this.globals[name] : undefined;
+            regs[base + dst] = typeof val;
+            break;
+          }
+
+        // Control flow
+        case OP.JUMP:
+          regs[fp + SLOTS.PC] = this._operand();
+          break;
+        case OP.JUMP_IF_FALSE:
+          {
+            var src = this._operand();
+            var target = this._operand();
+            if (!regs[base + src]) regs[fp + SLOTS.PC] = target;
+            break;
+          }
+        case OP.JUMP_IF_TRUE:
+          {
+            // || short-circuit: if truthy, jump over RHS.
+            var src = this._operand();
+            var target = this._operand();
+            if (regs[base + src]) regs[fp + SLOTS.PC] = target;
+            break;
+          }
+
+        // Calls
+        case OP.CALL:
+          {
+            // dst, calleeReg, argc, [argReg...]  (argc=-1 means next operand is spread-args array reg)
+            var dst = this._operand();
+            var callee = regs[base + this._operand()];
+            var argc = this._operand();
+            var args;
+            if (argc === SENTINELS.CALL_SPREAD) {
+              args = regs[base + this._operand()];
+            } else {
+              args = new Array(argc);
+              for (var i = 0; i < argc; i++) args[i] = regs[base + this._operand()];
+            }
+            var closure = callee && CLOSURE_MAP.get(callee);
+            if (closure) {
+              this._pushFrame(closure, args, this.globals, dst << 1);
+            } else {
+              regs[base + dst] = callee.apply(null, args);
+            }
+            break;
+          }
+        case OP.CALL_METHOD:
+          {
+            // dst, receiverReg, calleeReg, argc, [argReg...]  (argc=SENTINELS.CALL_SPREAD means spread-args array reg)
+            var dst = this._operand();
+            var receiver = regs[base + this._operand()];
+            var callee = regs[base + this._operand()];
+            var argc = this._operand();
+            var args;
+            if (argc === SENTINELS.CALL_SPREAD) {
+              args = regs[base + this._operand()];
+            } else {
+              args = new Array(argc);
+              for (var i = 0; i < argc; i++) args[i] = regs[base + this._operand()];
+            }
+            var closure = callee && CLOSURE_MAP.get(callee);
+            if (closure) {
+              this._pushFrame(closure, args, receiver, dst << 1);
+            } else {
+              regs[base + dst] = callee.apply(receiver, args);
+            }
+            break;
+          }
+        case OP.NEW:
+          {
+            // dst, calleeReg, argc, [argReg...]  (argc=SENTINELS.CALL_SPREAD means spread-args array reg)
+            var dst = this._operand();
+            var callee = regs[base + this._operand()];
+            var argc = this._operand();
+            var args;
+            if (argc === SENTINELS.CALL_SPREAD) {
+              args = regs[base + this._operand()];
+            } else {
+              args = new Array(argc);
+              for (var i = 0; i < argc; i++) args[i] = regs[base + this._operand()];
+            }
+            var closure = callee && CLOSURE_MAP.get(callee);
+            if (closure) {
+              // The new object doubles as the frame's THIS; bit 0 of RET_DST marks
+              // the frame as a constructor call so RETURN can fall back to it.
+              this._pushFrame(closure, args, Object.create(closure.prototype || null), dst << 1 | 1);
+            } else {
+              // Reflect.construct is required - Object.create+apply does NOT set
+              // internal slots ([[NumberData]], [[StringData]], etc.) for built-ins.
+              regs[base + dst] = Reflect.construct(callee, args);
+            }
+            break;
+          }
+        case OP.RETURN:
+          {
+            var retVal = regs[base + this._operand()];
+            this._closeUpvaluesFor(fp); // must happen before frame is abandoned
+
+            var caller = regs[fp + SLOTS.CALLER];
+            var retDst = regs[fp + SLOTS.RET_DST];
+
+            // NewExpression: When invoking from the 'new' keyword, the newly constructed object is returned instead (if the original function doesn't return an object)
+            if (retDst & 1 && (typeof retVal !== "object" || retVal === null)) retVal = regs[fp + SLOTS.THIS];
+
+            // Zero out the callee's whole block (header included) to limit
+            // exposing runtime values, then hand the slots back.
+            var hi = fp + regs[fp + SLOTS.FRAME_SIZE];
+            for (var i = fp; i < hi; i++) regs[i] = undefined;
+            this._regsTop = fp;
+            this._f = caller;
+
+            // A caller of 0 is the root frame returning to the host: park the
+            // value in slot 0 for run() to hand back. A bare `return retVal`
+            // would only exit an extracted VM.prototype[op] handler function
+            // (handlerTable option), not the loop. Keeping the sole `break`
+            // trailing (no mid-body break/return) also lets the handlerTable
+            // transform lift this body verbatim.
+            regs[caller ? regs[caller + SLOTS.REG_BASE] + (retDst >> 1) : 0] = retVal;
+            break;
+          }
+        case OP.THROW:
+          throw regs[base + this._operand()];
+
+        // Closures
+        case OP.MAKE_CLOSURE:
+          {
+            // dst, startPc, paramCount, regCount, uvCount, hasRest, [isLocal, idx, ...]
+            var dst = this._operand();
+            var startPc = this._operand();
+            var paramCount = this._operand();
+            var regCount = this._operand();
+            var uvCount = this._operand();
+            var hasRest = this._operand(); // 1 if last param is a rest element
+
+            var uvDescs = new Array(uvCount);
+            for (var i = 0; i < uvCount; i++) {
+              var isLocalRaw = this._operand();
+              var uvIndex = this._operand();
+              uvDescs[i] = {
+                isLocal: isLocalRaw,
+                _index: uvIndex
+              };
+            }
+
+            // uvDescs is consumed by the capture loop below and then dropped — it
+            // is deliberately NOT kept on the descriptor. A closure that carries
+            // its capture plan around spells out the closure graph ("captures
+            // local 2 of the parent frame") to anything that gets hold of it.
+            var fn = {
+              paramCount: paramCount,
+              regCount: regCount,
+              startPc: startPc,
+              hasRest: hasRest
+            };
+            var closure = new Closure(fn);
+            for (var i = 0; i < uvDescs.length; i++) {
+              var uvd = uvDescs[i];
+              if (uvd.isLocal) {
+                closure.upvalues.push(this.captureUpvalue(fp, uvd._index));
+              } else {
+                closure.upvalues.push(regs[fp + SLOTS.CLOSURE].upvalues[uvd._index]);
+              }
+            }
+
+            // Wrap in a native callable shell so host code (array methods,
+            // test assertions, setTimeout, etc.) can invoke VM closures.
+            // CLOSURE_MAP lets VM-internal CALL/NEW bypass the sub-VM entirely.
+            var self = this;
+            var shell = function (c) {
+              return function () {
+                return new VM(self.bytecode, self.constants, self.globals).run(c, this == null ? self.globals : this, Array.prototype.slice.call(arguments));
+              };
+            }(closure);
+            CLOSURE_MAP.set(shell, closure);
+            shell.prototype = closure.prototype; // unified prototype for new/instanceof
+            regs[base + dst] = shell;
+            break;
+          }
+
+        // Collections
+        case OP.BUILD_ARRAY:
+          {
+            // dst, count, [elemReg...]
+            var dst = this._operand();
+            var count = this._operand();
+            var elems = new Array(count);
+            for (var i = 0; i < count; i++) elems[i] = regs[base + this._operand()];
+            regs[base + dst] = elems;
+            break;
+          }
+        case OP.BUILD_OBJECT:
+          {
+            // dst, pairCount, [keyReg, valReg, ...]
+            var dst = this._operand();
+            var pairCount = this._operand();
+            var o = {};
+            for (var i = 0; i < pairCount; i++) {
+              var key = regs[base + this._operand()];
+              var val = regs[base + this._operand()];
+              o[key] = val;
+            }
+            regs[base + dst] = o;
+            break;
+          }
+
+        // Object methods (getters / setters)
+        case OP.DEFINE_GETTER:
+          {
+            // obj, key, fn
+            var obj = regs[base + this._operand()];
+            var key = regs[base + this._operand()];
+            var getterFn = regs[base + this._operand()];
+            var existingDesc = Object.getOwnPropertyDescriptor(obj, key);
+            var getDesc = {
+              get: getterFn,
+              configurable: true,
+              enumerable: true
+            };
+            if (existingDesc && typeof existingDesc.set === "function") {
+              getDesc.set = existingDesc.set;
+            }
+            Object.defineProperty(obj, key, getDesc);
+            break;
+          }
+        case OP.DEFINE_SETTER:
+          {
+            // obj, key, fn
+            var obj = regs[base + this._operand()];
+            var key = regs[base + this._operand()];
+            var setterFn = regs[base + this._operand()];
+            var existingDesc = Object.getOwnPropertyDescriptor(obj, key);
+            var setDesc = {
+              set: setterFn,
+              configurable: true,
+              enumerable: true
+            };
+            if (existingDesc && typeof existingDesc.get === "function") {
+              setDesc.get = existingDesc.get;
+            }
+            Object.defineProperty(obj, key, setDesc);
+            break;
+          }
+
+        // ── For-in iteration ──────────────────────────────────────────────────
+        case OP.FOR_IN_SETUP:
+          {
+            // dst, src — build iterator object from enumerable keys of regs[src]
+            var dst = this._operand();
+            var obj = regs[base + this._operand()];
+            var keys = [];
+            if (obj !== null && obj !== undefined) {
+              var seen = Object.create(null);
+              var cur = Object(obj); // box primitives
+              while (cur !== null) {
+                var ownNames = Object.getOwnPropertyNames(cur);
+                for (var i = 0; i < ownNames.length; i++) {
+                  var k = ownNames[i];
+                  if (!(k in seen)) {
+                    seen[k] = true;
+                    var propDesc = Object.getOwnPropertyDescriptor(cur, k);
+                    if (propDesc && propDesc.enumerable) {
+                      keys.push(k);
+                    }
+                  }
+                }
+                cur = Object.getPrototypeOf(cur);
+              }
+            }
+            regs[base + dst] = {
+              _keys: keys,
+              i: 0
+            };
+            break;
+          }
+        case OP.FOR_IN_NEXT:
+          {
+            // dst, iterReg, exitTarget
+            // Advances iterator; writes next key to dst, or jumps to exitTarget when done.
+            var dst = this._operand();
+            var iter = regs[base + this._operand()];
+            var exitTarget = this._operand();
+            if (iter.i >= iter._keys.length) {
+              regs[fp + SLOTS.PC] = exitTarget;
+            } else {
+              regs[base + dst] = iter._keys[iter.i++];
+            }
+            break;
+          }
+
+        // ── Exception handling ────────────────────────────────────────────────
+        case OP.TRY_SETUP:
+          {
+            // handlerPc, exceptionReg — push exception handler record onto current
+            // frame. The handler stack lives in a header slot and is created on
+            // first use, so frames that never try/catch carry nothing.
+            var hs = regs[fp + SLOTS.HANDLERS];
+            if (!hs) regs[fp + SLOTS.HANDLERS] = hs = [];
+            hs.push({
+              handlerPc: this._operand(),
+              exceptionReg: this._operand()
+            });
+            break;
+          }
+        case OP.TRY_END:
+          {
+            // Normal exit from a try block — disarm the top handler record
+            // (works for both catch and finally regions; they share the stack).
+            regs[fp + SLOTS.HANDLERS].pop();
+            break;
+          }
+        case OP.FINALLY_SETUP:
+          {
+            // finallyPc, contReg, payloadReg, throwPad
+            // Arm a finalizer for the current region.  Unlike a catch record this
+            // carries no exceptionReg; instead the continuation register (contReg)
+            // receives the resume PC and payloadReg carries the in-flight value.
+            var hs = regs[fp + SLOTS.HANDLERS];
+            if (!hs) regs[fp + SLOTS.HANDLERS] = hs = [];
+            hs.push({
+              finallyPc: this._operand(),
+              contReg: this._operand(),
+              payloadReg: this._operand(),
+              throwPad: this._operand()
+            });
+            break;
+          }
+
+        // Self-modifying bytecode
+        case OP.PATCH:
+          {
+            // destPc, sliceStart, sliceEnd, key
+            var destPc = this._operand();
+            var sliceStart = this._operand();
+            var sliceEnd = this._operand();
+            var pk = this._operand() ^ destPc | 0;
+            for (var pi = sliceStart; pi < sliceEnd; pi++) {
+              pk = pk + 0x9e3779b9 | 0;
+              // >>> 0: a negative slot would never match a case in the switch.
+              this.bytecode[destPc + (pi - sliceStart)] = (this.bytecode[pi] ^ (pk ^ pk >>> 13)) >>> 0;
+            }
+            break;
+          }
+        case OP.JUMP_REG:
+          {
+            // Indirect jump: allows VM to jump based on runtime values.
+            regs[fp + SLOTS.PC] = regs[base + this._operand()];
+            break;
+          }
+        case OP.DEBUGGER:
+          {
+            debugger;
+            break;
+          }
+        default:
+          throw new Error("Unknown opcode: " + op + " at pc " + (regs[fp + SLOTS.PC] - 1));
+        case 61:
+          {
+            // ANTI_MOVE_2_4_1_3_7_5_0_6 (order: [2,4,1,3,7,5,0,6])
+            let _unsortedOperands = [this._operand(), this._operand(), this._operand(), this._operand(), this._operand(), this._operand(), this._operand(), this._operand()];
+            let _operands = [_unsortedOperands[6], _unsortedOperands[2], _unsortedOperands[0], _unsortedOperands[3], _unsortedOperands[1], _unsortedOperands[5], _unsortedOperands[7], _unsortedOperands[4]];
+            // DIV
+            var dst = _operands[0];
+            var a = regs[base + _operands[1]];
+            regs[base + dst] = a / regs[base + _operands[2]];
+            // NEQ
+            var dst = _operands[3];
+            var a = regs[base + _operands[4]];
+            regs[base + dst] = a !== regs[base + _operands[5]];
+            // MOVE
+            var dst = _operands[6];
+            regs[base + dst] = regs[base + _operands[7]];
+            break;
+          }
+        case 62:
+          {
+            // ANTI_NEQ_4_8_2_11_1_3_9_6_0_5_7_10_12 (order: [4,8,2,11,1,3,9,6,0,5,7,10,12])
+            let _unsortedOperands = [this._operand(), this._operand(), this._operand(), this._operand(), this._operand(), this._operand(), this._operand(), this._operand(), this._operand(), this._operand(), this._operand(), this._operand(), this._operand()];
+            let _operands = [_unsortedOperands[8], _unsortedOperands[4], _unsortedOperands[2], _unsortedOperands[5], _unsortedOperands[0], _unsortedOperands[9], _unsortedOperands[7], _unsortedOperands[10], _unsortedOperands[1], _unsortedOperands[6], _unsortedOperands[11], _unsortedOperands[3], _unsortedOperands[12]];
+            // LOAD_GLOBAL
+            var dst = _operands[0];
+            var globalName = this._constant(_operands[1], _operands[2]);
+            if (!(globalName in this.globals)) {
+              throw new ReferenceError(`${globalName} is not defined`);
+            }
+            regs[base + dst] = this.globals[globalName];
+            // SUB
+            var dst = _operands[3];
+            var a = regs[base + _operands[4]];
+            regs[base + dst] = a - regs[base + _operands[5]];
+            // NEQ
+            var dst = _operands[6];
+            var a = regs[base + _operands[7]];
+            regs[base + dst] = a !== regs[base + _operands[8]];
+            // JUMP_IF_FALSE
+            var src = _operands[9];
+            var target = _operands[10];
+            if (!regs[base + src]) regs[fp + SLOTS.PC] = target;
+            // LOAD_INT
+            var dst = _operands[11];
+            regs[base + dst] = _operands[12];
+            break;
+          }
+        case 63:
+          {
+            // ANTI_EQ_0_9_3_6_1_8_7_10_5_2_4_11 (order: [0,9,3,6,1,8,7,10,5,2,4,11])
+            let _unsortedOperands = [this._operand(), this._operand(), this._operand(), this._operand(), this._operand(), this._operand(), this._operand(), this._operand(), this._operand(), this._operand(), this._operand(), this._operand()];
+            let _operands = [_unsortedOperands[0], _unsortedOperands[4], _unsortedOperands[9], _unsortedOperands[2], _unsortedOperands[10], _unsortedOperands[8], _unsortedOperands[3], _unsortedOperands[6], _unsortedOperands[5], _unsortedOperands[1], _unsortedOperands[7], _unsortedOperands[11]];
+            // EQ
+            var dst = _operands[0];
+            var a = regs[base + _operands[1]];
+            regs[base + dst] = a === regs[base + _operands[2]];
+            // SHR
+            var dst = _operands[3];
+            var a = regs[base + _operands[4]];
+            regs[base + dst] = a >> regs[base + _operands[5]];
+            // BUILD_ARRAY
+            // dst, count, [elemReg...]
+            var dst = _operands[6];
+            var count = _operands[7];
+            var elems = new Array(count);
+            for (var i = 0; i < count; i++) elems[i] = regs[base + _operands[8]];
+            regs[base + dst] = elems;
+            // ADD
+            var dst = _operands[9];
+            var a = regs[base + _operands[10]];
+            regs[base + dst] = a + regs[base + _operands[11]];
+            break;
+          }
+        case 64:
+          {
+            // ANTI_SUB_1_4_0_7_6_5_2_8_3 (order: [1,4,0,7,6,5,2,8,3])
+            let _unsortedOperands = [this._operand(), this._operand(), this._operand(), this._operand(), this._operand(), this._operand(), this._operand(), this._operand(), this._operand()];
+            let _operands = [_unsortedOperands[2], _unsortedOperands[0], _unsortedOperands[6], _unsortedOperands[8], _unsortedOperands[1], _unsortedOperands[5], _unsortedOperands[4], _unsortedOperands[3], _unsortedOperands[7]];
+            // LOAD_GLOBAL
+            var dst = _operands[0];
+            var globalName = this._constant(_operands[1], _operands[2]);
+            if (!(globalName in this.globals)) {
+              throw new ReferenceError(`${globalName} is not defined`);
+            }
+            regs[base + dst] = this.globals[globalName];
+            // SHL
+            var dst = _operands[3];
+            var a = regs[base + _operands[4]];
+            regs[base + dst] = a << regs[base + _operands[5]];
+            // SUB
+            var dst = _operands[6];
+            var a = regs[base + _operands[7]];
+            regs[base + dst] = a - regs[base + _operands[8]];
+            break;
+          }
+        case 65:
+          {
+            // ANTI_ADD_6_3_1_11_7_10_4_0_5_9_8_2 (order: [6,3,1,11,7,10,4,0,5,9,8,2])
+            let _unsortedOperands = [this._operand(), this._operand(), this._operand(), this._operand(), this._operand(), this._operand(), this._operand(), this._operand(), this._operand(), this._operand(), this._operand(), this._operand()];
+            let _operands = [_unsortedOperands[7], _unsortedOperands[2], _unsortedOperands[11], _unsortedOperands[1], _unsortedOperands[6], _unsortedOperands[8], _unsortedOperands[0], _unsortedOperands[4], _unsortedOperands[10], _unsortedOperands[9], _unsortedOperands[5], _unsortedOperands[3]];
+            // TYPEOF
+            var dst = _operands[0];
+            regs[base + dst] = typeof regs[base + _operands[1]];
+            // ADD
+            var dst = _operands[2];
+            var a = regs[base + _operands[3]];
+            regs[base + dst] = a + regs[base + _operands[4]];
+            // LOAD_INT
+            var dst = _operands[5];
+            regs[base + dst] = _operands[6];
+            // UNARY_NOT
+            var dst = _operands[7];
+            regs[base + dst] = !regs[base + _operands[8]];
+            // ADD
+            var dst = _operands[9];
+            var a = regs[base + _operands[10]];
+            regs[base + dst] = a + regs[base + _operands[11]];
+            break;
+          }
+        case 66:
+          {
+            // ANTI_LT_10_12_11_0_14_6_13_1_4_5_9_2_3_7_8 (order: [10,12,11,0,14,6,13,1,4,5,9,2,3,7,8])
+            let _unsortedOperands = [this._operand(), this._operand(), this._operand(), this._operand(), this._operand(), this._operand(), this._operand(), this._operand(), this._operand(), this._operand(), this._operand(), this._operand(), this._operand(), this._operand(), this._operand()];
+            let _operands = [_unsortedOperands[3], _unsortedOperands[7], _unsortedOperands[11], _unsortedOperands[12], _unsortedOperands[8], _unsortedOperands[9], _unsortedOperands[5], _unsortedOperands[13], _unsortedOperands[14], _unsortedOperands[10], _unsortedOperands[0], _unsortedOperands[2], _unsortedOperands[1], _unsortedOperands[6], _unsortedOperands[4]];
+            // TYPEOF_SAFE
+            // regs[dst] = typeof window[name]
+            // Never throws ReferenceError, instead returns undefined for undeclared variables
+            var dst = _operands[0];
+            var name = this._constant(_operands[1], _operands[2]);
+            var val = Object.prototype.hasOwnProperty.call(this.globals, name) ? this.globals[name] : undefined;
+            regs[base + dst] = typeof val;
+            // MUL
+            var dst = _operands[3];
+            var a = regs[base + _operands[4]];
+            regs[base + dst] = a * regs[base + _operands[5]];
+            // LTE
+            var dst = _operands[6];
+            var a = regs[base + _operands[7]];
+            regs[base + dst] = a <= regs[base + _operands[8]];
+            // LT
+            var dst = _operands[9];
+            var a = regs[base + _operands[10]];
+            regs[base + dst] = a < regs[base + _operands[11]];
+            // NEQ
+            var dst = _operands[12];
+            var a = regs[base + _operands[13]];
+            regs[base + dst] = a !== regs[base + _operands[14]];
+            break;
+          }
+      }
+    } catch (err) {
+      // Exception handler unwinding
+      // Walk the CALLER chain from the current frame until we find one holding an open exception handler (TRY_SETUP without a matching TRY_END).
+      // For every frame we abandon along the way, close its captured upvalues and release its block.
+      var handledFrame = 0;
+      var searchFrame = this._f;
+      while (searchFrame) {
+        var handlers = regs[searchFrame + SLOTS.HANDLERS];
+        if (handlers && handlers.length > 0) {
+          handledFrame = searchFrame;
+          break;
+        }
+        // No handler in this frame — abandon it and walk up.
+        this._closeUpvaluesFor(searchFrame);
+        this._regsTop = searchFrame;
+        searchFrame = regs[searchFrame + SLOTS.CALLER];
+        this._f = searchFrame;
+      }
+      if (!handledFrame) throw err; // if there's no handler, propagate back to host
+
+      var h = regs[handledFrame + SLOTS.HANDLERS].pop();
+      var hBase = regs[handledFrame + SLOTS.REG_BASE];
+      if (h.exceptionReg !== undefined) {
+        // catch region — deliver the exception to the catch binding and run it.
+        regs[hBase + h.exceptionReg] = err;
+        regs[handledFrame + SLOTS.PC] = h.handlerPc;
+      } else {
+        // finally region: run the finalizer with the exception pending, then
+        // resume at its throw pad (which re-raises and continues unwinding).
+        regs[hBase + h.contReg] = h.throwPad;
+        regs[hBase + h.payloadReg] = err;
+        regs[handledFrame + SLOTS.PC] = h.finallyPc;
+      }
+      // Walking the chain already released every frame pushed inside the
+      // protected region; the handling frame is now the top of the stack again.
+      this._regsTop = handledFrame + regs[handledFrame + SLOTS.FRAME_SIZE];
+      this._f = handledFrame;
+    }
+
+    // RETURN of the root frame cleared _f — stop the loop and hand the value
+    // back to run()'s caller (host code, or the sub-VM shell) from slot 0.
+    if (!this._f) return this._regs[0];
+  }
+};
+
+/* @BOOT */ // <- This comment can't be removed!
+var globals = globalThis;
+if (typeof window !== "undefined") {
+  globals.window = window;
+  globals.document = typeof document !== "undefined" ? document : undefined;
+}
+if (typeof module !== "undefined") {
+  globals.module = module;
+  globals.exports = typeof exports !== "undefined" ? exports : undefined;
+}
+var vm = new VM(decodeBytecode(BYTECODE), CONSTANTS, globals);
+vm.run(new Closure({
+  paramCount: 0,
+  regCount: MAIN_REG_COUNT,
+  startPc: MAIN_START_PC
+}), undefined, null // no arguments object / parameter setup for the root frame
+);

@@ -1,0 +1,37 @@
+{
+  "schemaVersion": "oracle.v1",
+  "cellId": "focused-call-method-spread",
+  "hostProfile": "minimal-window-v1",
+  "globals": {},
+  "setup": {
+    "state": {},
+    "aliases": []
+  },
+  "actions": [],
+  "timeoutMs": 2000,
+  "expected": [
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "expectedThrow": null,
+  "semanticTags": [
+    "spread-element",
+    "method-call",
+    "call-spread-sentinel",
+    "receiver-preservation"
+  ],
+  "hazards": [
+    "Finite synchronous child-process oracle with SIGKILL timeout; no time, random, network, locale, async, or stack observables.",
+    "Tagged JSON-safe projection compares the declared TEST_OUTPUT value only; function identity, object identity, and host-dependent stack data are excluded."
+  ],
+  "exclusions": [
+    "Compiler/runtime internals, debug comments, and decoder behavior are excluded from this focused fixture."
+  ],
+  "comparison": {
+    "sourceRawStripped": "exact-normalized-observable",
+    "expectedKind": "normalized-value"
+  }
+}

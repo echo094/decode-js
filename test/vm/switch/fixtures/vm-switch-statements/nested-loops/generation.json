@@ -1,0 +1,11 @@
+{
+  "note": "Each cell's encoded.js is the VM encoder's output for its source.js with default options, which draw no randomness, with the leading disassembly comment block removed (the committed corpus format). Regenerating with the same encoder revision reproduces the bytes.",
+  "vmEncoder": {
+    "revision": "20c5b96bf57337c568579352758d7685358650de",
+    "version": "0.1.5",
+    "options": {}
+  },
+  "cells": {
+    "forms": "one function per loop nesting (for in for, while in while, do-while in do-while, while in for, for in while, break in an inner loop, a conditional inside an inner loop)"
+  }
+}

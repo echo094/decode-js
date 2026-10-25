@@ -1,0 +1,108 @@
+{
+  "note": "Each encoded file is the VM encoder's output for source.js with the listed options, the leading disassembly comment block removed (the committed corpus format). Math.random was replaced by the seeded PRNG used by cff-loop-return (mulberry32: state += 0x6d2b79f5, then the standard mulberry32 output). Regenerating with the same encoder revision, options and seed reproduces the bytes. A file with a source field was generated from that source with the listed options added to the qualification baseline (target browser, every other representation and timing option false).",
+  "vmEncoder": {
+    "revision": "20c5b96bf57337c568579352758d7685358650de",
+    "version": "0.1.5"
+  },
+  "files": {
+    "dispatcher-anti-2.encoded.js": {
+      "options": {
+        "selfModifying": true,
+        "dispatcher": true,
+        "stringConcealing": true,
+        "antiInstrumentation": true
+      },
+      "seed": 2
+    },
+    "dispatcher-anti-7.encoded.js": {
+      "options": {
+        "selfModifying": true,
+        "dispatcher": true,
+        "stringConcealing": true,
+        "antiInstrumentation": true
+      },
+      "seed": 7
+    },
+    "cff-anti-2.encoded.js": {
+      "options": {
+        "selfModifying": true,
+        "controlFlowFlattening": true,
+        "antiInstrumentation": true
+      },
+      "seed": 2
+    },
+    "arithmetic-alias-specialized-212.encoded.js": {
+      "source": "arithmetic.src.js",
+      "options": {
+        "selfModifying": true,
+        "aliasedOpcodes": true,
+        "specializedOpcodes": true
+      },
+      "seed": 212
+    },
+    "patch-arrays-full-213.encoded.js": {
+      "source": "patch-arrays.src.js",
+      "options": {
+        "selfModifying": true,
+        "aliasedOpcodes": true,
+        "macroOpcodes": true,
+        "specializedOpcodes": true,
+        "antiInstrumentation": true
+      },
+      "seed": 213
+    },
+    "finalizers-patch-232.encoded.js": {
+      "source": "finalizers.src.js",
+      "options": {
+        "selfModifying": true,
+        "aliasedOpcodes": true,
+        "macroOpcodes": true,
+        "specializedOpcodes": true,
+        "antiInstrumentation": true
+      },
+      "seed": 232
+    },
+    "finalizers-alias-specialized-dispatcher-1.encoded.js": {
+      "source": "finalizers.src.js",
+      "options": {
+        "selfModifying": true,
+        "specializedOpcodes": true,
+        "aliasedOpcodes": true,
+        "dispatcher": true
+      },
+      "seed": 1
+    },
+    "finalizers-dispatcher-2.encoded.js": {
+      "source": "finalizers.src.js",
+      "options": {
+        "selfModifying": true,
+        "dispatcher": true
+      },
+      "seed": 2
+    },
+    "finalizers-dispatcher-1.encoded.js": {
+      "source": "finalizers.src.js",
+      "options": {
+        "selfModifying": true,
+        "dispatcher": true
+      },
+      "seed": 1
+    },
+    "finalizers-dispatcher-4.encoded.js": {
+      "source": "finalizers.src.js",
+      "options": {
+        "selfModifying": true,
+        "dispatcher": true
+      },
+      "seed": 4
+    },
+    "loops-dispatcher-2.encoded.js": {
+      "source": "loops.src.js",
+      "options": {
+        "selfModifying": true,
+        "dispatcher": true
+      },
+      "seed": 2
+    }
+  }
+}

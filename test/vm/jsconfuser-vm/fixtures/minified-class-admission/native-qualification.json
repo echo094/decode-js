@@ -1,0 +1,562 @@
+{
+  "schemaVersion": "vm-native-local-fixtures.v1",
+  "encoderPin": "20c5b96bf57337c568579352758d7685358650de",
+  "sourceFile": "exception-routes.source.js",
+  "expectedFile": "exception-routes.expected.json",
+  "qualifiedAt": "2026-10-05T18:29:40.814111+00:00",
+  "boundary": "Frozen generated source/encoded bytes were newly observed with current public decoded output under a bounded native host. Finite fixture qualification; no global final JavaScript semantics claim.",
+  "generationRecordBoundary": "Generation-record digests identify supplied value data after JSON normalization; retained raw journals remain external to this package.",
+  "execution": {
+    "utcStart": "2026-10-05T18:15:26.519876+00:00",
+    "utcEnd": "2026-10-05T18:19:23.758137+00:00",
+    "node": "v26.9.0",
+    "platform": "Darwin",
+    "architecture": "arm64",
+    "observedExitCode": 0,
+    "observedSignal": null,
+    "summarySha256": "b617868764dcc0456dd5a6835243a6b999cee81f54c9b165697534968bf8fe02",
+    "populationManifestSha256": "5909fb6a110d3c020de2ebfd3800651e6245850acc34ecb4b843667b662d1b9b"
+  },
+  "cells": [
+    {
+      "id": "exceptionRoutes--baseline--172",
+      "profile": "baseline",
+      "seed": 172,
+      "options": {
+        "aliasedOpcodes": false,
+        "antiInstrumentation": false,
+        "classObfuscation": false,
+        "concealConstants": false,
+        "controlFlowFlattening": false,
+        "dispatcher": false,
+        "encodeBytecode": false,
+        "handlerTable": false,
+        "macroOpcodes": false,
+        "minify": false,
+        "randomizeOpcodes": false,
+        "selfModifying": false,
+        "shuffleOpcodes": false,
+        "specializedOpcodes": false,
+        "stringConcealing": false,
+        "target": "browser",
+        "timingChecks": false
+      },
+      "encodedFile": "baseline-172.encoded.js",
+      "rng": {
+        "algorithm": "mulberry32",
+        "draws": 0,
+        "seed": 172,
+        "state": 172
+      },
+      "generationRecordValueSha256": "0a38523064be996028be429839df1b142c03ac99fb058a837e81241829d30a2b",
+      "currentOutputSha256": "766246874908d096445d7c33620a037101968a42f24846dfb2bf14384a16364b",
+      "qualified": true,
+      "behaviorAgreement": true,
+      "normalizedAgreement": true,
+      "effect": {
+        "axis": "reference",
+        "observed": null
+      }
+    },
+    {
+      "id": "exceptionRoutes--baseline--173",
+      "profile": "baseline",
+      "seed": 173,
+      "options": {
+        "aliasedOpcodes": false,
+        "antiInstrumentation": false,
+        "classObfuscation": false,
+        "concealConstants": false,
+        "controlFlowFlattening": false,
+        "dispatcher": false,
+        "encodeBytecode": false,
+        "handlerTable": false,
+        "macroOpcodes": false,
+        "minify": false,
+        "randomizeOpcodes": false,
+        "selfModifying": false,
+        "shuffleOpcodes": false,
+        "specializedOpcodes": false,
+        "stringConcealing": false,
+        "target": "browser",
+        "timingChecks": false
+      },
+      "encodedFile": "baseline-173.encoded.js",
+      "rng": {
+        "algorithm": "mulberry32",
+        "draws": 0,
+        "seed": 173,
+        "state": 173
+      },
+      "generationRecordValueSha256": "bd534ff3ae4d8ebb3fa83472ab76cbf1201ae2d595e1bd1a305dbcad6fde134c",
+      "currentOutputSha256": "766246874908d096445d7c33620a037101968a42f24846dfb2bf14384a16364b",
+      "qualified": true,
+      "behaviorAgreement": true,
+      "normalizedAgreement": true,
+      "effect": {
+        "axis": "reference",
+        "observed": null
+      }
+    },
+    {
+      "id": "exceptionRoutes--baseline--174",
+      "profile": "baseline",
+      "seed": 174,
+      "options": {
+        "aliasedOpcodes": false,
+        "antiInstrumentation": false,
+        "classObfuscation": false,
+        "concealConstants": false,
+        "controlFlowFlattening": false,
+        "dispatcher": false,
+        "encodeBytecode": false,
+        "handlerTable": false,
+        "macroOpcodes": false,
+        "minify": false,
+        "randomizeOpcodes": false,
+        "selfModifying": false,
+        "shuffleOpcodes": false,
+        "specializedOpcodes": false,
+        "stringConcealing": false,
+        "target": "browser",
+        "timingChecks": false
+      },
+      "encodedFile": "baseline-174.encoded.js",
+      "rng": {
+        "algorithm": "mulberry32",
+        "draws": 0,
+        "seed": 174,
+        "state": 174
+      },
+      "generationRecordValueSha256": "b8fd5117819ae96ee6184f13c454836f797b42138f552b4a37cbfbbe4eaebc2f",
+      "currentOutputSha256": "766246874908d096445d7c33620a037101968a42f24846dfb2bf14384a16364b",
+      "qualified": true,
+      "behaviorAgreement": true,
+      "normalizedAgreement": true,
+      "effect": {
+        "axis": "reference",
+        "observed": null
+      }
+    },
+    {
+      "id": "exceptionRoutes--minify--172",
+      "profile": "minify",
+      "seed": 172,
+      "options": {
+        "aliasedOpcodes": false,
+        "antiInstrumentation": false,
+        "classObfuscation": false,
+        "concealConstants": false,
+        "controlFlowFlattening": false,
+        "dispatcher": false,
+        "encodeBytecode": false,
+        "handlerTable": false,
+        "macroOpcodes": false,
+        "minify": true,
+        "randomizeOpcodes": false,
+        "selfModifying": false,
+        "shuffleOpcodes": false,
+        "specializedOpcodes": false,
+        "stringConcealing": false,
+        "target": "browser",
+        "timingChecks": false
+      },
+      "encodedFile": "minify-172.encoded.js",
+      "rng": {
+        "algorithm": "mulberry32",
+        "draws": 0,
+        "seed": 172,
+        "state": 172
+      },
+      "generationRecordValueSha256": "19e4b3cbf0da22b6f5d9cfcbc38cb40026a9a0cdbd905f45f43eb32b9d5b00cd",
+      "currentOutputSha256": "766246874908d096445d7c33620a037101968a42f24846dfb2bf14384a16364b",
+      "qualified": true,
+      "behaviorAgreement": true,
+      "normalizedAgreement": true,
+      "effect": {
+        "axis": "runtime-minification",
+        "observed": true
+      }
+    },
+    {
+      "id": "exceptionRoutes--minify--173",
+      "profile": "minify",
+      "seed": 173,
+      "options": {
+        "aliasedOpcodes": false,
+        "antiInstrumentation": false,
+        "classObfuscation": false,
+        "concealConstants": false,
+        "controlFlowFlattening": false,
+        "dispatcher": false,
+        "encodeBytecode": false,
+        "handlerTable": false,
+        "macroOpcodes": false,
+        "minify": true,
+        "randomizeOpcodes": false,
+        "selfModifying": false,
+        "shuffleOpcodes": false,
+        "specializedOpcodes": false,
+        "stringConcealing": false,
+        "target": "browser",
+        "timingChecks": false
+      },
+      "encodedFile": "minify-173.encoded.js",
+      "rng": {
+        "algorithm": "mulberry32",
+        "draws": 0,
+        "seed": 173,
+        "state": 173
+      },
+      "generationRecordValueSha256": "8f19ab2da328340633018cedad368145645b5c3266016008b5e8571bac5ff487",
+      "currentOutputSha256": "766246874908d096445d7c33620a037101968a42f24846dfb2bf14384a16364b",
+      "qualified": true,
+      "behaviorAgreement": true,
+      "normalizedAgreement": true,
+      "effect": {
+        "axis": "runtime-minification",
+        "observed": true
+      }
+    },
+    {
+      "id": "exceptionRoutes--minify--174",
+      "profile": "minify",
+      "seed": 174,
+      "options": {
+        "aliasedOpcodes": false,
+        "antiInstrumentation": false,
+        "classObfuscation": false,
+        "concealConstants": false,
+        "controlFlowFlattening": false,
+        "dispatcher": false,
+        "encodeBytecode": false,
+        "handlerTable": false,
+        "macroOpcodes": false,
+        "minify": true,
+        "randomizeOpcodes": false,
+        "selfModifying": false,
+        "shuffleOpcodes": false,
+        "specializedOpcodes": false,
+        "stringConcealing": false,
+        "target": "browser",
+        "timingChecks": false
+      },
+      "encodedFile": "minify-174.encoded.js",
+      "rng": {
+        "algorithm": "mulberry32",
+        "draws": 0,
+        "seed": 174,
+        "state": 174
+      },
+      "generationRecordValueSha256": "1390d7db3a193175a32433d89fba8ec8d16219d0134cbb7ef32d421887d39e29",
+      "currentOutputSha256": "766246874908d096445d7c33620a037101968a42f24846dfb2bf14384a16364b",
+      "qualified": true,
+      "behaviorAgreement": true,
+      "normalizedAgreement": true,
+      "effect": {
+        "axis": "runtime-minification",
+        "observed": true
+      }
+    },
+    {
+      "id": "exceptionRoutes--classObfuscation--172",
+      "profile": "classObfuscation",
+      "seed": 172,
+      "options": {
+        "aliasedOpcodes": false,
+        "antiInstrumentation": false,
+        "classObfuscation": true,
+        "concealConstants": false,
+        "controlFlowFlattening": false,
+        "dispatcher": false,
+        "encodeBytecode": false,
+        "handlerTable": false,
+        "macroOpcodes": false,
+        "minify": false,
+        "randomizeOpcodes": false,
+        "selfModifying": false,
+        "shuffleOpcodes": false,
+        "specializedOpcodes": false,
+        "stringConcealing": false,
+        "target": "browser",
+        "timingChecks": false
+      },
+      "encodedFile": "classObfuscation-172.encoded.js",
+      "rng": {
+        "algorithm": "mulberry32",
+        "draws": 690,
+        "seed": 172,
+        "state": 1060026118
+      },
+      "generationRecordValueSha256": "eadf209dd3eb0e4fe0ff8acccb89aa8d57fb85abae9c799b69c40173c2c26af1",
+      "currentOutputSha256": "766246874908d096445d7c33620a037101968a42f24846dfb2bf14384a16364b",
+      "qualified": true,
+      "behaviorAgreement": true,
+      "normalizedAgreement": true,
+      "effect": {
+        "axis": "runtime-class-layout",
+        "observed": true
+      }
+    },
+    {
+      "id": "exceptionRoutes--classObfuscation--173",
+      "profile": "classObfuscation",
+      "seed": 173,
+      "options": {
+        "aliasedOpcodes": false,
+        "antiInstrumentation": false,
+        "classObfuscation": true,
+        "concealConstants": false,
+        "controlFlowFlattening": false,
+        "dispatcher": false,
+        "encodeBytecode": false,
+        "handlerTable": false,
+        "macroOpcodes": false,
+        "minify": false,
+        "randomizeOpcodes": false,
+        "selfModifying": false,
+        "shuffleOpcodes": false,
+        "specializedOpcodes": false,
+        "stringConcealing": false,
+        "target": "browser",
+        "timingChecks": false
+      },
+      "encodedFile": "classObfuscation-173.encoded.js",
+      "rng": {
+        "algorithm": "mulberry32",
+        "draws": 1218,
+        "seed": 173,
+        "state": 1759133783
+      },
+      "generationRecordValueSha256": "de760de2b3bd061aeb12fd612e63ff53a9f5c7627d9630c80c6d14a1824d3a30",
+      "currentOutputSha256": "766246874908d096445d7c33620a037101968a42f24846dfb2bf14384a16364b",
+      "qualified": true,
+      "behaviorAgreement": true,
+      "normalizedAgreement": true,
+      "effect": {
+        "axis": "runtime-class-layout",
+        "observed": true
+      }
+    },
+    {
+      "id": "exceptionRoutes--classObfuscation--174",
+      "profile": "classObfuscation",
+      "seed": 174,
+      "options": {
+        "aliasedOpcodes": false,
+        "antiInstrumentation": false,
+        "classObfuscation": true,
+        "concealConstants": false,
+        "controlFlowFlattening": false,
+        "dispatcher": false,
+        "encodeBytecode": false,
+        "handlerTable": false,
+        "macroOpcodes": false,
+        "minify": false,
+        "randomizeOpcodes": false,
+        "selfModifying": false,
+        "shuffleOpcodes": false,
+        "specializedOpcodes": false,
+        "stringConcealing": false,
+        "target": "browser",
+        "timingChecks": false
+      },
+      "encodedFile": "classObfuscation-174.encoded.js",
+      "rng": {
+        "algorithm": "mulberry32",
+        "draws": 700,
+        "seed": 174,
+        "state": 2195815066
+      },
+      "generationRecordValueSha256": "a4ded9b594dff2930a57da49168d3b1d528c47b237a4c04c9707a51f303b5b51",
+      "currentOutputSha256": "766246874908d096445d7c33620a037101968a42f24846dfb2bf14384a16364b",
+      "qualified": true,
+      "behaviorAgreement": true,
+      "normalizedAgreement": true,
+      "effect": {
+        "axis": "runtime-class-layout",
+        "observed": true
+      }
+    },
+    {
+      "id": "exceptionRoutes--minifyClassObfuscation--172",
+      "profile": "minifyClassObfuscation",
+      "seed": 172,
+      "options": {
+        "aliasedOpcodes": false,
+        "antiInstrumentation": false,
+        "classObfuscation": true,
+        "concealConstants": false,
+        "controlFlowFlattening": false,
+        "dispatcher": false,
+        "encodeBytecode": false,
+        "handlerTable": false,
+        "macroOpcodes": false,
+        "minify": true,
+        "randomizeOpcodes": false,
+        "selfModifying": false,
+        "shuffleOpcodes": false,
+        "specializedOpcodes": false,
+        "stringConcealing": false,
+        "target": "browser",
+        "timingChecks": false
+      },
+      "encodedFile": "minifyClassObfuscation-172.encoded.js",
+      "rng": {
+        "algorithm": "mulberry32",
+        "draws": 690,
+        "seed": 172,
+        "state": 1060026118
+      },
+      "generationRecordValueSha256": "fb1ef8e441ee4d926aee86907e050acde0ff4bcd227d93839e06eb1ce686a936",
+      "currentOutputSha256": "766246874908d096445d7c33620a037101968a42f24846dfb2bf14384a16364b",
+      "qualified": true,
+      "behaviorAgreement": true,
+      "normalizedAgreement": true,
+      "effect": {
+        "axis": "emitted-representation-components",
+        "classWitness": {
+          "candidate": {
+            "argumentCount": 3,
+            "optionalSlotGuards": 0,
+            "pool": 0,
+            "words": 2
+          },
+          "control": {
+            "argumentCount": 3,
+            "optionalSlotGuards": 9,
+            "pool": 1,
+            "words": 0
+          },
+          "observed": true,
+          "witness": "connected-optional-slots-erased"
+        },
+        "components": {
+          "classObfuscation": true,
+          "minify": true
+        },
+        "observed": true
+      }
+    },
+    {
+      "id": "exceptionRoutes--minifyClassObfuscation--173",
+      "profile": "minifyClassObfuscation",
+      "seed": 173,
+      "options": {
+        "aliasedOpcodes": false,
+        "antiInstrumentation": false,
+        "classObfuscation": true,
+        "concealConstants": false,
+        "controlFlowFlattening": false,
+        "dispatcher": false,
+        "encodeBytecode": false,
+        "handlerTable": false,
+        "macroOpcodes": false,
+        "minify": true,
+        "randomizeOpcodes": false,
+        "selfModifying": false,
+        "shuffleOpcodes": false,
+        "specializedOpcodes": false,
+        "stringConcealing": false,
+        "target": "browser",
+        "timingChecks": false
+      },
+      "encodedFile": "minifyClassObfuscation-173.encoded.js",
+      "rng": {
+        "algorithm": "mulberry32",
+        "draws": 1218,
+        "seed": 173,
+        "state": 1759133783
+      },
+      "generationRecordValueSha256": "81427cbad9cc2c9e8e29e88dd1841aeefdbd8a575a4c451fdd583fd3ec90cb76",
+      "currentOutputSha256": "766246874908d096445d7c33620a037101968a42f24846dfb2bf14384a16364b",
+      "qualified": true,
+      "behaviorAgreement": true,
+      "normalizedAgreement": true,
+      "effect": {
+        "axis": "emitted-representation-components",
+        "classWitness": {
+          "candidate": {
+            "argumentCount": 5,
+            "optionalSlotGuards": 0,
+            "pool": 4,
+            "words": 3
+          },
+          "control": {
+            "argumentCount": 3,
+            "optionalSlotGuards": 9,
+            "pool": 1,
+            "words": 0
+          },
+          "observed": true,
+          "witness": "connected-optional-slots-erased"
+        },
+        "components": {
+          "classObfuscation": true,
+          "minify": true
+        },
+        "observed": true
+      }
+    },
+    {
+      "id": "exceptionRoutes--minifyClassObfuscation--174",
+      "profile": "minifyClassObfuscation",
+      "seed": 174,
+      "options": {
+        "aliasedOpcodes": false,
+        "antiInstrumentation": false,
+        "classObfuscation": true,
+        "concealConstants": false,
+        "controlFlowFlattening": false,
+        "dispatcher": false,
+        "encodeBytecode": false,
+        "handlerTable": false,
+        "macroOpcodes": false,
+        "minify": true,
+        "randomizeOpcodes": false,
+        "selfModifying": false,
+        "shuffleOpcodes": false,
+        "specializedOpcodes": false,
+        "stringConcealing": false,
+        "target": "browser",
+        "timingChecks": false
+      },
+      "encodedFile": "minifyClassObfuscation-174.encoded.js",
+      "rng": {
+        "algorithm": "mulberry32",
+        "draws": 700,
+        "seed": 174,
+        "state": 2195815066
+      },
+      "generationRecordValueSha256": "439ced21d3e72f00435f260ca9af73214bf2f7377bc78e3da48628ac1a4c99c5",
+      "currentOutputSha256": "766246874908d096445d7c33620a037101968a42f24846dfb2bf14384a16364b",
+      "qualified": true,
+      "behaviorAgreement": true,
+      "normalizedAgreement": true,
+      "effect": {
+        "axis": "emitted-representation-components",
+        "classWitness": {
+          "candidate": {
+            "argumentCount": 6,
+            "optionalSlotGuards": 0,
+            "pool": 0,
+            "words": 1
+          },
+          "control": {
+            "argumentCount": 3,
+            "optionalSlotGuards": 9,
+            "pool": 1,
+            "words": 0
+          },
+          "observed": true,
+          "witness": "connected-optional-slots-erased"
+        },
+        "components": {
+          "classObfuscation": true,
+          "minify": true
+        },
+        "observed": true
+      }
+    }
+  ]
+}
