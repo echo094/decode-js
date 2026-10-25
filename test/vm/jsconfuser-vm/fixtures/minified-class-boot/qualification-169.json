@@ -1,0 +1,61 @@
+{
+  "id": "arithmetic--minifyClassObfuscation--169",
+  "case": "arithmetic",
+  "profile": "minifyClassObfuscation",
+  "seed": 169,
+  "options": {
+    "randomizeOpcodes": false,
+    "shuffleOpcodes": false,
+    "encodeBytecode": false,
+    "concealConstants": false,
+    "controlFlowFlattening": false,
+    "dispatcher": false,
+    "stringConcealing": false,
+    "macroOpcodes": false,
+    "specializedOpcodes": false,
+    "aliasedOpcodes": false,
+    "antiInstrumentation": false,
+    "selfModifying": false,
+    "timingChecks": false,
+    "classObfuscation": true,
+    "handlerTable": false,
+    "minify": true,
+    "target": "browser"
+  },
+  "status": "declined",
+  "diagnostic": {
+    "code": "container-declined",
+    "message": "extractContainerFromSource declined the input container"
+  },
+  "sourceObservation": {
+    "kind": "value",
+    "value": 0
+  },
+  "encodedObservation": {
+    "kind": "value",
+    "value": 0
+  },
+  "decodedObservation": null,
+  "effectObservation": {
+    "axis": "emitted-representation-components",
+    "observed": null,
+    "components": {
+      "minify": null,
+      "classObfuscation": null
+    }
+  },
+  "provenance": {
+    "kind": "retained-cell-with-incomplete-generation-provenance",
+    "generation": {
+      "encoderCommit": null,
+      "decoderCommit": null,
+      "toolSha256": null,
+      "nodeVersion": null,
+      "rng": null,
+      "generatedAt": null,
+      "executionProvenance": null
+    },
+    "decodedBytesRetained": false,
+    "completeEffectControlsRetained": false
+  }
+}
