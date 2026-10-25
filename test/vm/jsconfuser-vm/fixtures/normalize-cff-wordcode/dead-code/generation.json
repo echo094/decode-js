@@ -1,0 +1,12 @@
+{
+  "note": "encoded.js is the VM encoder's output for source.js with controlFlowFlattening, and plain.encoded.js with no options, each with the leading disassembly comment block removed (the committed corpus format). Both encodes replaced Math.random with the seeded PRNG below (mulberry32: state += 0x6d2b79f5, then the standard mulberry32 output); the plain encode draws no randomness. Regenerating with the same encoder revision, options and seed reproduces the bytes.",
+  "vmEncoder": {
+    "revision": "20c5b96bf57337c568579352758d7685358650de",
+    "version": "0.1.5"
+  },
+  "files": {
+    "encoded.js": { "options": { "controlFlowFlattening": true }, "seed": 1 },
+    "plain.encoded.js": { "options": {}, "seed": 1 }
+  },
+  "claim": "source dead code after a return, with closures only the dead code creates, under control flow flattening: the CFF pass removes only the fake blocks it injected, so the normalized stream holds the plain compile's instructions apart from jumps, and the program decodes with the source's behaviour"
+}

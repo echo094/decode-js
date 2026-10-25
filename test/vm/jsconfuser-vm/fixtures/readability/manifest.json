@@ -1,0 +1,29 @@
+{
+  "schemaVersion": "jsconfuser-vm-readability-fixtures.v1",
+  "encoderCommit": "20c5b96bf57337c568579352758d7685358650de",
+  "options": {
+    "target": "browser",
+    "encodeBytecode": false,
+    "randomizeOpcodes": false,
+    "shuffleOpcodes": false,
+    "controlFlowFlattening": false,
+    "dispatcher": false,
+    "stringConcealing": false,
+    "macroOpcodes": false,
+    "specializedOpcodes": false,
+    "aliasedOpcodes": false,
+    "antiInstrumentation": false,
+    "selfModifying": false,
+    "timingChecks": false,
+    "classObfuscation": false,
+    "handlerTable": false,
+    "minify": false
+  },
+  "cases": [
+    "arithmetic",
+    "closure-loop",
+    "scale"
+  ],
+  "generatedInputs": "encoded.js is generated from each tracked source.js with the pinned encoder and the options above.",
+  "baseline": "decoded.js is the current decoder output and is measured, not treated as a readability target."
+}

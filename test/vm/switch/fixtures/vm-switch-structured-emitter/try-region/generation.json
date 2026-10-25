@@ -1,0 +1,21 @@
+{
+  "note": "Each cell's encoded.js is the VM encoder's output for its source.js, with the leading disassembly comment block removed (the committed corpus format). Default options draw no randomness; a cell with options names them and the seed of the PRNG that replaced Math.random for the encode (mulberry32: state += 0x6d2b79f5, then the standard mulberry32 output). Regenerating with the same encoder revision, options and seed reproduces the bytes.",
+  "vmEncoder": {
+    "revision": "20c5b96bf57337c568579352758d7685358650de",
+    "version": "0.1.5",
+    "options": {}
+  },
+  "cells": {
+    "routes": "exceptions raised in the try body, the catch and the finalizer, each against pending returns and throws, with a captured counter",
+    "forms": "one function per try form (empty, multi-block and binding-less catch; return and rethrow in a catch; conditional and nested try in a catch; try nested in a try body; finally that falls through; return of a call through finally; catch and finally that fall through; call-free try body; a catch and a finalizer whose try body cannot throw; inside loops: continue and break across a finally, break across a catch, a catch ending in break, a do-while whose body starts with the try), each run without and with an exception",
+    "forms-cff": "the forms source with control flow flattening: a try nested in a catch ends at the jump step its pops and its catch share, not at the outer try's end behind it"
+  },
+  "cellOptions": {
+    "forms-cff": {
+      "options": {
+        "controlFlowFlattening": true
+      },
+      "seed": 1
+    }
+  }
+}

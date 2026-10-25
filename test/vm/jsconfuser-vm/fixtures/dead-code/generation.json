@@ -1,0 +1,11 @@
+{
+  "note": "encoded.js is the VM encoder's output for source.js with no options, the leading disassembly comment block removed (the committed corpus format). Math.random was replaced by the seeded PRNG below (mulberry32: state += 0x6d2b79f5, then the standard mulberry32 output). Regenerating with the same encoder revision, options and seed reproduces the bytes.",
+  "vmEncoder": {
+    "revision": "20c5b96bf57337c568579352758d7685358650de",
+    "version": "0.1.5"
+  },
+  "files": {
+    "encoded.js": { "options": {}, "seed": 1 }
+  },
+  "claim": "dead code after a return: the compiler emits a try/catch and a try/finally no path reaches, with calls inside and the finalizer's resume JUMP_REG; the backend's control solver reaches none of them, so the program decodes with the source's behaviour"
+}
