@@ -1,0 +1,20 @@
+{
+  "expected": 3,
+  "timeoutMs": 2000,
+  "boundary": "child_process.spawnSync with finite timeout and SIGKILL kill signal",
+  "source": {
+    "ok": true,
+    "value": 3,
+    "timedOut": false
+  },
+  "raw": {
+    "ok": true,
+    "value": 3,
+    "timedOut": false
+  },
+  "stripped": {
+    "ok": true,
+    "value": 3,
+    "timedOut": false
+  }
+}
