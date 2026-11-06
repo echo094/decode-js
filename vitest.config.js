@@ -18,6 +18,10 @@ export default defineConfig({
     // sandbox-tests/ holds encoder checkouts fetched for qualification
     // (scripts/qualify-jsconfuser-vm); their own suites are not decoder tests.
     "exclude": [...configDefaults.exclude, 'sandbox-tests/**'],
+    // Encoded VM fixtures are generated from their recorded recipes before any
+    // test runs (test/vm/materialize-fixtures.js); the pinned encoder needs a JDK
+    // on PATH or JAVA_HOME for its minify cells.
+    "globalSetup": ['./test/vm/materialize-fixtures.js'],
     "passWithNoTests": true,
     // The heaviest jsconfuser and VM cases decode whole real-encoder samples,
     // and their time grows several-fold under v8 coverage and full parallel
