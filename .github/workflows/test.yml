@@ -33,10 +33,45 @@ jobs:
           # there are versioning quirks with node-gyp
           npm_config_build_from_source: true
 
+      # Generated VM cells: each suite defines its cells in
+      # test/vm/jsconfuser-vm/generated-cells/<suite>/suite.js; the pinned encoder is
+      # cloned and installed from the committed lock, and its output is cached per cell.
+      # Closure Compiler, used by minify cells, needs a JDK.
+      - name: Install JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Cache the encoder checkout
+        uses: actions/cache@v4
+        with:
+          path: sandbox-tests/js-confuser-vm
+          key: vm-encoder-${{ hashFiles('scripts/qualify-jsconfuser-vm/audit.mjs', 'scripts/qualify-jsconfuser-vm/encoder-lock.json') }}
+
+      # Each cell lives under its own key directory, so an older cache entry is
+      # reused for every cell whose inputs did not change.
+      - name: Cache generated VM cells
+        uses: actions/cache@v4
+        with:
+          path: sandbox-tests/vm-cells
+          key: vm-cells-${{ github.run_id }}
+          restore-keys: vm-cells-
+
       - name: Run Vitest
         # We use 'always()' so the report is posted even if tests fail
         run: npx vitest run
         if: always()
+        env:
+          VM_FRESH_SEEDS: 1
+
+      - name: Upload generated VM cells
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: vm-cells
+          path: sandbox-tests/vm-cells
+          retention-days: 90
 
       - name: Vitest Pull Request Report
         uses: davelosert/vitest-coverage-report-action@v2
