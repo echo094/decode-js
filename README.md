@@ -7,12 +7,15 @@ readable source.
 
 One target per run, selected with `-t`:
 
+The result-aware `jsconfuser-vm` target is listed in the dedicated section below.
+
 | `-t` | target |
 |---|---|
 | `common` | frequently-seen local obfuscation, not tied to any one tool — unreachable code, nested blocks, constant expressions, raw strings |
 | `jjencode` | jjencode, in the variant emitted by sojson.com |
 | `sojson` | sojson |
 | `sojsonv7` | sojson v7 |
+| `jsconfuser-vm` | JS-Confuser numeric VM containers via the standalone result-aware adapter |
 | `obfuscator` | [javascript-obfuscator](https://github.com/javascript-obfuscator/javascript-obfuscator) (obfuscator.io) |
 | `obfuscatorx` | the same obfuscator, version-aware — see below for how it differs |
 | `jsconfuser` | [JS-Confuser](https://github.com/MichaelXF/js-confuser) |
@@ -50,6 +53,15 @@ Covers JS-Confuser 2.x up to and including the `high` preset. Which transforms a
 reversed, which are not, and why are documented in the
 [decode-nexus jsconfuser plugin reference](https://github.com/echo094/decode-nexus/blob/main/skills/decode-js/plugins/jsconfuser.md).
 
+### `jsconfuser-vm`
+
+Decodes accepted numeric VM containers without executing target code. Each attempt writes the
+adapter's JavaScript output and a JSON result record containing `status`, `diagnostic`, and the
+standalone schema/proof metadata. The result path defaults to `<output>.result.json`; pass
+`--result path.json` to choose an explicit path. A declined input is written byte-for-byte to the
+output, recorded with `status: "declined"`, and exits successfully. The `--result` option is
+target-specific; legacy targets keep their string/null output contract and do not write sidecars.
+
 ## Usage
 
 **If problems occur during installation and execution, please check the requirements of
@@ -72,7 +84,7 @@ npm run decode -- -t type [-i input.js] [-o output.js] [-v]
 ```
 
 `xxx` is one of the predefined commands, each a shorthand for one target — `deob`,
-`dejsc`, `deso`, `desov7`. See the `scripts` field in [package.json](package.json).
+`dejsc`, `dejsc-vm`, `deso`, `desov7`. See the `scripts` field in [package.json](package.json).
 
 The default input file is `input.js`. The file cannot contain additional codes other
 than obfuscated code (such as non-obfuscated code).
@@ -80,6 +92,12 @@ than obfuscated code (such as non-obfuscated code).
 The default output file is `output.js`.
 
 `-v` turns on per-pass progress tracing, which is off by default.
+
+For the result-aware VM target, use `--result` when an explicit result path is preferred:
+
+```shell
+npm run decode -- -t jsconfuser-vm -i encoded.js -o decoded.js --result decoded.json
+```
 
 ## Related Projects
 
