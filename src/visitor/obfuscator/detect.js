@@ -1043,4 +1043,4 @@ function detectStringArray(ast) {
 }
 
 export default detectStringArray
-export { weakEvidence, foldNumber, resolveWrapperNode }
+export { foldNumber, resolveWrapperNode }

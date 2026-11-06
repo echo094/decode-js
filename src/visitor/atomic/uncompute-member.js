@@ -46,5 +46,3 @@ export function createUncomputeMember(onChange) {
     OptionalMemberExpression: visit,
   }
 }
-
-export default createUncomputeMember()
