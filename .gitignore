@@ -107,3 +107,7 @@ input.js
 output.js
 .vscode/
 .idea/
+
+# Qualification workspace: encoder checkouts fetched by scripts/qualify-jsconfuser-vm
+sandbox-tests/
+__pycache__/
