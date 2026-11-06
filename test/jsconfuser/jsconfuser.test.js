@@ -2,7 +2,7 @@ import { join } from 'path'
 import fs from 'node:fs'
 import vm from 'node:vm'
 import { expect, test } from 'vitest'
-import { getPluginResult } from '../helper.js'
+import { getPluginResult, scriptTimeout } from '../helper.js'
 import PluginJsconfuser from '#plugin/jsconfuser.js'
 
 const root = __dirname
@@ -16,7 +16,7 @@ test('control-flow flattening preserves lexical bindings when restoring scope me
   const run = (code) => {
     const context = {}
     context.window = context
-    vm.runInNewContext(code, context, { timeout: 5000 })
+    vm.runInNewContext(code, context, { timeout: scriptTimeout })
     return context.TEST_OUTPUT
   }
 

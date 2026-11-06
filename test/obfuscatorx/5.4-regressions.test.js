@@ -5,6 +5,7 @@ import { expect, test } from 'vitest'
 import { parse } from '@babel/parser'
 import traverse from '@babel/traverse'
 import PluginObfuscatorX from '#plugin/obfuscatorx.js'
+import { scriptTimeout } from '../helper.js'
 
 const root = __dirname
 
@@ -14,9 +15,11 @@ function read(name, suffix = '') {
 
 function run(code) {
   const output = []
-  vm.runInNewContext(code, {
-    console: { log: (...args) => output.push(args.join(' ')) },
-  })
+  vm.runInNewContext(
+    code,
+    { console: { log: (...args) => output.push(args.join(' ')) } },
+    { timeout: scriptTimeout },
+  )
   return output
 }
 
