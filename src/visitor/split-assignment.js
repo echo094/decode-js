@@ -1,10 +1,87 @@
 import * as t from '@babel/types'
 
+/**
+ * The operands of `parent` evaluated before its child at `key`; hoisting the child's assignment
+ * moves it ahead of them.
+ *
+ * - `x = <child>` only resolves `x`; `x op= <child>` reads `x` first.
+ * - `o[k] = <child>` evaluates `o` and `k` first; `o[k] op= <child>` also reads `o[k]`.
+ * - `<obj>[<child>]` evaluates `<obj>` first.
+ */
+function earlierOperands(parent, key) {
+  if (parent.isAssignmentExpression() && key === 'right') {
+    const left = parent.get('left')
+    const plain = parent.node.operator === '='
+    if (left.isIdentifier()) {
+      return plain ? [] : [left]
+    }
+    if (left.isMemberExpression() && plain) {
+      return left.node.computed
+        ? [left.get('object'), left.get('property')]
+        : [left.get('object')]
+    }
+    return [left]
+  }
+  if (parent.isMemberExpression() && key === 'property') {
+    return [parent.get('object')]
+  }
+  return []
+}
+
+/**
+ * Whether evaluating `operand` before or after the assignment `asg` gives the same result with the
+ * same effects: a literal, `this`, or a variable other than the target that the assignment cannot
+ * write (its right side is pure, or the variable is never reassigned). Anything else - a member
+ * read may run a getter, a call anything - is not.
+ */
+function isInert(operand, asg, rightIsPure) {
+  if (operand.isIdentifier()) {
+    if (operand.node.name === asg.node.left.name) {
+      return false
+    }
+    if (rightIsPure) {
+      return true
+    }
+    return operand.scope.getBinding(operand.node.name)?.constant === true
+  }
+  return (
+    operand.isStringLiteral() ||
+    operand.isNumericLiteral() ||
+    operand.isBooleanLiteral() ||
+    operand.isNullLiteral() ||
+    operand.isBigIntLiteral() ||
+    operand.isThisExpression()
+  )
+}
+
+/**
+ * The statement to insert the assignment `path` before, or undefined to leave it in place.
+ *
+ * The split leaves `left` behind as the value and runs the assignment before everything else in the
+ * statement, so it is only equivalent when:
+ *
+ * - `left` is an Identifier: reading it back has no effect and yields the assigned value. A member
+ *   target would evaluate its object and key a second time (`var e = a[a.length] = v`).
+ * - Every operand that ran before the assignment is inert to it (`a[i] = i = 1` would index with
+ *   the new `i`).
+ *
+ * Anything else is left in place: a split that kept behaviour would need a temporary, which this
+ * pass does not introduce.
+ */
 function getInsertPath(path) {
+  if (!t.isIdentifier(path.node.left)) {
+    return undefined
+  }
+  const rightIsPure = path.scope.isPure(path.node.right)
   let insertPath = path
   let parent = insertPath.parentPath
   let needSplit = false
   while (parent && !parent.isBlockStatement() && !parent.isProgram()) {
+    for (const operand of earlierOperands(parent, insertPath.key)) {
+      if (!isInert(operand, path, rightIsPure)) {
+        return undefined
+      }
+    }
     let valid = false
     if (parent.isAssignmentExpression()) {
       valid = true
