@@ -132,61 +132,6 @@ const deControlFlowFlatteningStateless = {
 }
 
 /**
- *
- * Template:
- * ```javascript
- * flaggedLabels = {
- *   currentLabel: { flagKey: 'xxx', flagValue : 'true or false' }
- * }
- * labelToStates[chunk[i].label] = stateValues: [] => caseStates[i]
- * initStateValues = labelToStates[startLabel]
- * endState
- * chunks = [
- *   {
- *     body: [
- *       {
- *         type: "GotoStatement",
- *         label: "END_LABEL",
- *       }
- *     ],
- *   }
- *   {
- *     label: "END_LABEL",
- *     body: [],
- *   }
- * ]
- * while (stateVars) {
- *   switch (stateVars) {
- *     // fake assignment expression
- *     case fake_assignment: {
- *       stateVar = 'rand'
- *       // 'GotoStatement label'
- *     }
- *     // clone chunks
- *     case fake_clone: {
- *       // contain a real chunk
- *     }
- *     // fake jumps
- *     case real_1: {
- *       if (false) {
- *         // 'GotoStatement label'
- *       }
- *       // follow with real statements
- *     }
- *   }
- * }
- * The key may exist in its parent's map
- * ```
- */
-const deControlFlowFlatteningState = {
-  ObjectExpression(path) {
-    if (!checkControlVar(path)) {
-      return
-    }
-  },
-}
-
-/**
  * Undoes ControlFlowFlattening's literal entanglement: every mangled
  * number/boolean/string is a small arithmetic expression whose only "variable" is
  * `statesName[index]` - a member read off the state-vector array - combined with plain
@@ -398,10 +343,6 @@ function makeLiteralResolverVisitor({
 
 export default {
   deControlFlowFlatteningStateless,
-  deControlFlowFlatteningState,
   resolveStateNumber,
-  resolveStateBoolean,
-  resolveStateString,
-  xorDecodeString,
   makeLiteralResolverVisitor,
 }

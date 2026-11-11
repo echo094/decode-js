@@ -1,0 +1,1 @@
+function check(value) { try { if (value < 0) throw new Error("negative"); return value + 1; } catch (error) { return error.message; } finally { window.finished = true; } } window.TEST_OUTPUT = [check(-1), check(4), window.finished];

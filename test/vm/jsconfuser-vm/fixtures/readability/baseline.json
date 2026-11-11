@@ -1,0 +1,116 @@
+{
+  "schemaVersion": "jsconfuser-vm-readability-baseline.v1",
+  "fixtureSchemaVersion": "jsconfuser-vm-readability-fixtures.v1",
+  "cases": [
+    {
+      "caseId": "arithmetic",
+      "decoded": {
+        "bytes": 1668,
+        "sha256": "1a294dd46b54b309f49a29b383aeec615ac1e8310764270f411ce4a67f05b8fc",
+        "ratios": {
+          "decodedToSource": 20.85,
+          "decodedToEncoded": 0.042799
+        },
+        "ast": {
+          "statements": 45,
+          "generatedStatements": 23,
+          "functions": 3,
+          "declaredIdentifiers": 16,
+          "generatedDeclarations": {
+            "total": 10,
+            "zeroReferences": 6
+          },
+          "emptyCellDeclarations": 1
+        },
+        "generatedIdentifiers": {
+          "distinct": 10,
+          "total": 33
+        },
+        "operations": {
+          "reflectCalls": {
+            "set": 1
+          },
+          "computedGlobalThis": 0,
+          "descriptorCalls": 0,
+          "closureWrappers": 0,
+          "handlerOperations": 0,
+          "structuredFunctions": 1
+        }
+      }
+    },
+    {
+      "caseId": "closure-loop",
+      "decoded": {
+        "bytes": 4255,
+        "sha256": "d682fc02d56aaab3d30c4d643d3a0cc0d325402e08b37c6d4077cc0d7d68028b",
+        "ratios": {
+          "decodedToSource": 19.080717,
+          "decodedToEncoded": 0.103139
+        },
+        "ast": {
+          "statements": 101,
+          "generatedStatements": 77,
+          "functions": 7,
+          "declaredIdentifiers": 43,
+          "generatedDeclarations": {
+            "total": 36,
+            "zeroReferences": 12
+          },
+          "emptyCellDeclarations": 3
+        },
+        "generatedIdentifiers": {
+          "distinct": 31,
+          "total": 116
+        },
+        "operations": {
+          "reflectCalls": {
+            "apply": 2,
+            "set": 1
+          },
+          "computedGlobalThis": 0,
+          "descriptorCalls": 0,
+          "closureWrappers": 3,
+          "handlerOperations": 0,
+          "structuredFunctions": 3
+        }
+      }
+    },
+    {
+      "caseId": "scale",
+      "decoded": {
+        "bytes": 15367,
+        "sha256": "55b103cf42fb22f4d447c7286330512e26c718f79c3345d3a144f4c40659aa1d",
+        "ratios": {
+          "decodedToSource": 7.970436,
+          "decodedToEncoded": 0.269634
+        },
+        "ast": {
+          "statements": 240,
+          "generatedStatements": 218,
+          "functions": 5,
+          "declaredIdentifiers": 30,
+          "generatedDeclarations": {
+            "total": 24,
+            "zeroReferences": 10
+          },
+          "emptyCellDeclarations": 2
+        },
+        "generatedIdentifiers": {
+          "distinct": 22,
+          "total": 509
+        },
+        "operations": {
+          "reflectCalls": {
+            "apply": 1,
+            "set": 1
+          },
+          "computedGlobalThis": 0,
+          "descriptorCalls": 0,
+          "closureWrappers": 2,
+          "handlerOperations": 0,
+          "structuredFunctions": 2
+        }
+      }
+    }
+  ]
+}

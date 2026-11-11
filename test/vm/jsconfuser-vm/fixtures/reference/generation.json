@@ -1,0 +1,16 @@
+{
+  "note": "encoded.js and encoded.debug.js are the VM encoder output for source.js with default options, which draw no randomness; encoded.js has the leading disassembly comment removed (the committed corpus format), encoded.debug.js keeps it.",
+  "vmEncoder": {
+    "revision": "20c5b96bf57337c568579352758d7685358650de",
+    "version": "0.1.5"
+  },
+  "files": {
+    "encoded.js": {
+      "options": {}
+    },
+    "encoded.debug.js": {
+      "options": {},
+      "listing": true
+    }
+  }
+}

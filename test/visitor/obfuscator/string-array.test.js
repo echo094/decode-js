@@ -205,7 +205,7 @@ describe('unreadable — the refusal, kept narrow', () => {
       timeout: 2000,
     })
     expect(res.notes.some((n) => n.includes('did not evaluate'))).toBe(true)
-  }, 20000)
+  })
 
   // An alias assigned without a declaration, so it is a global with no binding and its call sites
   // cannot be enumerated. Deleting the machinery here breaks the program rather than leaving

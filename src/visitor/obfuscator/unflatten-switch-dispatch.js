@@ -320,5 +320,3 @@ export function createUnflattenSwitchDispatch(onChange) {
     },
   }
 }
-
-export default createUnflattenSwitchDispatch()

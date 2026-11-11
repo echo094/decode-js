@@ -16,7 +16,7 @@ import inlineControlFlowStorage from '#visitor/obfuscator/inline-control-flow-st
 import { createUnflattenSwitchDispatch } from '#visitor/obfuscator/unflatten-switch-dispatch'
 import unlockEnv from '#visitor/obfuscator/unlock-env'
 import deleteExtra from '#visitor/delete-extra'
-import { expectConsistentState } from '../helper.js'
+import { expectConsistentState, scriptTimeout } from '../helper.js'
 
 const root = join(__dirname, 'static-top-level-declaration')
 const seeds = [52601, 52607, 52613, 52619]
@@ -82,9 +82,11 @@ function decodeDirect(code) {
 
 function run(code) {
   const output = []
-  vm.runInNewContext(code, {
-    console: { log: (...args) => output.push(args.join(' ')) },
-  })
+  vm.runInNewContext(
+    code,
+    { console: { log: (...args) => output.push(args.join(' ')) } },
+    { timeout: scriptTimeout },
+  )
   return output
 }
 

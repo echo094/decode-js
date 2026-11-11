@@ -29,10 +29,6 @@ function setDebugLogging(on) {
   enabled = !!on
 }
 
-function isDebugLogging() {
-  return enabled
-}
-
 function debugLog(...args) {
   if (enabled) {
     console.log(...args)
@@ -61,7 +57,6 @@ function error(...args) {
 export default {
   debugLog,
   setDebugLogging,
-  isDebugLogging,
   log,
   error,
 }

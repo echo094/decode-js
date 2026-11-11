@@ -1,0 +1,11 @@
+function tailOnBreak(n) { var t = []; L: if (n >= 0) { var i = n; while (i < 3) { i++; if (i === 2) break L; t.push(i); } t.push("tail"); } t.push("end"); return t; }
+function blockTail(n) { var t = []; L: { var i = n; while (i < 3) { i++; if (i === 2) break L; t.push(i); } t.push("tail"); } t.push("end"); return t; }
+function switchOneCase(n) { var t = []; outer: switch (n) { case 0: for (var i = 0; i < 3; i++) { if (i === 1) break outer; t.push(i); } t.push("tail"); } t.push("end"); return t; }
+function forInBlock(o, stop) { var t = []; L: { for (var k in o) { if (k === stop) break L; t.push(k); } t.push("tail"); } t.push("end"); return t; }
+function twoLabels(a, b) { var t = []; A: { B: { for (var i = 0; i < 4; i++) { if (i === a) break A; if (i === b) break B; t.push(i); } t.push("b"); } t.push("a"); } t.push("end"); return t; }
+function tailHoldsLoop(n) { var t = []; L: { for (var i = 0; i < 3; i++) { if (i === n) break L; } for (var j = 0; j < 2; j++) t.push(j); } t.push("end"); return t; }
+function continueOuter(n) { var t = []; A: for (var i = 0; i < 3; i++) { for (var j = 0; j < 3; j++) { if (j === n) continue A; t.push(i * 10 + j); } t.push("tail"); } return t; }
+function continueThroughFinally(n) { var t = []; A: for (var i = 0; i < 2; i++) { for (var j = 0; j < 2; j++) { try { if (j === n) continue A; t.push(j); } finally { t.push("f"); } } t.push("tail"); } return t; }
+function breakThroughTwoFinally(n) { var t = []; A: for (var i = 0; i < 2; i++) { try { for (var j = 0; j < 2; j++) { try { if (j === n) break A; t.push(j); } finally { t.push("f1"); } } } finally { t.push("f2"); } t.push("tail"); } t.push("end"); return t; }
+function conditionalBlock(a, b) { var t = []; L: { if (a) { t.push("a"); } else { if (b) break L; t.push("b"); } t.push("e"); } t.push("end"); return t; }
+window.TEST_OUTPUT = [tailOnBreak(0), tailOnBreak(5), blockTail(0), blockTail(5), switchOneCase(0), switchOneCase(1), forInBlock({ a: 1, b: 2 }, "b"), forInBlock({ a: 1 }, "z"), twoLabels(1, 2), twoLabels(2, 1), twoLabels(9, 9), tailHoldsLoop(1), tailHoldsLoop(9), continueOuter(1), continueOuter(9), continueThroughFinally(1), continueThroughFinally(9), breakThroughTwoFinally(1), breakThroughTwoFinally(9), conditionalBlock(1, 0), conditionalBlock(0, 1), conditionalBlock(0, 0)];
