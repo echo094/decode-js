@@ -2,7 +2,7 @@ import { join } from 'path'
 import fs from 'node:fs'
 import vm from 'node:vm'
 import { expect, test } from 'vitest'
-import { getPluginResult } from '../helper.js'
+import { getPluginResult, scriptTimeout } from '../helper.js'
 import PluginJsconfuser from '#plugin/jsconfuser.js'
 
 const root = __dirname
@@ -16,7 +16,7 @@ test('control-flow flattening preserves lexical bindings when restoring scope me
   const run = (code) => {
     const context = {}
     context.window = context
-    vm.runInNewContext(code, context, { timeout: 5000 })
+    vm.runInNewContext(code, context, { timeout: scriptTimeout })
     return context.TEST_OUTPUT
   }
 
@@ -121,8 +121,7 @@ test('control-flow-flattening-program-level', () => {
 // `scope["key"]` to `scope.key` wherever the key is a compile-time string that's also a
 // valid identifier - both of which broke this combo before `parseWhileSwitch` and
 // `matchScopeMemberChain`/`matchScopeMemberInterpreter` were taught to accept the
-// braceless/dot-notation forms (see checkpoint.md's "CFF scope-member computed-vs-dot-notation
-// gap").
+// braceless/dot-notation forms.
 test('control-flow-flattening-minify', () => {
   const tc = 'control-flow-flattening-minify'
   getPluginResult(PluginJsconfuser, true, join(root, tc))
@@ -220,7 +219,7 @@ test('domain-lock-string-concealing', () => {
 // true, preserveFunctionLength: true }) where RGF shrinks the transformed
 // function to a zero-param stub and preserveFunctionLength wraps it in
 // {ph}_fnLength(fn, length). Confirms function-length.js's hasRestParam guard
-// (see variable-masking.md's Known gaps) lets the wrapper strip cleanly
+// lets the wrapper strip cleanly
 // without crashing on the rest-param-less target, and RGF's own decode still
 // finds the call-site shape underneath.
 test('rgf-function-length', () => {
@@ -240,7 +239,7 @@ test('flatten-function-length', () => {
 
 // The #11 blind-spot fixture: the only committed sample containing a template literal or a
 // regex literal. Neither is reversed - Preparation rewrites them to concatenation and
-// `new RegExp(...)` and nothing puts them back (preparation.md's Known Gaps) - so what this
+// `new RegExp(...)` and no decoder puts them back - so what this
 // pins is that they survive *intact*: the flags and the pattern source round-trip, and the
 // concatenation is folded rather than left in pieces.
 //
@@ -279,7 +278,7 @@ test('cff-dispatcher-masking', () => {
 // The cleanest decode of the four whole-pipeline combos, and worth knowing why: with no CFF
 // or MovedDeclarations in the config nothing splits a declaration, so `var x = "..."` comes
 // back whole. What separates it from its source is renaming and the computed member spelling
-// (preparation.md's Known Gaps) - nothing else.
+// Preparation adds and no decoder reverses - nothing else.
 test('string-stack', () => {
   const tc = 'string-stack'
   getPluginResult(PluginJsconfuser, true, join(root, tc))

@@ -3,9 +3,8 @@ import { test } from 'vitest'
 import { getPluginResult } from '../helper.js'
 import PluginJsconfuser from '#plugin/jsconfuser.js'
 
-// Fixtures pairing each per-transform decoder with `renameVariables` - the audit tracked
-// on checkpoint.md's Next steps ("Audit every transform's decoder for name/suffix-based
-// matching"). RenameVariables (Order 30) reassigns every identifier independently, so it
+// Fixtures pairing each per-transform decoder with `renameVariables`, from an audit of every
+// transform's decoder for name- or suffix-based matching. RenameVariables (Order 30) reassigns every identifier independently, so it
 // can coincidentally hand the same name to two unrelated bindings that a decoder never
 // has to distinguish when real source names differ. Each fixture here either pins a real
 // bug this uncovered, or stands as proof-of-safety for a transform the audit cleared.

@@ -8,7 +8,7 @@ import traverse from '@babel/traverse'
 import unlockEnv from '#visitor/obfuscator/unlock-env'
 import plugin from '#plugin/obfuscatorx'
 import deleteExtra from '#visitor/delete-extra'
-import { expectConsistentState } from '../../helper.js'
+import { expectConsistentState, scriptTimeout } from '../../helper.js'
 
 const root = join(__dirname, 'unlock-env')
 
@@ -231,7 +231,7 @@ test('domain lock raw and decoded behavior under a Node-hosted location model', 
       document: { domain: host, location: { hostname: host } },
     }
     context.window = context
-    vm.runInNewContext(code, context)
+    vm.runInNewContext(code, context, { timeout: scriptTimeout })
     return { location: context.document.location, output }
   }
 
