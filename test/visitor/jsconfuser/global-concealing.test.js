@@ -39,7 +39,7 @@ test('assigned-holder', () => {
 // single minified case among forty left an entire GlobalConcealing layer undecoded. Expected
 // output byte-identical to `simple`'s.
 // The *sniffer* held as a merged `var …;` plus a separate `getGlobalVarFn = function …`,
-// which is how the CFF decode re-emits it (see control-flow.md item 4). The rewrite and the
+// which is how the CFF decode re-emits it. The rewrite and the
 // switch-fn/globalVar deletions never depended on that spelling; only the sniffer's own
 // cleanup did, and an `isFunctionDeclaration()` gate there left ~770B of getGlobal
 // scaffolding at zero references on 39 of 96 corpus samples. Expected output byte-identical
