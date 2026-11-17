@@ -33,6 +33,15 @@ jobs:
           # there are versioning quirks with node-gyp
           npm_config_build_from_source: true
 
+      # Formatting is checked on its own, over the same files `npm run lint` reads; test fixtures are
+      # decoder inputs and expected outputs, kept byte-exact.
+      - name: Check formatting
+        run: npm run format
+
+      # The limits and module dependencies in CONTRIBUTING.md.
+      - name: Lint
+        run: npm run lint
+
       - name: Run Vitest
         # We use 'always()' so the report is posted even if tests fail
         run: npx vitest run
