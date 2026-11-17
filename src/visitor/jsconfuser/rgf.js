@@ -2,7 +2,6 @@ import { parse } from '@babel/parser'
 import traverse from '@babel/traverse'
 import * as t from '@babel/types'
 
-import decodeJsconfuser from '../../plugin/jsconfuser.js'
 import safeFunc from '../../utility/safe-func.js'
 const safeDeleteNode = safeFunc.safeDeleteNode
 
@@ -135,7 +134,7 @@ function isPropertyAccess(node, propName) {
  * `function embed(){ var [arr, args] = arguments; function repl(origParams){
  * origBody } return repl.apply(this, args); } embed;`. The sub-program was
  * recursively obfuscated by (almost) the whole pipeline before being
- * serialized, so `decodeJsconfuser` has already reversed everything inside it
+ * serialized, so the caller's decode has already reversed everything inside it
  * (including a nested Flatten wrapper, if the same function was also
  * Flatten-eligible before RGF ran) - this only needs to find the wrapper
  * shape and pull `repl`'s params/body back out, not undo anything itself.
@@ -199,84 +198,103 @@ function extractReplacementFn(subAst) {
   return result
 }
 
-export default {
-  Program(programPath) {
-    let matched = null
+// The RGF array, its eval wrapper and its integrity variable in the program, with the code string
+// each RGF function was serialized to: `{ programPath, codes, ... }`, or null when the program has
+// none. The strings are the caller's to decode (the js-confuser plugin runs its own pipeline on each)
+// before `applyRgf` puts the functions back.
+export function findRgf(ast) {
+  let found = null
+  traverse(ast, {
+    Program(programPath) {
+      found = matchRgf(programPath)
+    },
+  })
+  return found
+}
 
-    for (const stmt of programPath.get('body')) {
-      if (!stmt.isVariableDeclaration()) continue
-      for (const decl of stmt.get('declarations')) {
-        const arrayMatch = matchRgfArray(decl)
-        if (!arrayMatch) continue
+function matchRgf(programPath) {
+  let matched = null
 
-        const wrapperBinding = programPath.scope.getBinding(
-          arrayMatch.wrapperName,
-        )
-        if (!wrapperBinding || !wrapperBinding.path.isFunctionDeclaration())
-          continue
-        const wrapperMatch = matchEvalWrapper(wrapperBinding.path)
-        if (!wrapperMatch) continue
+  for (const stmt of programPath.get('body')) {
+    if (!stmt.isVariableDeclaration()) continue
+    for (const decl of stmt.get('declarations')) {
+      const arrayMatch = matchRgfArray(decl)
+      if (!arrayMatch) continue
 
-        matched = {
-          declPath: decl,
-          wrapperPath: wrapperBinding.path,
-          ...arrayMatch,
-          ...wrapperMatch,
-        }
-        break
+      const wrapperBinding = programPath.scope.getBinding(
+        arrayMatch.wrapperName,
+      )
+      if (!wrapperBinding || !wrapperBinding.path.isFunctionDeclaration())
+        continue
+      const wrapperMatch = matchEvalWrapper(wrapperBinding.path)
+      if (!wrapperMatch) continue
+
+      matched = {
+        declPath: decl,
+        wrapperPath: wrapperBinding.path,
+        ...arrayMatch,
+        ...wrapperMatch,
       }
-      if (matched) break
+      break
     }
+    if (matched) break
+  }
 
-    if (!matched) return
+  return matched && { ...matched, programPath }
+}
 
-    const decodedFns = matched.codes.map((code) => {
-      const decodedCode = decodeJsconfuser(code)
-      if (!decodedCode) return null
-      let subAst
-      try {
-        subAst = parse(decodedCode, { errorRecovery: true })
-      } catch {
-        return null
+// Each RGF function's params and body restored from its decoded sub-program (`decodedCodes`, in
+// `found.codes` order; a null entry leaves that function as it is), then the array, its wrapper and
+// the integrity check removed when nothing else reads them.
+export function applyRgf(found, decodedCodes) {
+  const { programPath } = found
+  const matched = found
+
+  const decodedFns = decodedCodes.map((decodedCode) => {
+    if (!decodedCode) return null
+    let subAst
+    try {
+      subAst = parse(decodedCode, { errorRecovery: true })
+    } catch {
+      return null
+    }
+    return extractReplacementFn(subAst)
+  })
+
+  programPath.traverse({
+    'FunctionDeclaration|FunctionExpression'(fnPath) {
+      const callSite = matchRgfCallSite(fnPath, matched.arrayName)
+      if (!callSite) return
+      const decoded = decodedFns[callSite.index]
+      if (!decoded) return
+
+      fnPath.node.params = decoded.params
+      fnPath.node.body = decoded.body
+    },
+  })
+
+  programPath.scope.crawl()
+  if (safeDeleteNode(matched.arrayName, matched.declPath)) {
+    safeDeleteNode(matched.wrapperName, matched.wrapperPath)
+  }
+
+  const integrityBinding = programPath.scope.getBinding(
+    matched.integrityVarName,
+  )
+  if (integrityBinding && integrityBinding.path.isVariableDeclarator()) {
+    const init = integrityBinding.path.node.init
+    const integrityFnName =
+      t.isCallExpression(init) && t.isIdentifier(init.callee)
+        ? init.callee.name
+        : null
+    if (
+      safeDeleteNode(matched.integrityVarName, integrityBinding.path) &&
+      integrityFnName
+    ) {
+      const fnBinding = programPath.scope.getBinding(integrityFnName)
+      if (fnBinding && fnBinding.path.isFunctionDeclaration()) {
+        safeDeleteNode(integrityFnName, fnBinding.path)
       }
-      return extractReplacementFn(subAst)
-    })
-
-    programPath.traverse({
-      'FunctionDeclaration|FunctionExpression'(fnPath) {
-        const callSite = matchRgfCallSite(fnPath, matched.arrayName)
-        if (!callSite) return
-        const decoded = decodedFns[callSite.index]
-        if (!decoded) return
-
-        fnPath.node.params = decoded.params
-        fnPath.node.body = decoded.body
-      },
-    })
-
-    programPath.scope.crawl()
-    if (safeDeleteNode(matched.arrayName, matched.declPath)) {
-      safeDeleteNode(matched.wrapperName, matched.wrapperPath)
     }
-
-    const integrityBinding = programPath.scope.getBinding(
-      matched.integrityVarName,
-    )
-    if (integrityBinding && integrityBinding.path.isVariableDeclarator()) {
-      const init = integrityBinding.path.node.init
-      const integrityFnName =
-        t.isCallExpression(init) && t.isIdentifier(init.callee)
-          ? init.callee.name
-          : null
-      if (
-        safeDeleteNode(matched.integrityVarName, integrityBinding.path) &&
-        integrityFnName
-      ) {
-        const fnBinding = programPath.scope.getBinding(integrityFnName)
-        if (fnBinding && fnBinding.path.isFunctionDeclaration()) {
-          safeDeleteNode(integrityFnName, fnBinding.path)
-        }
-      }
-    }
-  },
+  }
 }

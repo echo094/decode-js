@@ -22,12 +22,18 @@ import jcLockInit from '../visitor/jsconfuser/lock.js'
 import jcMovedDeclarationsInit from '../visitor/jsconfuser/moved-declarations.js'
 import jcOpaquePredicates from '../visitor/jsconfuser/opaque-predicates.js'
 import jcPack from '../visitor/jsconfuser/pack.js'
-import jcRgf from '../visitor/jsconfuser/rgf.js'
+import { applyRgf, findRgf } from '../visitor/jsconfuser/rgf.js'
 import jcStringCompression from '../visitor/jsconfuser/string-compression.js'
 import jcStringConceal from '../visitor/jsconfuser/string-concealing.js'
 import jcVariableMasking from '../visitor/jsconfuser/variable-masking.js'
 
-export default function (code) {
+// RGF: each eval-wrapped sub-program is decoded with this same pipeline, then put back.
+export function decodeRgf(ast) {
+  const found = findRgf(ast)
+  if (found) applyRgf(found, found.codes.map(decodeJsconfuser))
+}
+
+export default function decodeJsconfuser(code) {
   let ast
   try {
     ast = parse(code, { errorRecovery: true })
@@ -213,7 +219,7 @@ export default function (code) {
   // RGF (recursively decodes each eval-wrapped sub-program with this same
   // pipeline - must run after the index-literal folding above so the array
   // index reads as a plain NumericLiteral)
-  traverse(ast, jcRgf)
+  decodeRgf(ast)
   // Dispatcher (needs VariableMasking, above, to have already unmasked the
   // dispatcher function's own params if VariableMasking also applies to it)
   traverse(ast, jcDispatcherInit())
