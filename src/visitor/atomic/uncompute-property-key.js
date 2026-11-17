@@ -31,39 +31,34 @@ const IDENTIFIER = /^[A-Za-z_$][A-Za-z0-9_$]*$/
  * A key that was *already* non-computed skips step 1 and is still eligible for step 2, which is
  * what makes the pass idempotent and safe to re-run in a fixpoint loop.
  */
-export function createUncomputePropertyKey(onChange) {
-  const visit = (path) => {
-    const { node } = path
-    if (!t.isStringLiteral(node.key)) {
-      return
-    }
-    let changed = false
+function visit(path, state) {
+  const { node } = path
+  if (!t.isStringLiteral(node.key)) {
+    return
+  }
+  let changed = false
 
-    // Step 1: the guarded half. `uncomputeStringKey` takes the KEY path and decides for itself
-    // whether this owner and name may lose the brackets.
-    if (node.computed) {
-      safeFunc.uncomputeStringKey(path.get('key'))
-      if (!node.computed) {
-        changed = true
-      }
-    }
-
-    // Step 2: pure spelling, and only once the key is non-computed.
-    if (!node.computed && IDENTIFIER.test(node.key.value)) {
-      node.key = t.identifier(node.key.value)
+  // Step 1: the guarded half. `uncomputeStringKey` takes the KEY path and decides for itself
+  // whether this owner and name may lose the brackets.
+  if (node.computed) {
+    safeFunc.uncomputeStringKey(path.get('key'))
+    if (!node.computed) {
       changed = true
     }
+  }
 
-    if (changed && onChange) {
-      onChange()
-    }
+  // Step 2: pure spelling, and only once the key is non-computed.
+  if (!node.computed && IDENTIFIER.test(node.key.value)) {
+    node.key = t.identifier(node.key.value)
+    changed = true
   }
-  return {
-    ObjectProperty: visit,
-    ObjectMethod: visit,
-    ClassMethod: visit,
-    ClassProperty: visit,
-  }
+
+  if (changed && state) state.changes += 1
 }
 
-export default createUncomputePropertyKey()
+export default {
+  ObjectProperty: visit,
+  ObjectMethod: visit,
+  ClassMethod: visit,
+  ClassProperty: visit,
+}

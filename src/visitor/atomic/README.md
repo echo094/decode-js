@@ -3,11 +3,10 @@
 Single-rewrite, plugin-agnostic Babel visitors. One file does one thing to one node shape, so a
 plugin composes the ones it needs instead of inheriting a bundle.
 
-Each file exports:
-
-- a **default** plain visitor object, for `traverse(ast, visitorDefault)`;
-- a named **`create…(onChange)`** factory, for a caller that needs to know whether the visitor
-  fired — which a fixpoint loop does, since it has to decide whether to run another round.
+Each file exports one **default** plain visitor object, for `traverse(ast, visitor)`. A caller that
+needs to know whether it fired (a fixpoint loop does, since it has to decide whether to run another
+round) passes a traversal state, `traverse(ast, visitor, undefined, { changes: 0 })`, and reads
+`changes`: the visitor adds each rewrite to it. The caller hands data, never a callback.
 
 ## What belongs here
 

@@ -10,7 +10,7 @@ import normalizeStatements from '../visitor/obfuscator/normalize-statements.js'
 import inlineControlFlowStorage from '../visitor/obfuscator/inline-control-flow-storage.js'
 import decodeStringArray from '../visitor/obfuscator/string-array.js'
 import normalizeConverting from '../visitor/obfuscator/normalize-converting.js'
-import { createUnflattenSwitchDispatch } from '../visitor/obfuscator/unflatten-switch-dispatch.js'
+import { unflattenSwitchDispatch } from '../visitor/obfuscator/unflatten-switch-dispatch.js'
 import unlockEnv from '../visitor/obfuscator/unlock-env.js'
 
 /**
@@ -49,10 +49,7 @@ function runGroup(ast, maxRounds = 8) {
     traverse(ast, inlineControlFlowStorage)
     traverse(ast, calculateConstantExp)
     traverse(ast, pruneIfBranch)
-    traverse(
-      ast,
-      createUnflattenSwitchDispatch(() => {}),
-    )
+    traverse(ast, unflattenSwitchDispatch)
     const current = generator(ast, { compact: true }).code
     if (current === previous) break
     previous = current

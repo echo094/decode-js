@@ -9,7 +9,7 @@ import normalizeConverting from '#visitor/obfuscator/normalize-converting'
 import inlineControlFlowStorage from '#visitor/obfuscator/inline-control-flow-storage'
 import calculateConstantExp from '#visitor/calculate-constant-exp'
 import pruneIfBranch from '#visitor/prune-if-branch'
-import { createUnflattenSwitchDispatch } from '#visitor/obfuscator/unflatten-switch-dispatch'
+import { unflattenSwitchDispatch } from '#visitor/obfuscator/unflatten-switch-dispatch'
 import unlockEnv from '#visitor/obfuscator/unlock-env'
 import { getPipelineResult } from '../../helper.js'
 
@@ -64,10 +64,7 @@ const group = (ast) => {
     traverse(ast, inlineControlFlowStorage)
     traverse(ast, calculateConstantExp)
     traverse(ast, pruneIfBranch)
-    traverse(
-      ast,
-      createUnflattenSwitchDispatch(() => {}),
-    )
+    traverse(ast, unflattenSwitchDispatch)
     const cur = generate(ast, { compact: true }).code
     if (cur === previous) break
     previous = cur

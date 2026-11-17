@@ -26,25 +26,20 @@ const IDENTIFIER = /^[A-Za-z_$][A-Za-z0-9_$]*$/
  *
  * Optional members (`o?.["foo"]`) are the same rewrite and are handled alongside.
  */
-export function createUncomputeMember(onChange) {
-  const visit = (path) => {
-    const { node } = path
-    if (!node.computed || !t.isStringLiteral(node.property)) {
-      return
-    }
-    if (!IDENTIFIER.test(node.property.value)) {
-      return
-    }
-    node.property = t.identifier(node.property.value)
-    node.computed = false
-    if (onChange) {
-      onChange()
-    }
+function visit(path, state) {
+  const { node } = path
+  if (!node.computed || !t.isStringLiteral(node.property)) {
+    return
   }
-  return {
-    MemberExpression: visit,
-    OptionalMemberExpression: visit,
+  if (!IDENTIFIER.test(node.property.value)) {
+    return
   }
+  node.property = t.identifier(node.property.value)
+  node.computed = false
+  if (state) state.changes += 1
 }
 
-export default createUncomputeMember()
+export default {
+  MemberExpression: visit,
+  OptionalMemberExpression: visit,
+}

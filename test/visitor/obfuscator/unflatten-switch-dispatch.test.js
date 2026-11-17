@@ -1,7 +1,7 @@
 import { join } from 'path'
 import { expect, test } from 'vitest'
 import { getVisitorResult } from '../../helper.js'
-import { createUnflattenSwitchDispatch } from '#visitor/obfuscator/unflatten-switch-dispatch'
+import { unflattenSwitchDispatch } from '#visitor/obfuscator/unflatten-switch-dispatch'
 
 const root = join(__dirname, 'unflatten-switch-dispatch')
 
@@ -20,19 +20,15 @@ const root = join(__dirname, 'unflatten-switch-dispatch')
  *   identical. Stale scope state was one of this pass's own two defects, so it is the last check
  *   to hand-roll around.
  *
- * What the helper cannot supply is the `onChange` count, and that is the only reason for the
+ * What the helper cannot supply is the `state.changes` count, and that is the only reason for the
  * wrapper below. The channel is part of the pass's interface - it is how a caller runs a pipeline
  * to a fixpoint without re-serializing the tree - so a rewrite that forgot to report itself would
  * silently make a fixpoint driver exit a round early. Nothing else pins that.
  */
 function run(name, fix) {
-  let fired = 0
-  getVisitorResult(
-    createUnflattenSwitchDispatch(() => fired++),
-    fix,
-    join(root, name),
-  )
-  return fired
+  const state = { changes: 0 }
+  getVisitorResult(unflattenSwitchDispatch, fix, join(root, name), state)
+  return state.changes
 }
 
 /**

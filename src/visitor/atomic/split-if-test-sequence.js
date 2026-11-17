@@ -21,26 +21,20 @@ import * as t from '@babel/types'
  * Order within the sequence is preserved, and the hoisted expressions still evaluate before
  * the test - so this is safe even when they have side effects the test depends on.
  */
-export function createSplitIfTestSequence(onSplit) {
-  return {
-    IfStatement: {
-      enter(path) {
-        const test = path.node.test
-        if (!t.isSequenceExpression(test) || !path.inList) {
-          return
-        }
-        const rest = test.expressions.slice()
-        const last = rest.pop()
-        path.insertBefore(
-          rest.map((expression) => t.expressionStatement(expression)),
-        )
-        path.get('test').replaceWith(last)
-        if (onSplit) {
-          onSplit()
-        }
-      },
+export default {
+  IfStatement: {
+    enter(path, state) {
+      const test = path.node.test
+      if (!t.isSequenceExpression(test) || !path.inList) {
+        return
+      }
+      const rest = test.expressions.slice()
+      const last = rest.pop()
+      path.insertBefore(
+        rest.map((expression) => t.expressionStatement(expression)),
+      )
+      path.get('test').replaceWith(last)
+      if (state) state.changes += 1
     },
-  }
+  },
 }
-
-export default createSplitIfTestSequence()

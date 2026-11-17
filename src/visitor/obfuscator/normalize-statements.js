@@ -4,10 +4,10 @@ import logger from '../../utility/logger.js'
 import lintIfStatement from '../lint-if-statement.js'
 import splitSequence from '../split-sequence.js'
 import splitVariableDeclaration from '../split-variable-declaration.js'
-import { createConvertConditionalAssign } from '../atomic/convert-conditional-assign.js'
-import { createLintConditionalIf } from '../atomic/lint-conditional-if.js'
-import { createLintLogicalIf } from '../atomic/lint-logical-if.js'
-import { createSplitIfTestSequence } from '../atomic/split-if-test-sequence.js'
+import convertConditionalAssign from '../atomic/convert-conditional-assign.js'
+import lintConditionalIf from '../atomic/lint-conditional-if.js'
+import lintLogicalIf from '../atomic/lint-logical-if.js'
+import splitIfTestSequence from '../atomic/split-if-test-sequence.js'
 
 const debugLog = logger.debugLog
 
@@ -65,33 +65,22 @@ function normalizeStatements(ast, maxRounds = 8) {
   }
 
   for (let round = 0; round < maxRounds; round += 1) {
-    let changed = 0
-
-    traverse(
-      ast,
-      createConvertConditionalAssign(() => (total.assign += 1)),
-    )
+    const assign = { changes: 0 }
+    const sequence = { changes: 0 }
+    const conditional = { changes: 0 }
+    const logical = { changes: 0 }
+    traverse(ast, convertConditionalAssign, undefined, assign)
     traverse(ast, lintIfStatement)
     traverse(ast, splitSequence)
     traverse(ast, splitVariableDeclaration)
-    traverse(
-      ast,
-      createSplitIfTestSequence(() => (total.sequence += 1)),
-    )
-    traverse(
-      ast,
-      createLintConditionalIf(() => {
-        total.conditional += 1
-        changed += 1
-      }),
-    )
-    traverse(
-      ast,
-      createLintLogicalIf(() => {
-        total.logical += 1
-        changed += 1
-      }),
-    )
+    traverse(ast, splitIfTestSequence, undefined, sequence)
+    traverse(ast, lintConditionalIf, undefined, conditional)
+    traverse(ast, lintLogicalIf, undefined, logical)
+    total.assign += assign.changes
+    total.sequence += sequence.changes
+    total.conditional += conditional.changes
+    total.logical += logical.changes
+    const changed = conditional.changes + logical.changes
 
     total.rounds = round + 1
     if (!changed) {

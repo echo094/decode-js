@@ -5,6 +5,12 @@ import generate from '@babel/generator'
 import traverse from '@babel/traverse'
 import * as t from '@babel/types'
 
+// The one limit for every script a test runs in a node:vm context. vitest's testTimeout cannot
+// interrupt a synchronous run, so this is what stops a hang; like testTimeout it is generous, so a
+// slow host, a CI runner or full parallel load is not a red build. A test that needs a limit to
+// fire passes its own to the code under test, never to this.
+export const scriptTimeout = 60000
+
 // Every node reachable from the Program right now.
 function liveNodes(ast) {
   const live = new Set()
@@ -140,10 +146,10 @@ export function expectConsistentState(ast, cmpCode, parseOptions = {}) {
   )
 }
 
-export function getVisitorResult(visitor, fix, input) {
+export function getVisitorResult(visitor, fix, input, state) {
   const sourceCode = fs.readFileSync(input + '.js', { encoding: 'utf-8' })
   const ast = parse(sourceCode)
-  traverse(ast, visitor)
+  traverse(ast, visitor, undefined, state)
   // The state audit applies to no-op cases too, and deliberately: "output unchanged" is not
   // "nothing happened", so a visitor that removes and rebuilds can leave stale references while
   // the text round-trips. Only the reference-state comparison is fix-only - a case that does not

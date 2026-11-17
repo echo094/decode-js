@@ -27,28 +27,19 @@ import * as t from '@babel/types'
  * when `a` is *falsy*, so the reversal would need a negated test, and a negation this pass
  * introduced is a shape no encoder emitted. Left alone.
  */
-export function createLintLogicalIf(onReverse) {
-  return {
-    LogicalExpression: {
-      exit(path) {
-        if (path.node.operator !== '&&') {
-          return
-        }
-        const stmt = path.parentPath
-        if (
-          !stmt.isExpressionStatement() ||
-          stmt.node.expression !== path.node
-        ) {
-          return
-        }
-        const { left, right } = path.node
-        stmt.replaceWith(t.ifStatement(left, t.expressionStatement(right)))
-        if (onReverse) {
-          onReverse()
-        }
-      },
+export default {
+  LogicalExpression: {
+    exit(path, state) {
+      if (path.node.operator !== '&&') {
+        return
+      }
+      const stmt = path.parentPath
+      if (!stmt.isExpressionStatement() || stmt.node.expression !== path.node) {
+        return
+      }
+      const { left, right } = path.node
+      stmt.replaceWith(t.ifStatement(left, t.expressionStatement(right)))
+      if (state) state.changes += 1
     },
-  }
+  },
 }
-
-export default createLintLogicalIf()

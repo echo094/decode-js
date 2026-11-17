@@ -24,29 +24,23 @@ import * as t from '@babel/types'
  * is that it is now evaluated *after* the test rather than before it. Where the test reads
  * what the target expression writes, that is observable.
  */
-export function createConvertConditionalAssign(onConvert) {
-  return {
-    ConditionalExpression: {
-      exit(path) {
-        const parent = path.parent
-        if (!t.isAssignmentExpression(parent) || parent.right !== path.node) {
-          return
-        }
-        const { test, consequent, alternate } = path.node
-        const { operator, left } = parent
-        path.parentPath.replaceWith(
-          t.conditionalExpression(
-            test,
-            t.assignmentExpression(operator, t.cloneNode(left), consequent),
-            t.assignmentExpression(operator, t.cloneNode(left), alternate),
-          ),
-        )
-        if (onConvert) {
-          onConvert()
-        }
-      },
+export default {
+  ConditionalExpression: {
+    exit(path, state) {
+      const parent = path.parent
+      if (!t.isAssignmentExpression(parent) || parent.right !== path.node) {
+        return
+      }
+      const { test, consequent, alternate } = path.node
+      const { operator, left } = parent
+      path.parentPath.replaceWith(
+        t.conditionalExpression(
+          test,
+          t.assignmentExpression(operator, t.cloneNode(left), consequent),
+          t.assignmentExpression(operator, t.cloneNode(left), alternate),
+        ),
+      )
+      if (state) state.changes += 1
     },
-  }
+  },
 }
-
-export default createConvertConditionalAssign()
