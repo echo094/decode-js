@@ -286,39 +286,29 @@ function match(path) {
   }
 }
 
-/**
- * @param {(info: object) => void} [onChange] notified once per rewritten block, so a caller can
- *   run a pipeline to a fixpoint without re-serializing the tree.
- */
-export function createUnflattenSwitchDispatch(onChange) {
-  return {
-    WhileStatement: {
-      exit(path) {
-        const found = match(path)
-        if (!found) return
-        const {
-          statements,
-          parts,
-          controllerDecl,
-          indexDecl,
-          scopeDirectives,
-        } = found
+// A caller that passes a traversal state (`traverse(ast, unflattenSwitchDispatch, undefined, state)`)
+// has `state.changes` counted once per rewritten block, so it can run a pipeline to a fixpoint
+// without re-serializing the tree.
+export const unflattenSwitchDispatch = {
+  WhileStatement: {
+    exit(path, state) {
+      const found = match(path)
+      if (!found) return
+      const { statements, parts, controllerDecl, indexDecl, scopeDirectives } =
+        found
 
-        // Read the controller left to right: position k names the case holding original
-        // statement k. Empty cases drop out here rather than at the gate, so the permutation
-        // check above still sees every index.
-        const rebuilt = rebuildStatements(statements, parts, scopeDirectives)
+      // Read the controller left to right: position k names the case holding original
+      // statement k. Empty cases drop out here rather than at the gate, so the permutation
+      // check above still sees every index.
+      const rebuilt = rebuildStatements(statements, parts, scopeDirectives)
 
-        controllerDecl.remove()
-        indexDecl.remove()
-        // Every case empty is a block that does nothing. `replaceWithMultiple([])` is not a
-        // removal, so ask for one explicitly.
-        if (rebuilt.length === 0) path.remove()
-        else path.replaceWithMultiple(rebuilt)
-        if (onChange) onChange({ count: rebuilt.length })
-      },
+      controllerDecl.remove()
+      indexDecl.remove()
+      // Every case empty is a block that does nothing. `replaceWithMultiple([])` is not a
+      // removal, so ask for one explicitly.
+      if (rebuilt.length === 0) path.remove()
+      else path.replaceWithMultiple(rebuilt)
+      if (state) state.changes += 1
     },
-  }
+  },
 }
-
-export default createUnflattenSwitchDispatch()

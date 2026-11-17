@@ -28,28 +28,22 @@ import * as t from '@babel/types'
  * names match - so there is no node to rewrite, and the generator already prints the short form.
  * That reversal is free at generation time and needs no pass.
  */
-export function createCollapsePropertyShorthand(onChange) {
-  return {
-    ObjectProperty(path) {
-      const { node } = path
-      if (node.computed || node.shorthand) {
-        return
-      }
-      if (!t.isIdentifier(node.key) || !t.isIdentifier(node.value)) {
-        return
-      }
-      if (node.key.name !== node.value.name) {
-        return
-      }
-      if (node.key.name === '__proto__') {
-        return
-      }
-      node.shorthand = true
-      if (onChange) {
-        onChange()
-      }
-    },
-  }
+export default {
+  ObjectProperty(path, state) {
+    const { node } = path
+    if (node.computed || node.shorthand) {
+      return
+    }
+    if (!t.isIdentifier(node.key) || !t.isIdentifier(node.value)) {
+      return
+    }
+    if (node.key.name !== node.value.name) {
+      return
+    }
+    if (node.key.name === '__proto__') {
+      return
+    }
+    node.shorthand = true
+    if (state) state.changes += 1
+  },
 }
-
-export default createCollapsePropertyShorthand()

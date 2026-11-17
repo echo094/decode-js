@@ -4,9 +4,9 @@ import traverse from '@babel/traverse'
 import logger from '../../utility/logger.js'
 import calculateConstantExp from '../calculate-constant-exp.js'
 import mergeObject from '../merge-object.js'
-import { createCollapsePropertyShorthand } from '../atomic/collapse-property-shorthand.js'
-import { createUncomputeMember } from '../atomic/uncompute-member.js'
-import { createUncomputePropertyKey } from '../atomic/uncompute-property-key.js'
+import collapsePropertyShorthand from '../atomic/collapse-property-shorthand.js'
+import uncomputeMember from '../atomic/uncompute-member.js'
+import uncomputePropertyKey from '../atomic/uncompute-property-key.js'
 
 const debugLog = logger.debugLog
 
@@ -95,17 +95,12 @@ export default function normalizeConverting(ast, maxRounds = 10) {
   let previous = null
   let rounds = 0
   for (; rounds < maxRounds; rounds++) {
-    const noted = { atomic: 0 }
-    const bump = () => {
-      noted.atomic++
-    }
-
     stripNumericRaw(ast)
     traverse(ast, calculateConstantExp)
-    traverse(ast, createUncomputeMember(bump))
-    traverse(ast, createUncomputePropertyKey(bump))
+    traverse(ast, uncomputeMember)
+    traverse(ast, uncomputePropertyKey)
     traverse(ast, mergeObject)
-    traverse(ast, createCollapsePropertyShorthand(bump))
+    traverse(ast, collapsePropertyShorthand)
 
     const current = generator(ast, { compact: true }).code
     if (current === previous) {

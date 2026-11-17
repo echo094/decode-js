@@ -27,70 +27,63 @@ import * as t from '@babel/types'
  * `convert-conditional-assign.js`, which distributes an assignment into both branches to move
  * the conditional into statement position; run it before this one to reach those sites.
  */
-export function createLintConditionalIf(onReverse) {
-  // Whether this traversal rewrote anything, so `Program.exit` knows if a crawl is owed. Closure
-  // state rather than module-level, since each factory call is its own visitor instance.
-  let rewroteSomething = false
-  return {
-    // The crawl restores an invariant this rewrite breaks: after a pass, the scope information
-    // Babel has cached should equal what a fresh parse of that pass's own output would produce.
-    // `replaceWith` is handed an `IfStatement` built from the conditional's own `test`,
-    // `consequent` and `alternate`, and it registers those reused subtrees' references a second
-    // time - the same live node listed twice in `binding.referencePaths`, with nothing detached.
-    // Measured on one real sample: 14 duplicate entries, 1462 recorded references against 1448
-    // real ones. A later consumer gating a deletion on "have I resolved every reference" then
-    // passes that check while a live reference goes unhandled.
-    //
-    // Program-scoped and once per traversal: crawling a narrower scope *adds* duplicates, by
-    // appending to outer-scope bindings that already hold those references. Gated because a crawl
-    // is only owed when something moved, and it cannot change the tree.
-    Program: {
-      enter() {
-        rewroteSomething = false
-      },
-      exit(path) {
-        if (rewroteSomething) path.scope.crawl()
-      },
-    },
-    ConditionalExpression: {
-      exit(path) {
-        const { test, consequent, alternate } = path.node
-        const parent = path.parentPath
+// Whether this traversal rewrote anything, so `Program.exit` knows if a crawl is owed; `Program.enter`
+// resets it for each traversal.
+let rewroteSomething = false
 
-        if (
-          parent.isExpressionStatement() &&
-          parent.node.expression === path.node
-        ) {
-          parent.replaceWith(
-            t.ifStatement(
-              test,
-              t.expressionStatement(consequent),
-              t.expressionStatement(alternate),
-            ),
-          )
-          rewroteSomething = true
-          if (onReverse) {
-            onReverse()
-          }
-          return
-        }
-
-        if (parent.isReturnStatement() && parent.node.argument === path.node) {
-          parent.replaceWith(
-            t.ifStatement(
-              test,
-              t.returnStatement(consequent),
-              t.returnStatement(alternate),
-            ),
-          )
-          rewroteSomething = true
-          if (onReverse) {
-            onReverse()
-          }
-        }
-      },
+export default {
+  // The crawl restores an invariant this rewrite breaks: after a pass, the scope information
+  // Babel has cached should equal what a fresh parse of that pass's own output would produce.
+  // `replaceWith` is handed an `IfStatement` built from the conditional's own `test`,
+  // `consequent` and `alternate`, and it registers those reused subtrees' references a second
+  // time - the same live node listed twice in `binding.referencePaths`, with nothing detached.
+  // Measured on one real sample: 14 duplicate entries, 1462 recorded references against 1448
+  // real ones. A later consumer gating a deletion on "have I resolved every reference" then
+  // passes that check while a live reference goes unhandled.
+  //
+  // Program-scoped and once per traversal: crawling a narrower scope *adds* duplicates, by
+  // appending to outer-scope bindings that already hold those references. Gated because a crawl
+  // is only owed when something moved, and it cannot change the tree.
+  Program: {
+    enter() {
+      rewroteSomething = false
     },
-  }
+    exit(path) {
+      if (rewroteSomething) path.scope.crawl()
+    },
+  },
+  ConditionalExpression: {
+    exit(path, state) {
+      const { test, consequent, alternate } = path.node
+      const parent = path.parentPath
+
+      if (
+        parent.isExpressionStatement() &&
+        parent.node.expression === path.node
+      ) {
+        parent.replaceWith(
+          t.ifStatement(
+            test,
+            t.expressionStatement(consequent),
+            t.expressionStatement(alternate),
+          ),
+        )
+        rewroteSomething = true
+        if (state) state.changes += 1
+        return
+      }
+
+      if (parent.isReturnStatement() && parent.node.argument === path.node) {
+        parent.replaceWith(
+          t.ifStatement(
+            test,
+            t.returnStatement(consequent),
+            t.returnStatement(alternate),
+          ),
+        )
+        rewroteSomething = true
+        if (state) state.changes += 1
+      }
+    },
+  },
 }
-
-export default createLintConditionalIf()
