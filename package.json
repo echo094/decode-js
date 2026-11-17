@@ -10,10 +10,13 @@
     "deob": "node src/main.js -t obfuscator",
     "deobx": "node src/main.js -t obfuscatorx",
     "dejsc": "node src/main.js -t jsconfuser",
+    "dejsc-vm": "node src/main.js -t jsconfuser-vm",
     "deso": "node src/main.js -t sojson",
     "desov7": "node src/main.js -t sojsonv7",
     "test": "vitest --config vitest.config.js",
-    "lint": "eslint --fix src"
+    "lint": "eslint src && node scripts/check-folder-cycles.mjs",
+    "lint:fix": "eslint --fix src",
+    "format": "prettier --check \"src/**/*.js\""
   },
   "dependencies": {
     "@babel/generator": "^8.0.0",
@@ -27,7 +30,7 @@
     "@vitest/coverage-v8": "^5.0.3",
     "eslint": "^10.0.3",
     "eslint-config-prettier": "^10.1.8",
-    "eslint-plugin-prettier": "^5.5.5",
+    "eslint-plugin-import-x": "4.17.1",
     "globals": "^17.4.0",
     "prettier": "^3.8.1",
     "vitest": "^5.0.3"
