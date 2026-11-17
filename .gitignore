@@ -107,3 +107,7 @@ input.js
 output.js
 .vscode/
 .idea/
+
+# Cell workspace: encoder checkouts fetched by scripts/jsconfuser-vm-cells
+sandbox-tests/
+__pycache__/
