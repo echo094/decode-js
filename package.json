@@ -32,7 +32,7 @@
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-import-x": "4.17.1",
     "globals": "^17.4.0",
-    "prettier": "^3.8.1",
+    "prettier": "^3.10.1",
     "vitest": "^5.0.3"
   }
 }
