@@ -10,6 +10,17 @@ Formatting: Prettier (`npm run format`). ESLint turns off the rules that clash w
 Code merged into `main` meets the limits below; a working branch need not. Each violation is fixed
 by its cause or listed as a known exception. A fix changes no decoded output.
 
+The limits are a floor. Code that meets them and still reads clumsily (a hand-written AST walk, a
+chain of `if (x.kind === …)`, a `switch` restating another table) is fixed as a class: find every
+instance and decide each, keeping the short and clear ones. One job has one mechanism, the
+library's own where the library has one.
+
+### Names and layout
+
+A file, folder, test or suite is named for what it is and grouped by what it does or tests, never
+by where it came from; no letter codes or history labels. A layout is judged on its design; the
+cost of moving files is not weighed.
+
 ### The limits
 
 ESLint core rules over `src/vm/`, `src/plugin/jsconfuser-vm.js` and
