@@ -19,9 +19,9 @@
     "format": "prettier --check \"src/**/*.js\""
   },
   "dependencies": {
-    "@babel/generator": "^8.0.0",
+    "@babel/generator": "^8.1.2",
     "@babel/parser": "^8.0.0",
-    "@babel/traverse": "^8.0.0",
+    "@babel/traverse": "^8.1.2",
     "@babel/types": "^8.0.0",
     "isolated-vm": "^7.0.0"
   },
